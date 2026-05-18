@@ -8,3 +8,4 @@ class_name Intervention extends Resource
 @export var gate_tags: Array[StringName] = []
 @export var needs_effects: Dictionary = {}
 @export var skill_effects: Dictionary = {}
+@export var cognitive_effects: Dictionary = {}

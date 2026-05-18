@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Intervention" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/economy/intervention.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"int_reading_together"
+label = "Reading Together"
+description = "Caseworker reads alongside Elling at the kitchen table."
+caseworker_cost = 0.5
+overskudd_cost = 5.0
+gate_tags = []
+needs_effects = {&"social": 0.10}
+skill_effects = {}
+cognitive_effects = {&"willpower": 0.05}

@@ -76,6 +76,9 @@ func _run_intervention_impl(i: Intervention) -> bool:
         client.needs[k] = clamp(cur + float(i.needs_effects[k]), 0.0, 1.0)
     for k: StringName in i.skill_effects.keys():
         client.skills[k] = int(client.skills.get(k, 0)) + int(i.skill_effects[k])
+    for k: StringName in i.cognitive_effects.keys():
+        var cur_c: float = client.cognitive.get(k, 0.0)
+        client.cognitive[k] = clamp(cur_c + float(i.cognitive_effects[k]), 0.0, 1.0)
     EventBus.intervention_completed.emit(i.id)
     EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
     EventBus.overskudd_changed.emit(client.id, client.overskudd)

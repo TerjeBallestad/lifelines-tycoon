@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Intervention" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/economy/intervention.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"int_quiet_walk"
+label = "Quiet Walk"
+description = "Caseworker walks with Elling on the wooded path behind the house."
+caseworker_cost = 1.0
+overskudd_cost = 10.0
+gate_tags = [&"mtg:green"]
+needs_effects = {&"energy": 0.20}
+skill_effects = {}
+cognitive_effects = {&"willpower": 0.10}

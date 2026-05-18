@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Intervention" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/economy/intervention.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"int_eye_contact"
+label = "Eye Contact Practice"
+description = "Short, structured sessions of held eye contact, paced by Elling."
+caseworker_cost = 0.5
+overskudd_cost = 15.0
+gate_tags = [&"trauma:strangers"]
+needs_effects = {}
+skill_effects = {&"eye_contact": 1}
+cognitive_effects = {&"willpower": -0.05}

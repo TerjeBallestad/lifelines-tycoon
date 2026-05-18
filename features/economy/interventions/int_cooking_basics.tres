@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Intervention" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/economy/intervention.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"int_cooking_basics"
+label = "Cooking Basics"
+description = "One simple meal prepared end-to-end, mother out of the kitchen."
+caseworker_cost = 1.5
+overskudd_cost = 20.0
+gate_tags = [&"dependency:mother", &"flow:solo_focused"]
+needs_effects = {&"security": 0.05}
+skill_effects = {&"cooking": 1}
+cognitive_effects = {}

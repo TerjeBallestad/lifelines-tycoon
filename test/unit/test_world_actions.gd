@@ -96,3 +96,13 @@ func test_intervention_emits_capacity_overskudd_and_completion() -> void:
 	assert_signal_emitted_with_parameters(EventBus, "intervention_completed", [&"i_ok"])
 	assert_signal_emitted(EventBus, "caseworker_capacity_changed")
 	assert_signal_emitted(EventBus, "overskudd_changed")
+
+func test_intervention_applies_cognitive_effects() -> void:
+	var i := Intervention.new()
+	i.id = &"i_cog"
+	i.caseworker_cost = 0.5
+	i.overskudd_cost = 5.0
+	i.cognitive_effects = {&"willpower": 0.1}
+	w.client.cognitive[&"willpower"] = 0.5
+	assert_true(w._run_intervention_impl(i))
+	assert_almost_eq(w.client.cognitive[&"willpower"], 0.6, 0.0001)

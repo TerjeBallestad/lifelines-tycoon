@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Intervention" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/economy/intervention.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"int_phone_practice"
+label = "Phone Call Practice"
+description = "Practice calls to a friendly contact, scripts in hand."
+caseworker_cost = 1.0
+overskudd_cost = 25.0
+gate_tags = [&"skill_gap:phone", &"trauma:strangers"]
+needs_effects = {&"security": -0.10}
+skill_effects = {&"phone": 1}
+cognitive_effects = {}
