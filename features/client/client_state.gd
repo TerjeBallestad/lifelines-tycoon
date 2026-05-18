@@ -45,3 +45,14 @@ func tick_overskudd(game_hours: float) -> void:
 		overskudd = ceiling
 	else:
 		overskudd = min(overskudd + overskudd_regen_rate * game_hours, ceiling)
+
+func apply_init_data(init: ClientInitData) -> void:
+	id = init.id
+	display_name = init.display_name
+	mtg_primary = init.mtg_primary
+	mtg_secondary = init.mtg_secondary
+	needs = init.needs.duplicate()
+	cognitive = init.cognitive.duplicate()
+	overskudd = init.overskudd
+	overskudd_regen_rate = init.overskudd_regen_rate
+	skills = init.skills.duplicate()
