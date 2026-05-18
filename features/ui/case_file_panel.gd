@@ -1,0 +1,1 @@
+class_name CaseFilePanel extends ScrollContainer
