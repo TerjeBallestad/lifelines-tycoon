@@ -31,14 +31,21 @@ gdscript/warnings/untyped_declaration=2
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/size/window_width_override=3200
+window/size/window_height_override=1800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/dpi/allow_hidpi=true
 
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[gui]
+
+theme/default_font_size=22
 
 [input]
 
