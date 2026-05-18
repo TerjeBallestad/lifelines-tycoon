@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CaseEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"obs_mother_laundry"
+source = 0
+title = "Mother irons"
+body = "Mother irons Elling's shirts. He has not touched the iron."
+tags = [&"dependency:mother", &"skill_gap:self_care"]
+require_state = {}

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CaseEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"obs_morning_routine"
+source = 0
+title = "Morning routine"
+body = "Same breakfast, same chair, same window-side angle every morning."
+tags = [&"mtg:green", &"affinity:routine"]
+require_state = {}

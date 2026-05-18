@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CaseEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"obs_brittle"
+source = 0
+title = "Door click flinch"
+body = "Elling flinches when the door clicks closed."
+tags = [&"need:security_low", &"trauma:strangers"]
+require_state = {&"needs_security_lt": 0.3}

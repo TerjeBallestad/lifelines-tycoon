@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CaseEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"obs_phone_unanswered"
+source = 0
+title = "Phone unanswered"
+body = "The phone rings; Elling stares at it until it stops."
+tags = [&"skill_gap:phone", &"trauma:strangers"]
+require_state = {}

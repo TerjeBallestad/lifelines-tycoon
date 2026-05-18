@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CaseEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"obs_tired"
+source = 0
+title = "Pale and tired"
+body = "Elling looks pale. He hasn't been sleeping."
+tags = [&"need:energy_low"]
+require_state = {&"needs_energy_lt": 0.3}
