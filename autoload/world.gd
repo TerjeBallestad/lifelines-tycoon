@@ -83,3 +83,11 @@ func start_new_day(day: int) -> void:
     economy.refill_to_max()
     EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
     EventBus.day_started.emit(day)
+
+func try_surface_observation() -> CaseEntry:
+    var candidates: Array[CaseEntry] = Catalog.observation_candidates(client, case_file)
+    if candidates.is_empty(): return null
+    var pick: CaseEntry = candidates[randi() % candidates.size()]
+    case_file.add_entry(pick)
+    EventBus.case_file_updated.emit(pick.id)
+    return pick
