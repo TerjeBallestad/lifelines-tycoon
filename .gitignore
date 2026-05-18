@@ -1,0 +1,22 @@
+# Godot 4.5 defaults
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Mono / C# (unused but defensive)
+.mono/
+data_*/
+mono_crash.*.json
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
+
+# GUT plugin runtime cache
+addons/gut/.cache/
+
+# Local plan / scratch
+/scratch/
