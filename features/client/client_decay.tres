@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ClientDecay" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/client/client_decay.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+needs_per_hour = {
+&"energy": -0.003,
+&"hunger": -0.005,
+&"bladder": -0.004,
+&"social": -0.001,
+&"security": -0.002
+}
+cognitive_per_hour = {
+&"attention": 0.02,
+&"willpower": -0.003
+}

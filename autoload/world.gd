@@ -1,6 +1,7 @@
 extends Node
 
 const ELLING_INIT_PATH := "res://features/client/elling_init.tres"
+const CLIENT_DECAY_PATH := "res://features/client/client_decay.tres"
 
 var client: ClientState
 var case_file: CaseFile
@@ -21,7 +22,8 @@ func reset_for_test() -> void:
         client.display_name = "Elling Pettersen"
     case_file = CaseFile.new()
     economy = EconomyState.new()
-    decay = ClientDecay.new()
+    var loaded_decay := load(CLIENT_DECAY_PATH) as ClientDecay
+    decay = loaded_decay if loaded_decay != null else ClientDecay.new()
 
 func try_run_diagnostic(id: StringName) -> bool:
     var d: Diagnostic = Catalog.diagnostics.get(id)

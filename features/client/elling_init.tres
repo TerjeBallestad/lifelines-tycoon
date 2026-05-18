@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="ClientInitData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/client/client_init_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"elling"
+display_name = "Elling Pettersen"
+mtg_primary = &"blue"
+mtg_secondary = &"green"
+needs = {
+&"energy": 0.9,
+&"hunger": 0.9,
+&"bladder": 0.9,
+&"social": 0.5,
+&"security": 0.7
+}
+cognitive = {
+&"attention": 0.8,
+&"willpower": 0.5
+}
+overskudd = 71.0
+overskudd_regen_rate = 8.0
+skills = {
+&"reading": 5,
+&"phone": 0,
+&"eye_contact": 0,
+&"cooking": 0,
+&"going_outside": 0
+}
