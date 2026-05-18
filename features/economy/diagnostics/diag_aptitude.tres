@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Diagnostic" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://features/economy/diagnostic.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="y1"]
+script = ExtResource("2")
+id = &"diag_yield_apt_reading"
+source = 1
+title = "Aptitude — strong affinity"
+body = "Comprehension and recall on text are well above average."
+tags = [&"affinity:reading"]
+require_state = {}
+
+[sub_resource type="Resource" id="y2"]
+script = ExtResource("2")
+id = &"diag_yield_apt_order"
+source = 1
+title = "Aptitude — affinity for order"
+body = "Sequencing tasks completed without prompting; finds calm in classification."
+tags = [&"affinity:order"]
+require_state = {}
+
+[sub_resource type="Resource" id="y3"]
+script = ExtResource("2")
+id = &"diag_yield_apt_flow"
+source = 1
+title = "Aptitude — solo focus"
+body = "Performance climbs sharply when alone and without interruption."
+tags = [&"flow:solo_focused"]
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"diag_aptitude"
+label = "Aptitude Test"
+description = "Two-hour structured cognitive aptitude battery."
+caseworker_cost = 2.0
+overskudd_cost = 25.0
+gate_tags = [&"mtg:blue"]
+yields = [SubResource("y1"), SubResource("y2"), SubResource("y3")]

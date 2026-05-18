@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Diagnostic" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://features/economy/diagnostic.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="y1"]
+script = ExtResource("2")
+id = &"diag_yield_sw_trauma"
+source = 1
+title = "Social Worker — trauma indicators"
+body = "Elling avoids unfamiliar visitors; mother answers all doors."
+tags = [&"trauma:strangers"]
+require_state = {}
+
+[sub_resource type="Resource" id="y2"]
+script = ExtResource("2")
+id = &"diag_yield_sw_dependency"
+source = 1
+title = "Social Worker — dependency map"
+body = "Daily life functions are routed through mother; high relational dependency."
+tags = [&"dependency:mother"]
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"diag_social_worker"
+label = "Social Worker Visit"
+description = "Caseworker observes Elling in the home for an hour."
+caseworker_cost = 1.0
+overskudd_cost = 10.0
+gate_tags = []
+yields = [SubResource("y1"), SubResource("y2")]

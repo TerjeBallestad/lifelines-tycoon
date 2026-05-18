@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Diagnostic" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://features/economy/diagnostic.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="y1"]
+script = ExtResource("2")
+id = &"diag_yield_psych_mtg"
+source = 1
+title = "Psych Eval — MTG profile"
+body = "Profile reads as Blue/Green: methodical observer with quiet attachment to routine."
+tags = [&"mtg:blue", &"mtg:green"]
+require_state = {}
+
+[sub_resource type="Resource" id="y2"]
+script = ExtResource("2")
+id = &"diag_yield_psych_cog"
+source = 1
+title = "Psych Eval — cognitive profile"
+body = "High sustained attention, low willpower reserves under demand."
+tags = [&"cognitive:high_attention_low_willpower"]
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"diag_psych_eval"
+label = "Psych Eval"
+description = "Hour-long structured interview by clinical psychologist."
+caseworker_cost = 2.5
+overskudd_cost = 15.0
+gate_tags = []
+yields = [SubResource("y1"), SubResource("y2")]
