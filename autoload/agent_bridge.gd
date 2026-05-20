@@ -115,6 +115,8 @@ func handle_command(cmd: Dictionary) -> Dictionary:
 			return _handle_diag(cmd)
 		"interv":
 			return _handle_interv(cmd)
+		"advance":
+			return _handle_advance(cmd)
 		_:
 			return {"ok": false, "err": "unsupported_op", "op": op}
 
@@ -137,3 +139,13 @@ func _handle_interv(cmd: Dictionary) -> Dictionary:
 		return {"ok": false, "err": "unknown_id"}
 	var success: bool = World.try_assign_intervention(id_sn)
 	return {"ok": success}
+
+func _handle_advance(cmd: Dictionary) -> Dictionary:
+	var hrs: float = float(cmd.get("game_hours", 0.0))
+	if hrs < 0.0:
+		return {"ok": false, "err": "negative_hours"}
+	if hrs == 0.0:
+		return {"ok": true}
+	Clock.advance(hrs)
+	Sim.apply_tick(hrs)
+	return {"ok": true}
