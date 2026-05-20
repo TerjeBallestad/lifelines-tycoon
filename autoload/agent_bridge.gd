@@ -103,3 +103,25 @@ func _stringify_array(a: Array) -> Array:
 	for x: Variant in a:
 		out.append(String(x))
 	return out
+
+# ---------------------------------------------------------------- commands
+
+func handle_command(cmd: Dictionary) -> Dictionary:
+	var op: String = String(cmd.get("op", ""))
+	match op:
+		"snapshot":
+			return {"ok": true, "snapshot": build_snapshot()}
+		"diag":
+			return _handle_diag(cmd)
+		_:
+			return {"ok": false, "err": "unsupported_op", "op": op}
+
+func _handle_diag(cmd: Dictionary) -> Dictionary:
+	var id_str: String = String(cmd.get("id", ""))
+	if id_str == "":
+		return {"ok": false, "err": "missing_id"}
+	var id_sn: StringName = StringName(id_str)
+	if not Catalog.diagnostics.has(id_sn):
+		return {"ok": false, "err": "unknown_id"}
+	var success: bool = World.try_run_diagnostic(id_sn)
+	return {"ok": success}
