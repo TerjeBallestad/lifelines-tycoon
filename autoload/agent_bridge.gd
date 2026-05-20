@@ -162,3 +162,67 @@ func _handle_advance(cmd: Dictionary) -> Dictionary:
 	Clock.advance(hrs)
 	Sim.apply_tick(hrs)
 	return {"ok": true}
+
+# ---------------------------------------------------------------- events
+
+var _event_buffer: Array = []
+var _event_capture_active: bool = false
+
+func start_event_capture() -> void:
+	if _event_capture_active:
+		return
+	_event_capture_active = true
+	EventBus.day_started.connect(_on_day_started)
+	EventBus.day_ended.connect(_on_day_ended)
+	EventBus.overskudd_changed.connect(_on_overskudd_changed)
+	EventBus.caseworker_capacity_changed.connect(_on_capacity_changed)
+	EventBus.case_file_updated.connect(_on_case_file_updated)
+	EventBus.diagnostic_completed.connect(_on_diagnostic_completed)
+	EventBus.intervention_completed.connect(_on_intervention_completed)
+	EventBus.action_failed.connect(_on_action_failed)
+
+func stop_event_capture() -> void:
+	if not _event_capture_active:
+		return
+	_event_capture_active = false
+	EventBus.day_started.disconnect(_on_day_started)
+	EventBus.day_ended.disconnect(_on_day_ended)
+	EventBus.overskudd_changed.disconnect(_on_overskudd_changed)
+	EventBus.caseworker_capacity_changed.disconnect(_on_capacity_changed)
+	EventBus.case_file_updated.disconnect(_on_case_file_updated)
+	EventBus.diagnostic_completed.disconnect(_on_diagnostic_completed)
+	EventBus.intervention_completed.disconnect(_on_intervention_completed)
+	EventBus.action_failed.disconnect(_on_action_failed)
+
+func drain_events() -> Array:
+	var out := _event_buffer
+	_event_buffer = []
+	return out
+
+func _push_event(ev: Dictionary) -> void:
+	ev["t"] = {"d": Clock.day, "h": Clock.hour_of_day}
+	_event_buffer.append(ev)
+
+func _on_day_started(day: int) -> void:
+	_push_event({"ev": "day_started", "day": day})
+
+func _on_day_ended(day: int) -> void:
+	_push_event({"ev": "day_ended", "day": day})
+
+func _on_overskudd_changed(client_id: StringName, v: float) -> void:
+	_push_event({"ev": "overskudd_changed", "client": String(client_id), "v": v})
+
+func _on_capacity_changed(current: float, max_val: float) -> void:
+	_push_event({"ev": "caseworker_capacity_changed", "current": current, "max": max_val})
+
+func _on_case_file_updated(entry_id: StringName) -> void:
+	_push_event({"ev": "case_file_updated", "entry": String(entry_id)})
+
+func _on_diagnostic_completed(id: StringName) -> void:
+	_push_event({"ev": "diagnostic_completed", "id": String(id)})
+
+func _on_intervention_completed(id: StringName) -> void:
+	_push_event({"ev": "intervention_completed", "id": String(id)})
+
+func _on_action_failed(reason: StringName) -> void:
+	_push_event({"ev": "action_failed", "reason": String(reason)})
