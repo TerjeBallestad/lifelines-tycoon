@@ -5,8 +5,9 @@ const DEFAULT_COMMS_DIR := "user://harness_comms_default"
 func _ready() -> void:
 	_apply_cli_flags()
 	if AgentBridge.active:
-		# Headless agent run: skip UI, do not auto-start Sim.
-		# Bridge controls Sim ticking via `advance` op.
+		AgentBridge.start_event_capture()
+		AgentBridge.bind_comms(AgentBridge.comms_dir)
+		AgentBridge.set_process(true)
 		return
 	var ui: PackedScene = load("res://features/ui/main_ui.tscn")
 	add_child(ui.instantiate())

@@ -11,6 +11,13 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_process(false)
 
+func _process(_delta: float) -> void:
+	if not active:
+		return
+	pump()
+	if shutdown_requested:
+		get_tree().quit(0)
+
 # ---------------------------------------------------------------- snapshot
 
 func build_snapshot() -> Dictionary:
@@ -226,3 +233,87 @@ func _on_intervention_completed(id: StringName) -> void:
 
 func _on_action_failed(reason: StringName) -> void:
 	_push_event({"ev": "action_failed", "reason": String(reason)})
+
+# ---------------------------------------------------------------- comms loop
+
+const _CMD_FILENAME := "cmd.jsonl"
+const _EVENTS_FILENAME := "events.jsonl"
+const _READY_FILENAME := "ready"
+
+var _cmd_cursor: int = 0
+var _comms_bound: bool = false
+
+func bind_comms(dir: String) -> void:
+	comms_dir = dir
+	_cmd_cursor = 0
+	DirAccess.make_dir_recursive_absolute(dir)
+	# Truncate both files so each bind starts from a clean slate.
+	var ev_path := _events_path()
+	if FileAccess.file_exists(ev_path):
+		DirAccess.remove_absolute(ev_path)
+	var cmd_path := _cmd_path()
+	if FileAccess.file_exists(cmd_path):
+		DirAccess.remove_absolute(cmd_path)
+	# Create an empty cmd.jsonl so external writers can append immediately.
+	FileAccess.open(cmd_path, FileAccess.WRITE).close()
+	_comms_bound = true
+
+func unbind_comms() -> void:
+	_comms_bound = false
+	_cmd_cursor = 0
+
+func _cmd_path() -> String:
+	return comms_dir.path_join(_CMD_FILENAME)
+
+func _events_path() -> String:
+	return comms_dir.path_join(_EVENTS_FILENAME)
+
+func _ready_path() -> String:
+	return comms_dir.path_join(_READY_FILENAME)
+
+func pump() -> void:
+	if not _comms_bound:
+		return
+	var lines := _read_pending_command_lines()
+	for line: String in lines:
+		if line.strip_edges() == "":
+			continue
+		var parsed: Variant = JSON.parse_string(line)
+		if parsed == null or typeof(parsed) != TYPE_DICTIONARY:
+			_append_event({"ev": "parse_error", "raw": line})
+			continue
+		var reply := handle_command(parsed)
+		_append_event({"reply": reply, "for": parsed.get("op", ""), "t": {"d": Clock.day, "h": Clock.hour_of_day}})
+		# Flush any EventBus events that fired during this command.
+		for ev: Dictionary in drain_events():
+			_append_event(ev)
+		_write_ready_sentinel()
+		if shutdown_requested:
+			return
+
+func _read_pending_command_lines() -> Array:
+	var path := _cmd_path()
+	if not FileAccess.file_exists(path):
+		return []
+	var f := FileAccess.open(path, FileAccess.READ)
+	f.seek(_cmd_cursor)
+	var out: Array = []
+	while not f.eof_reached():
+		var line := f.get_line()
+		if line.length() > 0 or not f.eof_reached():
+			out.append(line)
+	_cmd_cursor = f.get_position()
+	f.close()
+	return out
+
+func _append_event(ev: Dictionary) -> void:
+	var path := _events_path()
+	var f := FileAccess.open(path, FileAccess.READ_WRITE) if FileAccess.file_exists(path) else FileAccess.open(path, FileAccess.WRITE)
+	f.seek_end()
+	f.store_line(JSON.stringify(ev))
+	f.close()
+
+func _write_ready_sentinel() -> void:
+	var f := FileAccess.open(_ready_path(), FileAccess.WRITE)
+	f.store_string(str(Time.get_ticks_msec()))
+	f.close()
