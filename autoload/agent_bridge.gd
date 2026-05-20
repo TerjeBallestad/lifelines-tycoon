@@ -5,6 +5,7 @@ extends Node
 var active: bool = false
 var reveal_hidden: bool = false
 var comms_dir: String = ""
+var shutdown_requested: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -119,6 +120,9 @@ func handle_command(cmd: Dictionary) -> Dictionary:
 			return _handle_advance(cmd)
 		"set_speed":
 			return _handle_set_speed(cmd)
+		"shutdown":
+			shutdown_requested = true
+			return {"ok": true}
 		_:
 			return {"ok": false, "err": "unsupported_op", "op": op}
 
