@@ -117,6 +117,8 @@ func handle_command(cmd: Dictionary) -> Dictionary:
 			return _handle_interv(cmd)
 		"advance":
 			return _handle_advance(cmd)
+		"set_speed":
+			return _handle_set_speed(cmd)
 		_:
 			return {"ok": false, "err": "unsupported_op", "op": op}
 
@@ -139,6 +141,13 @@ func _handle_interv(cmd: Dictionary) -> Dictionary:
 		return {"ok": false, "err": "unknown_id"}
 	var success: bool = World.try_assign_intervention(id_sn)
 	return {"ok": success}
+
+func _handle_set_speed(cmd: Dictionary) -> Dictionary:
+	var scale: float = float(cmd.get("scale", 0.0))
+	if scale <= 0.0:
+		return {"ok": false, "err": "invalid_scale"}
+	Clock.time_scale = scale
+	return {"ok": true}
 
 func _handle_advance(cmd: Dictionary) -> Dictionary:
 	var hrs: float = float(cmd.get("game_hours", 0.0))
