@@ -1,0 +1,10 @@
+{
+  "name": "baseline_observer",
+  "description": "Runs a single diagnostic on day 1 hour 9, otherwise observes. Drives a 2-day arc.",
+  "default": {"op": "snapshot"},
+  "checkpoints": [
+    {"at": {"d": 1, "h": 9.0}, "ops": [{"op": "diag", "id": "diag_psych_eval"}]},
+    {"at": {"d": 2, "h": 9.0}, "ops": [{"op": "interv", "id": "int_reading_together"}]}
+  ],
+  "stop_at": {"d": 3, "h": 0.0}
+}
