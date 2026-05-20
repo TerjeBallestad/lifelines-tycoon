@@ -24,6 +24,7 @@ Clock="*res://autoload/clock.gd"
 Catalog="*res://autoload/catalog.gd"
 World="*res://autoload/world.gd"
 Sim="*res://autoload/sim.gd"
+AgentBridge="*res://autoload/agent_bridge.gd"
 
 [debug]
 
