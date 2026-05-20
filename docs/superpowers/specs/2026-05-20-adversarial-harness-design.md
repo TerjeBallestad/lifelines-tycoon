@@ -261,7 +261,20 @@ verdict:
 
 **Activation:** Off by default. Boots only when game launched with `--agent-mode` flag, parsed in `main.gd`.
 
-**Protocol:** JSON-lines over stdin/stdout. One JSON object per line. Bidirectional. No file polling — stdin blocks naturally.
+**Protocol:** JSON-lines, file-based transport. Same semantic protocol either way (commands + events), but file-based is more robust on Godot 4.5 headless than stdin/stdout and produces readable trace artifacts automatically (matches the design's existing `traces/<strategy>_seed<S>.jsonl` outputs).
+
+Comms layout per run:
+
+```
+harness/comms/<run-id>/
+├── cmd.jsonl             # agent appends commands here; bridge tails
+├── events.jsonl          # bridge appends events; agent tails
+├── cmd.cursor            # bridge's read position in cmd.jsonl
+├── events.cursor         # agent's read position in events.jsonl
+└── ready                 # sentinel — bridge writes after each command completes
+```
+
+Tail-style append-only files. Cursors track byte offsets. Bridge polls `cmd.jsonl` at fixed cadence (default 100ms when paused, every Sim tick when running) via `FileAccess` re-open + seek-to-cursor.
 
 **Commands accepted (from agent):**
 
