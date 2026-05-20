@@ -58,6 +58,17 @@ def append_command(comms_dir: str, cmd: dict) -> None:
         fh.write(line)
 
 
+def wait_for_bound(comms_dir: str, timeout_s: float = 30.0) -> bool:
+    """Block until the bridge writes the `bound` sentinel after `bind_comms`."""
+    bound = Path(comms_dir) / "bound"
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if bound.exists():
+            return True
+        time.sleep(0.05)
+    return False
+
+
 def wait_for_ready(comms_dir: str, timeout_s: float = 30.0) -> bool:
     ready = Path(comms_dir) / "ready"
     if ready.exists():
@@ -133,6 +144,10 @@ def run(args: argparse.Namespace) -> int:
     pending_checkpoints = list(plan["checkpoints"])
 
     try:
+        # Wait for Godot to finish bind_comms before sending commands.
+        if not wait_for_bound(args.comms_dir, args.checkpoint_timeout):
+            print("[player] timeout waiting for bridge to bind", file=sys.stderr)
+            return 4
         # Initial snapshot — establish baseline time.
         append_command(args.comms_dir, {"op": "snapshot"})
         if not wait_for_ready(args.comms_dir, args.checkpoint_timeout):

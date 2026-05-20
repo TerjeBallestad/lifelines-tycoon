@@ -256,6 +256,13 @@ func bind_comms(dir: String) -> void:
 		DirAccess.remove_absolute(cmd_path)
 	# Create an empty cmd.jsonl so external writers can append immediately.
 	FileAccess.open(cmd_path, FileAccess.WRITE).close()
+	# Signal to external coordinators that the bridge is ready to receive commands.
+	# Python driver (scripted_player.py) waits for this before writing commands,
+	# avoiding the race where commands written before bind_comms get truncated.
+	var bound_path := comms_dir.path_join("bound")
+	var f := FileAccess.open(bound_path, FileAccess.WRITE)
+	f.store_string(str(Time.get_ticks_msec()))
+	f.close()
 	_comms_bound = true
 
 func unbind_comms() -> void:
