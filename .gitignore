@@ -20,3 +20,4 @@ addons/gut/.cache/
 
 # Local plan / scratch
 /scratch/
+harness/comms/
