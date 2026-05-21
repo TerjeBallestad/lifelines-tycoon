@@ -11,7 +11,7 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 | 1 | AgentBridge + scripted playtest | ✅ done |
 | 2 | Rubric authoring (vision.md + ~70 anchor files) | ✅ done |
 | 3 | Generator agent + worktree loop | 🚧 in progress |
-| 4 | Evaluator + strategy tournament | pending |
+| 4 | Evaluator + strategy tournament | 🚧 in progress |
 | 5 | Planner + orchestrator + report.html | pending |
 | 6 | Meta-evaluation | pending |
 
