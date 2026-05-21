@@ -22,3 +22,15 @@ The talk's central insight (Anthropic, AI Engineer Conf 2026, "Building long-run
 - Anchor files: stable; only add new ones, never silently rewrite existing scored anchors (this would invalidate calibration history).
 - `vision.md` / `rubric.md` / `anti-rubric.md`: stable; revise via explicit commit + recalibrate.
 - `baseline-scorecard.md` / `bad-mod-scorecard.md`: re-score on every model swap (Sonnet 4.6 → 4.7 etc.) and store the new scores alongside the old. Drift > 1 axis point = recalibration needed (see spec §3.5).
+
+## Current anchor count
+
+- Positive anchors: 35 (5 per axis × 7 axes)
+- Negative anchors: 35 (5 per axis × 7 axes)
+- Total: 70
+
+Validate with:
+
+```bash
+python3 harness/lib/rubric_schema.py docs/rubric/anchors/
+```
