@@ -141,7 +141,7 @@ Cost-control flags on `run_evaluator.sh`: `--strategies`, `--seeds`, `--skip-fre
 
 - `calibration.json` — anchor re-score result
 - `traces/<strategy>_seed<S>.jsonl` × 12 + `traces/freeplay.jsonl`
-- `strategy_sessions/<strategy>_seed<S>.log` × 12
+- `strategy_sessions/<strategy>_seed<S>.log` × 13
 - `test_results.json`
 - `trace_findings.json`
 - `judgments.json`

@@ -2,8 +2,8 @@
 # End-to-end dry-run smoke for run_evaluator.sh.
 # - Skips strategy tournament Godot launches (uses shim canned + a manual trace seed).
 # - Skips real claude calls.
-# - Asserts verdict.json + critique.md exist and verdict is REJECT (because tournament
-#   shim produces empty case_file_updated counts → trace verifier fails).
+# - Asserts verdict.json + critique.md exist and verdict is REJECT (because
+#   shim judgment scores fall below floor on decision-density and loop-closure).
 
 set -euo pipefail
 
