@@ -42,13 +42,13 @@ BASE_SHA=$(git rev-parse main)
 
 mkdir -p "$(dirname "$WORKTREE_ABS")"
 if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
-    git worktree add "$WORKTREE_ABS" "$BRANCH"
+    git worktree add "$WORKTREE_ABS" "$BRANCH" >&2
 else
-    git worktree add -b "$BRANCH" "$WORKTREE_ABS" "$BASE_SHA"
+    git worktree add -b "$BRANCH" "$WORKTREE_ABS" "$BASE_SHA" >&2
 fi
 
 # Install hooks.
-bash "${REPO_ROOT}/harness/lib/install_worktree_hooks.sh" "$WORKTREE_ABS" "$ALLOWLIST"
+bash "${REPO_ROOT}/harness/lib/install_worktree_hooks.sh" "$WORKTREE_ABS" "$ALLOWLIST" >&2
 
 # Link the run dir into the worktree at the *same relative path* so paths
 # referenced from the generator's tool surface resolve identically inside the
