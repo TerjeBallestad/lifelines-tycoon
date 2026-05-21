@@ -119,7 +119,15 @@ BRANCH_LOG=$(git -C "$WORKTREE" log --oneline)
 echo "$BRANCH_LOG" | grep -q 'feat(smoke)' \
     || { echo "smoke: shim commit not on branch"; exit 1; }
 
-# Cleanup.
+# Cleanup. Order matters: drop the shared pre-commit hook FIRST so subsequent
+# commits on the primary repo aren't broken by a stale touch-surface allowlist
+# (the hook trampoline points at a path inside harness/runs/<run-id>/ that we
+# delete a few lines down). Plan 5's orchestrator will swap this for per-worktree
+# `core.hooksPath`; for now this one-liner keeps the smoke side-effect-free.
+HOOK_PATH=$(git rev-parse --git-path hooks/pre-commit)
+if [ -f "$HOOK_PATH" ] && grep -q 'install_worktree_hooks.sh' "$HOOK_PATH"; then
+    rm -f "$HOOK_PATH"
+fi
 git worktree remove --force "$WORKTREE"
 git branch -D "harness/${RUN_ID}/sprint_${SPRINT_N}"
 rm -rf "harness/runs/${RUN_ID}"
