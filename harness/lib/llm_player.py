@@ -177,6 +177,12 @@ def _current_day(events: list[dict]) -> int:
 
 def run_playtest(args: argparse.Namespace) -> int:
     strategy: Strategy = parse_strategy_file(Path(args.strategy))
+    preamble_path = Path(args.project) / "harness/prompts/strategy_player.md"
+    if not preamble_path.exists():
+        # Fall back to the in-repo path (when project != repo root, e.g. worktree).
+        preamble_path = Path(__file__).parent.parent / "prompts" / "strategy_player.md"
+    preamble = preamble_path.read_text() if preamble_path.exists() else ""
+    composed_system_prompt = preamble + "\n\n---\n\n" + strategy.body
 
     comms_dir = Path(args.comms_dir)
     _init_comms_dir(comms_dir)
@@ -197,7 +203,7 @@ def run_playtest(args: argparse.Namespace) -> int:
 
     # Spawn the LLM session.
     if args.live:
-        session = ClaudeSession.live(system_prompt=strategy.body, working_dir=args.project)
+        session = ClaudeSession.live(system_prompt=composed_system_prompt, working_dir=args.project)
     else:
         canned_path = Path(args.shim_canned) if args.shim_canned else None
         if not canned_path or not canned_path.exists():
