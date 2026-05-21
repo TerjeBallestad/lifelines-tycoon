@@ -21,3 +21,8 @@ addons/gut/.cache/
 # Local plan / scratch
 /scratch/
 harness/comms/
+
+# Harness Plan 3 runtime
+/.worktrees/
+harness/runs/*/
+!harness/runs/.gitkeep
