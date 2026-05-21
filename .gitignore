@@ -26,3 +26,12 @@ harness/comms/
 /.worktrees/
 harness/runs/*/
 !harness/runs/.gitkeep
+
+# Harness Plan 4 runtime (per-sprint grading artifacts live under harness/runs/, already ignored)
+# Strategy session logs may be large; explicitly ensure they are not committed.
+harness/runs/*/sprint_*/strategy_sessions/
+harness/runs/*/sprint_*/traces/
+
+# Harness Plan 5 runtime — per-sprint flock files
+harness/.locks/*.lock
+!harness/.locks/.gitkeep

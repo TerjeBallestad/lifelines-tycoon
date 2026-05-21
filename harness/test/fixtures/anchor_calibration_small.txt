@@ -1,0 +1,30 @@
+# Plan 4 calibration set: one positive + one negative per axis = 14 anchors.
+# Drift > 1 on any of these → recalibration needed; grading aborts.
+
+# axis 1 — thematic-coherence
+docs/rubric/anchors/positive/01-theme-disco-elysium-bureaucracy.md
+docs/rubric/anchors/negative/01-theme-xp-bar-leveling.md
+
+# axis 2 — decision-density
+docs/rubric/anchors/positive/06-decision-citizen-sleeper-dice.md
+docs/rubric/anchors/negative/06-decision-dominant-strategy.md
+
+# axis 3 — earned-discovery
+docs/rubric/anchors/positive/11-discovery-obra-dinn-deduction.md
+docs/rubric/anchors/negative/11-discovery-tooltip-dump.md
+
+# axis 4 — forgiveness-with-stakes
+docs/rubric/anchors/positive/16-forgiveness-sdd080-fail-pays.md
+docs/rubric/anchors/negative/16-forgiveness-permadeath-instafail.md
+
+# axis 5 — texture-voice
+docs/rubric/anchors/positive/24-voice-disco-elysium-monologue.md
+docs/rubric/anchors/negative/21-voice-motivational-copy.md
+
+# axis 6 — sim-legibility
+docs/rubric/anchors/positive/30-legibility-causal-trace.md
+docs/rubric/anchors/negative/26-legibility-failed-no-reason.md
+
+# axis 7 — loop-closure
+docs/rubric/anchors/positive/31-closure-day1-observe-to-act.md
+docs/rubric/anchors/negative/31-closure-no-payoff-drift.md

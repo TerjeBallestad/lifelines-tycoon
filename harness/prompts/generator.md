@@ -26,6 +26,11 @@ Read, Edit, Write, Bash. Inside the worktree only. No web fetch. No agent spawni
 
 1. **Read context**: `goal.md`, `contract.md`, `vision.md`, `rubric.md`, the relevant slice of `docs/superpowers/specs/2026-05-18-economy-prototype-design.md`.
 2. **Check contract status**. If `NEGOTIATING`, propose minimal edits to `contract.md` (sharper test or trace rule, narrower scope, rubric coverage you can actually move) and STOP. Otherwise proceed.
+   - **Phase A negotiation rules** (apply when status is `NEGOTIATING`):
+     - If the literal token `__REPLACE_ME__` appears anywhere in the contract, you MUST replace every occurrence with a concrete value; the orchestrator rejects your turn otherwise.
+     - You may set `## Status: AGREED` ONLY on a turn where you made no edits to the contract beyond the status line itself. "Agreed AND edited" is treated as `NEGOTIATING` by the orchestrator and wastes a round.
+     - The negotiation has a hard cap of 5 rounds. If you and the evaluator have not reached AGREED after 5 rounds, the orchestrator force-pivots the sprint and re-plans. Treat round 4–5 as last-chance: if you cannot agree without compromising the contract's gradability, write a `## Generator note — irreconcilable` block and keep `NEGOTIATING`.
+     - You may NOT edit `## Sprint goal` (the verbatim copy of `goal.md`). If the goal is broken, write a `## Generator note — goal escalation` block under Status and keep `NEGOTIATING`.
 3. **Plan in checklist** (in `harness/runs/<run-id>/sprint_<N>/plan.md`): bite-sized steps that each end in a commit. Reject any step you cannot describe in 1–2 sentences.
 4. **Loop until contract is satisfied**:
    - Write the failing test FIRST (every `[test]` item in the contract gets a real test before any implementation).

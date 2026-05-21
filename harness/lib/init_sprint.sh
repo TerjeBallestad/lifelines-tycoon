@@ -39,8 +39,11 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 SPRINT_DIR="${REPO_ROOT}/harness/runs/${RUN_ID}/sprint_${SPRINT_N}"
 mkdir -p "$SPRINT_DIR"
 
-# touch_surface.allow — verbatim copy
-cp "$TOUCH" "${SPRINT_DIR}/touch_surface.allow"
+# touch_surface.allow — verbatim copy (skip if already the same file)
+TOUCH_DEST="${SPRINT_DIR}/touch_surface.allow"
+if [ "$(realpath "$TOUCH" 2>/dev/null || echo "$TOUCH")" != "$(realpath "$TOUCH_DEST" 2>/dev/null || echo "$TOUCH_DEST")" ]; then
+    cp "$TOUCH" "$TOUCH_DEST"
+fi
 
 # generator_session.jsonl — empty placeholder
 [ -f "${SPRINT_DIR}/generator_session.jsonl" ] || : > "${SPRINT_DIR}/generator_session.jsonl"
