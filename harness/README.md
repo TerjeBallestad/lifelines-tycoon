@@ -10,10 +10,11 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 |------|-------|--------|
 | 1 | AgentBridge + scripted playtest | ✅ done |
 | 2 | Rubric authoring (vision.md + ~70 anchor files) | ✅ done |
-| 3 | Generator agent + worktree loop | 🚧 in progress |
+| 3 | Generator agent + worktree loop | ✅ done |
 | 4 | Evaluator + strategy tournament | ✅ done |
-| 5 | Planner + orchestrator + report.html | pending |
-| 6 | Meta-evaluation | pending |
+| 5 | Evaluator agent + Phase A negotiation | 🚧 in progress |
+| 6 | Planner + orchestrator + report.html | pending |
+| 7 | Meta-evaluation | pending |
 
 ## What's in Plan 1
 
