@@ -12,7 +12,7 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 | 2 | Rubric authoring (vision.md + ~70 anchor files) | ✅ done |
 | 3 | Generator agent + worktree loop | ✅ done |
 | 4 | Evaluator + strategy tournament | ✅ done |
-| 5 | Evaluator agent + Phase A negotiation | 🚧 in progress |
+| 5 | Evaluator agent + Phase A negotiation | ✅ done |
 | 6 | Planner + orchestrator + report.html | pending |
 | 7 | Meta-evaluation | pending |
 
@@ -25,6 +25,41 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 - `test/smoke_bridge.sh` — end-to-end smoke test
 
 Bridge is dormant unless the game is launched with `--agent-mode`.
+
+## What's in Plan 5
+
+- `run_sprint.sh` — full single-sprint orchestrator (Phase A → implementation → Phase B)
+- `run_evaluator_agent.sh` — long-lived Opus evaluator session driver
+- `prompts/evaluator.md` — Opus harshness-tuned system prompt (Mode A + Mode B)
+- `lib/negotiation_state.py`, `negotiation_loop.py`, `contract_lock.py`, `contract_hash.py`, `contract_template.py`, `pre_grade_calibration.py`, `claude_agents.py`, `init_negotiation.sh`, `run_evaluator_phase_b.sh` — coordination layer
+- `test/smoke_negotiation.sh` — end-to-end dry-run
+- `prompts/generator.md` — augmented with Phase A round-aware directives
+- `run_generator.sh` — accepts `--round N` for Phase A single-turn invocation
+
+The negotiation protocol: generator drafts → evaluator critiques + edits → repeat until both write `## Status: AGREED` consecutively with no contract changes on the confirming turn, OR round counter exceeds 5 (force-pivot).
+
+### Quick start (real sprint run)
+
+```bash
+# Requires `claude` in PATH, ANTHROPIC_API_KEY set, Plan 4's run_evaluator.sh available.
+EVALUATOR_LIVE=1 ./harness/run_sprint.sh \
+  --run-id $(date -u +%Y%m%d-%H%M%S)-$(openssl rand -hex 3) \
+  --sprint 1 \
+  --goal-file path/to/sprint_goal.md \
+  --touch-surface path/to/sprint_touch.allow
+```
+
+### Quick start (dry-run smoke)
+
+```bash
+./harness/test/smoke_negotiation.sh
+```
+
+### Known limitations (Plan 6 follow-up)
+
+- No planner agent yet: `run_sprint.sh` requires an operator-authored `goal.md` and `touch_surface.allow`. Plan 6 will produce these from a higher-level user prompt.
+- No multi-sprint orchestration. `run_sprint.sh` runs one sprint per invocation.
+- No `report.html`. Plan 7 renders the artifacts in `harness/runs/<run-id>/` into a single-file viewer.
 
 ## Quick start
 
