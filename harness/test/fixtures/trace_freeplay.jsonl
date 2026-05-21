@@ -1,0 +1,6 @@
+{"ev":"narration","strategy":"freeplay","text":"begin with the most informative cheap action — observe the morning chart","checkpoint":1}
+{"ev":"diagnostic_completed","id":"diag_routine_chart","t":{"d":1,"h":9.5}}
+{"ev":"case_file_updated","entry":"obs_morning_quiet","t":{"d":1,"h":9.5}}
+{"ev":"narration","strategy":"freeplay","text":"elling's mornings are quiet; he tolerates routine — keep low-pressure activities","checkpoint":4}
+{"ev":"intervention_completed","id":"int_quiet_walk","t":{"d":2,"h":10.0}}
+{"ev":"day_ended","day":2,"t":{"d":3,"h":0.0}}

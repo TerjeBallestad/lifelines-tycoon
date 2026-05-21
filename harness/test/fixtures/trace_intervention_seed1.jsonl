@@ -1,0 +1,6 @@
+{"ev":"day_started","day":1,"t":{"d":1,"h":8.0}}
+{"reply":{"ok":true,"snapshot":{"time":{"day":1,"hour":8.0},"client":{"overskudd":60.0},"case_file":{"entries":[],"tags":[]}}},"for":"snapshot","t":{"d":1,"h":8.0}}
+{"ev":"intervention_completed","id":"int_reading_together","t":{"d":1,"h":11.0}}
+{"ev":"action_failed","reason":"client_refuses","action":"int_phone_call","t":{"d":1,"h":14.0}}
+{"ev":"intervention_completed","id":"int_quiet_walk","t":{"d":2,"h":10.0}}
+{"ev":"day_ended","day":2,"t":{"d":3,"h":0.0}}
