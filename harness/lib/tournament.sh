@@ -74,6 +74,7 @@ run_one() {
     local session_log="${SESSIONS_DIR}/${strategy_id}_seed${seed}.log"
     local comms_dir
     comms_dir=$(mktemp -d -t "lifelines-tournament.XXXXXX")
+    trap 'rm -rf "$comms_dir"' RETURN
     local strategy_md="${REPO_ROOT}/harness/strategies/${strategy_id}.md"
 
     if [ ! -f "$strategy_md" ]; then
@@ -99,7 +100,6 @@ run_one() {
 
     echo "[tournament] strategy=$strategy_id seed=$seed -> $trace_out" >&2
     python3 "${args[@]}"
-    rm -rf "$comms_dir"
 
     if [ ! -s "$trace_out" ]; then
         echo "[tournament] empty trace: $trace_out" >&2
