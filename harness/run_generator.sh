@@ -26,6 +26,7 @@ SPRINT_N=""
 GOAL_FILE=""
 TOUCH=""
 TIMEOUT_S="${HARNESS_READY_TIMEOUT:-1800}"
+ROUND=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -34,6 +35,7 @@ while [ $# -gt 0 ]; do
         --goal-file)      GOAL_FILE="$2"; shift 2 ;;
         --touch-surface)  TOUCH="$2"; shift 2 ;;
         --ready-timeout)  TIMEOUT_S="$2"; shift 2 ;;
+        --round)          ROUND="$2"; shift 2 ;;
         *) echo "run_generator: unknown arg: $1" >&2; exit 2 ;;
     esac
 done
@@ -47,6 +49,93 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 SPRINT_DIR_REL="harness/runs/${RUN_ID}/sprint_${SPRINT_N}"
 SPRINT_DIR_ABS="${REPO_ROOT}/${SPRINT_DIR_REL}"
 READY_FILE="${SPRINT_DIR_ABS}/ready"
+
+# Plan 5 Phase A negotiation: single-turn edit-and-stop mode.
+if [ -n "$ROUND" ]; then
+    CONTRACT_PATH="${SPRINT_DIR_ABS}/contract.md"
+    if [ ! -f "$CONTRACT_PATH" ]; then
+        echo "[run_generator] --round set but $CONTRACT_PATH missing — init_negotiation.sh must run first" >&2
+        exit 2
+    fi
+
+    LIB_DIR="${REPO_ROOT}/harness/lib"
+    PROMPT_DIR="${REPO_ROOT}/harness/prompts"
+    SESSION_FILE="${SPRINT_DIR_ABS}/generator_session.id"
+    LOG_FILE="${SPRINT_DIR_ABS}/generator_session.log"
+
+    STATUS=$(python3 - "$CONTRACT_PATH" "$LIB_DIR" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[2])
+from contract_schema import parse_contract
+print(parse_contract(open(sys.argv[1]).read()).status)
+PY
+)
+
+    PHASE_A_USER_PROMPT="It is round ${ROUND} of Phase A negotiation for sprint ${SPRINT_N}.
+
+The current contract is at \`${CONTRACT_PATH}\`. Its current status is \`${STATUS}\`.
+
+If the contract still contains the literal token \`__REPLACE_ME__\`, you must replace every occurrence with a concrete value before doing anything else.
+
+Read the contract, the sprint goal (\`${SPRINT_DIR_ABS}/goal.md\`), and the rubric (\`docs/rubric/rubric.md\`). If the contract is gradable and matches the sprint's intent, write \`## Status: AGREED\` (and make no other edits). Otherwise edit it in place and write \`## Status: NEGOTIATING\`.
+
+Stop after writing."
+
+    mkdir -p "$(dirname "$LOG_FILE")"
+
+    if [ "${GENERATOR_LIVE:-0}" != "1" ]; then
+        echo "[run_generator] --round mode but GENERATOR_LIVE=0 — shim no-op (smoke supplies its own TurnAgent)" >&2
+        exit 0
+    fi
+
+    if ! command -v claude >/dev/null 2>&1; then
+        echo "[run_generator] GENERATOR_LIVE=1 but \`claude\` CLI not found" >&2
+        exit 2
+    fi
+
+    SYSTEM_PROMPT_TEXT="$(cat "$PROMPT_DIR/generator.md")"
+    MODEL="${CLAUDE_MODEL_GEN:-claude-sonnet-4-6}"
+
+    STREAM_TMP=$(mktemp)
+    trap 'rm -f "$STREAM_TMP"' EXIT
+
+    if [ -f "$SESSION_FILE" ]; then
+        SESSION_ID="$(cat "$SESSION_FILE")"
+        echo "[run_generator] Phase A: resuming session $SESSION_ID (round $ROUND)" >&2
+        (
+            cd "$REPO_ROOT"
+            claude -p "$PHASE_A_USER_PROMPT" \
+                --resume "$SESSION_ID" \
+                --model "$MODEL" \
+                --append-system-prompt "$SYSTEM_PROMPT_TEXT" \
+                --output-format stream-json \
+                --permission-mode acceptEdits \
+                2>&1 | tee -a "$LOG_FILE"
+        )
+    else
+        echo "[run_generator] Phase A: spawning fresh Sonnet session (round $ROUND)" >&2
+        (
+            cd "$REPO_ROOT"
+            claude -p "$PHASE_A_USER_PROMPT" \
+                --model "$MODEL" \
+                --append-system-prompt "$SYSTEM_PROMPT_TEXT" \
+                --output-format stream-json \
+                --permission-mode acceptEdits \
+                2>&1 | tee -a "$LOG_FILE" > "$STREAM_TMP"
+        )
+        python3 - "$STREAM_TMP" "$SESSION_FILE" "$LIB_DIR" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[3])
+from claude_subprocess import parse_session_id
+text = open(sys.argv[1]).read()
+sid = parse_session_id(text)
+if sid:
+    open(sys.argv[2], "w").write(sid)
+PY
+    fi
+
+    exit 0
+fi
 
 echo "[run_generator] scaffolding sprint dir…"
 bash "${REPO_ROOT}/harness/lib/init_sprint.sh" \
