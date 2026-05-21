@@ -10,7 +10,7 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 |------|-------|--------|
 | 1 | AgentBridge + scripted playtest | ✅ done |
 | 2 | Rubric authoring (vision.md + ~70 anchor files) | ✅ done |
-| 3 | Generator agent + worktree loop | 🚧 in progress |
+| 3 | Generator agent + worktree loop | ✅ done |
 | 4 | Evaluator + strategy tournament | pending |
 | 5 | Planner + orchestrator + report.html | pending |
 | 6 | Meta-evaluation | pending |
@@ -76,3 +76,40 @@ See `autoload/agent_bridge.gd` for the canonical handler list and `harness/lib/t
 ## What's NOT in Plan 1
 
 LLM-driven strategy player, planner, generator, evaluator, contract negotiation, rubric anchors, orchestrator, report.html. See `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md` §11 for upcoming plans.
+
+## What's in Plan 2
+
+(Plan 2 focused on rubric authoring — vision.md + ~70 anchor files. See `docs/superpowers/specs/` for details.)
+
+## What's in Plan 3
+
+- `run_generator.sh` — operator-facing launcher (one sprint at a time)
+- `prompts/generator.md` — Sonnet 4.6 system prompt
+- `lib/contract_schema.py`, `lib/scan_contract_trace.py` — contract parsing + trace-rule DSL
+- `lib/check_touch.py`, `lib/check_no_placeholders.sh` — pre-commit guards
+- `lib/install_worktree_hooks.sh`, `lib/worktree_up.sh` — worktree lifecycle
+- `lib/init_sprint.sh`, `lib/sprint_smoke.sh` — sprint dir + smoke driver
+- `test/smoke_generator.sh` — end-to-end dry-run
+
+Bridge from Plan 1 is unchanged; the smoke and generator both reuse `scripted_player.py`.
+
+### Quick start (real generator run)
+
+```bash
+# Requires `claude` CLI in PATH and ANTHROPIC_API_KEY set.
+GENERATOR_LIVE=1 ./harness/run_generator.sh \
+  --run-id $(date -u +%Y%m%d-%H%M%S)-$(openssl rand -hex 3) \
+  --sprint 1 \
+  --goal-file path/to/sprint_goal.md \
+  --touch-surface path/to/sprint_touch.allow
+```
+
+### Quick start (dry-run smoke)
+
+```bash
+./harness/test/smoke_generator.sh
+```
+
+### Known limitation (Plan 5 follow-up)
+
+`install_worktree_hooks.sh` writes to `.git/hooks/pre-commit`, which git shares across all linked worktrees. This is fine for Plan 3's single-sprint use, but multi-sprint parallel orchestration in Plan 5 must switch to per-worktree `core.hooksPath` (`git config extensions.worktreeConfig true` + `git config --worktree core.hooksPath <local-dir>`).
