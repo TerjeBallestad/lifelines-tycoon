@@ -14,6 +14,14 @@ mono_crash.*.json
 .DS_Store
 .vscode/
 .idea/
+__pycache__/
+*.py[cod]
+*.bak
+
+# Local agent runtime state
+.claire/
+.claude/settings.local.json
+.claude/worktrees/
 
 # GUT plugin runtime cache
 addons/gut/.cache/
