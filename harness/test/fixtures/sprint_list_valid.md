@@ -4,23 +4,41 @@
 - Make day-one decisions diverge across optimizer vs neglect.
 - Keep the first harness run small enough to read.
 
-## Sprint 1 - Day-one decision divergence
+## Sprint 1 — Day-one decision divergence
 
-Intent: Make early choices visibly matter.
+### Goal
+Make two early intervention choices produce visibly different case-file and trace outcomes by day 3.
 
-Touch surface:
+### User-intent coverage
+- Make day-one decisions diverge across optimizer vs neglect.
+
+### Touch surface
 - features/economy/
 - features/case_file/
 - test/harness/
 
-Optional: no
+### Rubric focus
+- decision-density: primary
+- sim-legibility: touched
+- loop-closure: touched
 
-## Sprint 2 - Report clarity pass
+### Optional
+false
 
-Intent: Make the resulting run easy to inspect.
+## Sprint 2 — Report readability polish
 
-Touch surface:
-- harness/runs/
-- harness/lib/
+### Goal
+Improve the trace excerpts in the final report without changing game behavior.
 
-Optional: yes
+### User-intent coverage
+- Keep the first harness run small enough to read.
+
+### Touch surface
+- harness/lib/report_renderer.py
+- harness/test/
+
+### Rubric focus
+- sim-legibility: primary
+
+### Optional
+true

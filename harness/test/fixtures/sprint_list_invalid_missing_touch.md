@@ -3,8 +3,16 @@
 ## User intent
 - Make day-one decisions diverge across optimizer vs neglect.
 
-## Sprint 1 - Missing touch surface
+## Sprint 1 — Missing touch surface
 
-Intent: This fixture omits the touch surface section for schema tests.
+### Goal
+Make two early intervention choices produce visibly different case-file and trace outcomes by day 3.
 
-Optional: no
+### User-intent coverage
+- Make day-one decisions diverge across optimizer vs neglect.
+
+### Rubric focus
+- decision-density: primary
+
+### Optional
+false

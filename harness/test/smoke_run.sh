@@ -19,8 +19,25 @@ from pathlib import Path
 repo = Path.cwd()
 sys.path.insert(0, str(repo / "harness" / "lib"))
 
+planner_schema = importlib.import_module("planner_schema")
+assert set(planner_schema.__all__) == {
+    "SprintList",
+    "SprintListError",
+    "SprintSpec",
+    "parse_sprint_list",
+    "validate_sprint_list",
+}
+valid_plan = planner_schema.parse_sprint_list((repo / "harness" / "test" / "fixtures" / "sprint_list_valid.md").read_text())
+planner_schema.validate_sprint_list(valid_plan)
+try:
+    invalid_plan = planner_schema.parse_sprint_list((repo / "harness" / "test" / "fixtures" / "sprint_list_invalid_missing_touch.md").read_text())
+    planner_schema.validate_sprint_list(invalid_plan)
+except planner_schema.SprintListError:
+    pass
+else:
+    raise AssertionError("invalid sprint-list fixture should fail validation")
+
 for module_name in (
-    "planner_schema",
     "planner_agent",
     "run_state",
     "run_orchestrator",
