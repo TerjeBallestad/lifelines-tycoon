@@ -46,9 +46,19 @@ assert set(run_state.__all__) == {
     "SprintRunState",
 }
 
+git_integration = importlib.import_module("git_integration")
+assert set(git_integration.__all__) == {
+    "archive_sprint_branch",
+    "cherry_pick_sprint",
+    "collect_sprint_commits",
+    "current_sha",
+    "ensure_integration_branch",
+    "git",
+    "sprint_branch",
+}
+
 for module_name in (
     "run_orchestrator",
-    "git_integration",
     "report_renderer",
 ):
     module = importlib.import_module(module_name)
