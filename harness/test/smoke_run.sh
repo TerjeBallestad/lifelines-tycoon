@@ -1,12 +1,27 @@
 #!/usr/bin/env bash
-# smoke_run.sh - scaffold-level checks for the Phase 6 run entrypoint.
+# End-to-end dry-run smoke for the Phase 6 run entrypoint.
 set -euo pipefail
 
-REPO="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-cd "$REPO"
+SRC_REPO="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/lifelines-smoke-run.XXXXXX")"
+trap 'rm -rf "$WORKDIR"' EXIT
 
-test -x harness/run.sh || { echo "[smoke_run] harness/run.sh is not executable" >&2; exit 1; }
-test -f harness/prompts/planner.md || { echo "[smoke_run] planner prompt missing" >&2; exit 1; }
+cp -R "${SRC_REPO}/harness" "${WORKDIR}/harness"
+cp -R "${SRC_REPO}/docs" "${WORKDIR}/docs"
+cd "$WORKDIR"
+
+find harness -name __pycache__ -type d -prune -exec rm -rf {} +
+chmod +x harness/run.sh harness/test/smoke_run.sh harness/run_sprint.sh
+
+if ! git init -q -b main >/dev/null 2>&1; then
+  git init -q
+  git checkout -q -b main
+fi
+git config user.email smoke@example.test
+git config user.name "Smoke Test"
+git add harness docs
+git commit -q -m "base"
+BASE_SHA="$(git rev-parse HEAD)"
 
 python3 - <<'PY'
 from __future__ import annotations
@@ -75,24 +90,75 @@ for name in ("verdict_pass.json", "verdict_pivot.json", "verdict_reject.json"):
     assert data["verdict"] in {"PASS", "PIVOT", "REJECT"}, name
 PY
 
-./harness/run.sh --help >/dev/null
+cat > harness/run_sprint.sh <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
 
-set +e
-RUN_OUTPUT="$(./harness/run.sh "phase 6 smoke prompt" 2>&1)"
-RUN_STATUS=$?
-set -e
+RUN_ID=""
+SPRINT=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --run-id) RUN_ID="$2"; shift 2 ;;
+    --sprint) SPRINT="$2"; shift 2 ;;
+    --goal-file|--touch-surface) shift 2 ;;
+    --dry-run) shift ;;
+    *) shift ;;
+  esac
+done
 
-if [[ "$RUN_STATUS" -eq 0 ]]; then
-  echo "[smoke_run] run.sh should not execute orchestration yet" >&2
-  exit 1
+if [[ -z "$RUN_ID" || -z "$SPRINT" ]]; then
+  echo "smoke run_sprint stub: missing --run-id or --sprint" >&2
+  exit 64
 fi
 
-case "$RUN_OUTPUT" in
-  *"Phase 6 scaffold only"*) ;;
-  *)
-    echo "[smoke_run] scaffold message missing" >&2
-    exit 1
-    ;;
-esac
+SPRINT_DIR="harness/runs/${RUN_ID}/sprint_${SPRINT}"
+mkdir -p "$SPRINT_DIR"
+cat > "${SPRINT_DIR}/contract.md" <<'EOF'
+# Contract
+
+## Done means
+- [test] smoke stub passes
+
+## Status: AGREED
+EOF
+cat > "${SPRINT_DIR}/verdict.json" <<'EOF'
+{
+  "verdict": "PASS",
+  "total": 84.0,
+  "max_total": 84.0,
+  "per_axis": {
+    "decision-density": {
+      "axis_score": 3.0,
+      "weight": 5,
+      "weighted": 15.0,
+      "floor": 2,
+      "below_floor": false
+    }
+  },
+  "floor_violations": [],
+  "test_pass": true,
+  "trace_pass": true,
+  "notes": ["smoke pass"]
+}
+EOF
+cat > "${SPRINT_DIR}/critique.md" <<'EOF'
+Smoke critique: deterministic PASS.
+EOF
+touch "${SPRINT_DIR}/ready"
+SH
+chmod +x harness/run_sprint.sh
+
+grep -E '^## Sprint [0-9]+' harness/test/fixtures/sprint_list_valid.md | awk '{print $3}' | while read -r sprint; do
+  git branch "harness/smoke-run/sprint_${sprint}" "$BASE_SHA"
+done
+
+./harness/run.sh --dry-run --planner-shim harness/test/fixtures/sprint_list_valid.md --run-id smoke-run --no-open "Make day-one decisions diverge."
+
+test -f harness/runs/smoke-run/sprint_list.md
+test -f harness/runs/smoke-run/run_state.json
+test -f harness/runs/smoke-run/final.md
+test -f harness/runs/smoke-run/report.html
+grep -q "Day-one decision divergence" harness/runs/smoke-run/report.html
+grep -q "PASS" harness/runs/smoke-run/report.html
 
 echo "[smoke_run] OK"
