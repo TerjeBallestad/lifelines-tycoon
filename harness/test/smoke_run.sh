@@ -38,7 +38,6 @@ else:
     raise AssertionError("invalid sprint-list fixture should fail validation")
 
 for module_name in (
-    "planner_agent",
     "run_state",
     "run_orchestrator",
     "git_integration",
@@ -46,6 +45,9 @@ for module_name in (
 ):
     module = importlib.import_module(module_name)
     assert module.__all__ == [], module_name
+
+planner_agent = importlib.import_module("planner_agent")
+assert set(planner_agent.__all__) == {"PlannerError", "run_planner"}
 
 fixtures = repo / "harness" / "test" / "fixtures"
 for name in ("verdict_pass.json", "verdict_pivot.json", "verdict_reject.json"):
