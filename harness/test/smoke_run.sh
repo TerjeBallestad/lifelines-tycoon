@@ -37,8 +37,16 @@ except planner_schema.SprintListError:
 else:
     raise AssertionError("invalid sprint-list fixture should fail validation")
 
+run_state = importlib.import_module("run_state")
+assert set(run_state.__all__) == {
+    "RUN_STATUSES",
+    "SPRINT_STATUSES",
+    "RunState",
+    "RunStateError",
+    "SprintRunState",
+}
+
 for module_name in (
-    "run_state",
     "run_orchestrator",
     "git_integration",
     "report_renderer",
