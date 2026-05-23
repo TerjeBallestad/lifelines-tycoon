@@ -57,12 +57,14 @@ assert set(git_integration.__all__) == {
     "sprint_branch",
 }
 
-for module_name in (
-    "run_orchestrator",
-    "report_renderer",
-):
-    module = importlib.import_module(module_name)
-    assert module.__all__ == [], module_name
+run_orchestrator = importlib.import_module("run_orchestrator")
+assert set(run_orchestrator.__all__) == {
+    "OrchestratorConfig",
+    "RunOrchestrator",
+}
+
+report_renderer = importlib.import_module("report_renderer")
+assert report_renderer.__all__ == []
 
 planner_agent = importlib.import_module("planner_agent")
 assert set(planner_agent.__all__) == {"PlannerError", "run_planner"}
