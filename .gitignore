@@ -43,3 +43,7 @@ harness/runs/*/sprint_*/traces/
 # Harness Plan 5 runtime — per-sprint flock files
 harness/.locks/*.lock
 !harness/.locks/.gitkeep
+
+# Harness Phase 6 runtime
+harness/runs/*/report.html.tmp
+harness/runs/*/.run.lock

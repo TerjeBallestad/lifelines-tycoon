@@ -13,7 +13,7 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 | 3 | Generator agent + worktree loop | ✅ done |
 | 4 | Evaluator + strategy tournament | ✅ done |
 | 5 | Evaluator agent + Phase A negotiation | ✅ done |
-| 6 | Planner + orchestrator + report.html | pending |
+| 6 | Planner + orchestrator + report.html | 🚧 in progress |
 | 7 | Meta-evaluation | pending |
 
 ## What's in Plan 1
@@ -55,11 +55,11 @@ EVALUATOR_LIVE=1 ./harness/run_sprint.sh \
 ./harness/test/smoke_negotiation.sh
 ```
 
-### Known limitations (Plan 6 follow-up)
+### Known limitations before Plan 6 completes
 
-- No planner agent yet: `run_sprint.sh` requires an operator-authored `goal.md` and `touch_surface.allow`. Plan 6 will produce these from a higher-level user prompt.
+- No planner agent behavior yet: `run_sprint.sh` requires an operator-authored `goal.md` and `touch_surface.allow`. Plan 6 will produce these from a higher-level user prompt through configurable live execution, with dry-run/shimmed execution as the default.
 - No multi-sprint orchestration. `run_sprint.sh` runs one sprint per invocation.
-- No `report.html`. Plan 7 renders the artifacts in `harness/runs/<run-id>/` into a single-file viewer.
+- No run-level `report.html` yet. Plan 6 renders the artifacts in `harness/runs/<run-id>/` into a single-file viewer.
 
 ## Quick start
 
