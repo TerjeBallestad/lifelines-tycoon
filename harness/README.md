@@ -1,6 +1,6 @@
 # Harness — Adversarial Agent Loop
 
-Plan 1 of 6 from `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md`.
+Plans 1–7 from `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md`.
 
 This directory holds the orchestration + comms layer that drives the Lifelines economy prototype from external agents.
 
@@ -13,7 +13,7 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 | 3 | Generator agent + worktree loop | ✅ done |
 | 4 | Evaluator + strategy tournament | ✅ done |
 | 5 | Evaluator agent + Phase A negotiation | ✅ done |
-| 6 | Planner + orchestrator + report.html | 🚧 in progress |
+| 6 | Planner + orchestrator + report.html | ✅ done |
 | 7 | Meta-evaluation | pending |
 
 ## What's in Plan 1
@@ -55,11 +55,36 @@ EVALUATOR_LIVE=1 ./harness/run_sprint.sh \
 ./harness/test/smoke_negotiation.sh
 ```
 
-### Known limitations before Plan 6 completes
+## What's in Plan 6
 
-- No planner agent behavior yet: `run_sprint.sh` requires an operator-authored `goal.md` and `touch_surface.allow`. Plan 6 will produce these from a higher-level user prompt through configurable live execution, with dry-run/shimmed execution as the default.
-- No multi-sprint orchestration. `run_sprint.sh` runs one sprint per invocation.
-- No run-level `report.html` yet. Plan 6 renders the artifacts in `harness/runs/<run-id>/` into a single-file viewer.
+- `run.sh` — run-level planner/orchestrator/report CLI.
+- `prompts/planner.md` — sprint decomposition prompt.
+- `lib/planner_schema.py` — validates `sprint_list.md`.
+- `lib/planner_agent.py` — live/shimmed planner wrapper.
+- `lib/run_state.py` — resumable run state.
+- `lib/run_orchestrator.py` — sequential sprint loop around `run_sprint.sh`.
+- `lib/git_integration.py` — PASS cherry-pick/archive helpers.
+- `lib/report_renderer.py` — static `report.html` + `final.md`.
+- `test/smoke_run.sh` — end-to-end dry-run.
+
+### Quick start — Plan 6
+
+```bash
+# Dry-run smoke
+./harness/test/smoke_run.sh
+
+# Real harness run
+PLANNER_LIVE=1 GENERATOR_LIVE=1 EVALUATOR_LIVE=1 ./harness/run.sh \
+  "Improve day-one decision density without adding UI."
+
+# Resume
+./harness/run.sh --resume <run-id>
+
+# Re-grade one sprint
+./harness/run.sh --replay <run-id> <sprint-N>
+```
+
+Plan 6 treats live agent execution as configurable. Dry-run and shimmed execution are first-class, and the planner wrapper fails early if its configured live command is unavailable.
 
 ## Quick start
 
