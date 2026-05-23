@@ -64,7 +64,7 @@ assert set(run_orchestrator.__all__) == {
 }
 
 report_renderer = importlib.import_module("report_renderer")
-assert report_renderer.__all__ == []
+assert set(report_renderer.__all__) == {"render_final_markdown", "render_report"}
 
 planner_agent = importlib.import_module("planner_agent")
 assert set(planner_agent.__all__) == {"PlannerError", "run_planner"}
