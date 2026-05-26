@@ -35,6 +35,7 @@ class TestAuditLog(unittest.TestCase):
             (sprint_dir / "contract.md").write_text("# Contract\n\n## Status: AGREED\n")
             snapshot = snapshot_contract_turn(sprint_dir, round_number=2, actor="evaluator")
             append_event(run_dir, "negotiation_turn", sprint=1, round=2, snapshot=str(snapshot))
+            (run_dir / "sprint_list.md").write_text("# Sprint List\n")
             audit = render_audit_markdown(run_dir)
             text = audit.read_text()
 
@@ -42,6 +43,7 @@ class TestAuditLog(unittest.TestCase):
         self.assertIn("Harness Process Audit", text)
         self.assertIn("negotiation_turn", text)
         self.assertIn("contract_turns/round_02_evaluator.md", text)
+        self.assertNotIn("### sprint_list.md", text)
 
 
 if __name__ == "__main__":

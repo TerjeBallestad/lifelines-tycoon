@@ -83,7 +83,10 @@ def render_audit_markdown(run_dir: Path) -> Path:
     else:
         lines.append("- No audit events recorded.")
 
-    sprint_dirs = sorted(run_dir.glob("sprint_*"), key=_sprint_sort_key)
+    sprint_dirs = sorted(
+        (path for path in run_dir.glob("sprint_*") if path.is_dir()),
+        key=_sprint_sort_key,
+    )
     if sprint_dirs:
         lines.extend(["", "## Sprint artifacts", ""])
     for sprint_dir in sprint_dirs:

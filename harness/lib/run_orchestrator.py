@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Sequence
 
+from audit_log import append_event, render_audit_markdown
 from git_integration import (
     cherry_pick_sprint,
     collect_sprint_commits,
@@ -100,6 +101,7 @@ class RunOrchestrator:
             state.current_sprint = sprint.number
             state.set_sprint_status(sprint.number, "RUNNING")
             state.record("sprint_started", sprint=sprint.number, attempt=sprint.attempt)
+            append_event(self.run_dir, "sprint_started", sprint=sprint.number, attempt=sprint.attempt)
             self._save(state)
 
             try:
@@ -109,6 +111,7 @@ class RunOrchestrator:
                     timeout=self.config.sprint_timeout_seconds,
                 )
             except subprocess.TimeoutExpired:
+                append_event(self.run_dir, "run_sprint_timeout", sprint=sprint.number)
                 self._pivot_or_exhaust(
                     state,
                     sprint.number,
@@ -116,6 +119,13 @@ class RunOrchestrator:
                     note="sprint_timeout",
                 )
                 return state
+
+            append_event(
+                self.run_dir,
+                "run_sprint_completed",
+                sprint=sprint.number,
+                returncode=result.returncode,
+            )
 
             if result.returncode == 0:
                 action = self._handle_verdict(state, sprint.number)
@@ -452,6 +462,7 @@ class RunOrchestrator:
 
     def _save(self, state: RunState) -> None:
         state.to_file(self.state_path)
+        render_audit_markdown(self.run_dir)
 
 
 def _default_runner(
