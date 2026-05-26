@@ -31,6 +31,8 @@ class TestNegotiationAgentSelection(unittest.TestCase):
             gen.take_turn(sprint_dir, 1)
             after_generator = (sprint_dir / "contract.md").read_text()
             self.assertNotIn("__REPLACE_ME__", after_generator)
+            self.assertIn("[trace] events where event=phase_a_agreed count >= 1", after_generator)
+            self.assertNotIn("phase_a_contract_agreed", after_generator)
             self.assertEqual(parse_contract(after_generator).status, "AGREED")
 
             evaluator.take_turn(sprint_dir, 2)

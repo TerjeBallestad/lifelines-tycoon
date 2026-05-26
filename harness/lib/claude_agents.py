@@ -105,7 +105,7 @@ def _make_seed_contract_concrete(text: str, *, sprint: int) -> str:
         )
         .replace(
             "[trace] events where __REPLACE_ME__=value count >= 1   # replace with a real trace-rule",
-            "[trace] events where ev=phase_a_contract_agreed count >= 1",
+            "[trace] events where event=phase_a_agreed count >= 1",
         )
         .replace("Axis ?: primary — replace with the axis you intend to move", "Axis Decision Quality: primary")
         .replace("Axis ?: touched — replace with axes that must not regress", "Axis Scope Control: touched")

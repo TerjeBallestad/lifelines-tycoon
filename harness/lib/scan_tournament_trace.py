@@ -96,7 +96,7 @@ def _count_events(trace_path: Path, flt: dict[str, str]) -> int:
                 continue
             if not isinstance(obj, dict):
                 continue
-            if "ev" not in obj:
+            if "ev" not in obj and "event" not in obj:
                 continue
             if _event_matches(obj, flt):
                 n += 1

@@ -155,6 +155,9 @@ from scan_tournament_trace import TraceRule, run_all
 contract = parse_contract(Path("${CONTRACT}").read_text())
 rules = [TraceRule.parse(it.body, index=i) for i, it in enumerate(contract.items) if it.kind == "trace"]
 traces = sorted(Path("${TRACES_DIR}").glob("*.jsonl"))
+process_events = Path("${REPO_ROOT}") / "harness" / "runs" / "${RUN_ID}" / "events.jsonl"
+if process_events.exists():
+    traces.append(process_events)
 run_all(rules=rules, trace_files=traces, out_path=Path("${SPRINT_DIR}/trace_findings.json"))
 PYEOF
 

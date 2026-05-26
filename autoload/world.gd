@@ -2,11 +2,19 @@ extends Node
 
 const ELLING_INIT_PATH := "res://features/client/elling_init.tres"
 const CLIENT_DECAY_PATH := "res://features/client/client_decay.tres"
+const DESK_BACKLOG_ACTION_ID := &"desk_nav_backlog"
+const DESK_BACKLOG_AWAY_HOURS := 3.0
+const DESK_BACKLOG_CAPACITY_COST := 1.0
+const APARTMENT_PHONE_EVENT_ID := &"apt_phone_window"
+const APARTMENT_PHONE_EVENT_DELAY_HOURS := 2.0
+const APARTMENT_PHONE_OBSERVATION_ID := &"obs_phone_unanswered"
 
 var client: ClientState
 var case_file: CaseFile
 var economy: EconomyState
 var decay: ClientDecay
+var _apartment_events: Array[Dictionary] = []
+var _pending_return_report: Dictionary = {}
 
 func _ready() -> void:
     reset_for_test()
@@ -24,6 +32,41 @@ func reset_for_test() -> void:
     economy = EconomyState.new()
     var loaded_decay := load(CLIENT_DECAY_PATH) as ClientDecay
     decay = loaded_decay if loaded_decay != null else ClientDecay.new()
+    _pending_return_report = {}
+    _apartment_events = [{
+        "id": APARTMENT_PHONE_EVENT_ID,
+        "due_at": Clock.total_game_hours + APARTMENT_PHONE_EVENT_DELAY_HOURS,
+        "observation_id": APARTMENT_PHONE_OBSERVATION_ID,
+    }]
+
+func scheduled_apartment_event_count() -> int:
+    return _apartment_events.size()
+
+func try_process_desk_backlog() -> bool:
+    if not economy.can_spend(DESK_BACKLOG_CAPACITY_COST):
+        EventBus.action_failed.emit(&"no_capacity")
+        return false
+    var before := _snapshot_for_report()
+    var start_hour := Clock.total_game_hours
+    economy.spend(DESK_BACKLOG_CAPACITY_COST)
+    EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
+    Sim.advance_away_time(DESK_BACKLOG_AWAY_HOURS)
+    var events := _resolve_due_apartment_events(start_hour, Clock.total_game_hours)
+    _pending_return_report = _build_return_report(before, _snapshot_for_report(), events)
+    return true
+
+func return_to_apartment() -> Dictionary:
+    if _pending_return_report.is_empty():
+        return {
+            "has_delta": false,
+            "changes": [],
+            "events": [],
+            "why": "No away-time desk action has changed the apartment since the last return.",
+            "next_decision": "Choose a desk action or inspect Elling at home before spending capacity.",
+        }
+    var report := _pending_return_report.duplicate(true)
+    _pending_return_report = {}
+    return report
 
 func try_run_diagnostic(id: StringName) -> bool:
     var d: Diagnostic = Catalog.diagnostics.get(id)
@@ -96,3 +139,51 @@ func try_surface_observation() -> CaseEntry:
     case_file.add_entry(pick)
     EventBus.case_file_updated.emit(pick.id)
     return pick
+
+func _resolve_due_apartment_events(start_hour: float, end_hour: float) -> Array[Dictionary]:
+    var resolved: Array[Dictionary] = []
+    var remaining: Array[Dictionary] = []
+    for event: Dictionary in _apartment_events:
+        var due_at := float(event.get("due_at", 0.0))
+        if due_at > start_hour and due_at <= end_hour:
+            resolved.append(_resolve_apartment_event(event))
+        else:
+            remaining.append(event)
+    _apartment_events = remaining
+    return resolved
+
+func _resolve_apartment_event(event: Dictionary) -> Dictionary:
+    client.needs[&"social"] = clamp(float(client.needs.get(&"social", 0.0)) - 0.04, 0.0, 1.0)
+    client.needs[&"security"] = clamp(float(client.needs.get(&"security", 0.0)) - 0.06, 0.0, 1.0)
+    var observation_id: StringName = event.get("observation_id", &"")
+    var entry := Catalog.observations.get(observation_id) as CaseEntry
+    if entry != null:
+        case_file.add_entry(entry)
+        EventBus.case_file_updated.emit(entry.id)
+    return {
+        "id": String(event.get("id", &"")),
+        "title": "Phone unanswered",
+        "observation_id": String(observation_id),
+        "summary": "Phone unanswered: Elling watched the line ring out while you were at the desk.",
+    }
+
+func _build_return_report(before: Dictionary, after: Dictionary, events: Array[Dictionary]) -> Dictionary:
+    var changes: Array[String] = [
+        "Desk capacity %.1f -> %.1f." % [before.get("capacity", 0.0), after.get("capacity", 0.0)],
+    ]
+    for event: Dictionary in events:
+        changes.append(String(event.get("summary", "Apartment event resolved.")))
+    return {
+        "has_delta": true,
+        "cause_id": String(DESK_BACKLOG_ACTION_ID),
+        "away_hours": DESK_BACKLOG_AWAY_HOURS,
+        "events": events.duplicate(true),
+        "changes": changes,
+        "why": "A scheduled apartment phone call came due while attention stayed at the desk.",
+        "next_decision": "Use Phone Call Practice now, or keep the caseworker hour for diagnostics and risk the next call landing the same way.",
+    }
+
+func _snapshot_for_report() -> Dictionary:
+    return {
+        "capacity": economy.capacity_current,
+    }

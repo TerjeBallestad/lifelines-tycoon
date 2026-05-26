@@ -43,6 +43,12 @@ func apply_tick(game_hours: float) -> void:
 		_hours_since_observation -= OBSERVATION_INTERVAL_HOURS
 		World.try_surface_observation()
 
+func advance_away_time(game_hours: float) -> void:
+	if game_hours <= 0.0:
+		return
+	Clock.advance(game_hours)
+	apply_tick(game_hours)
+
 func reset_for_test() -> void:
 	set_process(false)
 	_hours_since_observation = 0.0

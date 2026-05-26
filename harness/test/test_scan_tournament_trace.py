@@ -82,6 +82,16 @@ class TestEvaluateRule(unittest.TestCase):
         self.assertEqual(result.observed, 2)
 
 
+    def test_process_event_vocabulary_matches_phase_a_audit_events(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            events = Path(td) / "events.jsonl"
+            events.write_text(json.dumps({"event": "phase_a_agreed", "sprint": 1}) + "\n")
+            rule = parse_trace_rule("events where event=phase_a_agreed count >= 1")
+            result = evaluate_rule(rule, [events])
+            self.assertTrue(result.passed)
+            self.assertEqual(result.observed, 1)
+
+
 class TestRunAll(unittest.TestCase):
     def test_writes_findings_json(self) -> None:
         fixtures = Path(__file__).parent / "fixtures"
