@@ -175,6 +175,28 @@ def _current_day(events: list[dict]) -> int:
 
 # --- Main playtest loop ---------------------------------------------------
 
+
+def _ensure_project_imported(godot: str, project: str) -> None:
+    """Prime Godot's per-worktree import/cache data before agent-mode boot.
+
+    Fresh git worktrees do not have `.godot/` cache data. Without an import pass,
+    headless agent-mode can fail to resolve `class_name` types during autoload
+    parsing, never reaching `AgentBridge.bind_comms()` and leaving players stuck
+    waiting for the `bound` sentinel.
+    """
+    proc = subprocess.run(
+        [godot, "--headless", "--path", project, "--import"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=120,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or "").strip().splitlines()[-8:]
+        tail = "\n".join(detail) if detail else f"exit {proc.returncode}"
+        raise LlmPlayerError(f"godot import failed before agent-mode launch: {tail}")
+
+
 def run_playtest(args: argparse.Namespace) -> int:
     strategy: Strategy = parse_strategy_file(Path(args.strategy))
     preamble_path = Path(args.project) / "harness/prompts/strategy_player.md"
@@ -197,6 +219,8 @@ def run_playtest(args: argparse.Namespace) -> int:
     ]
     if strategy.hidden_state_visible:
         godot_cmd.append("--reveal-hidden")
+
+    _ensure_project_imported(args.godot, args.project)
 
     print(f"[llm_player] launching godot: {' '.join(godot_cmd)}", file=sys.stderr)
     godot_proc = subprocess.Popen(godot_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)

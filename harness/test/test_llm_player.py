@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
 from claude_subprocess import ClaudeSession  # noqa: E402
@@ -13,6 +14,7 @@ from llm_player import (  # noqa: E402
     extract_op,
     LlmPlayerError,
     PlayerState,
+    _ensure_project_imported,
     _trim_history,
     render_user_prompt,
 )
@@ -67,6 +69,27 @@ class TestTrimHistory(unittest.TestCase):
         self.assertEqual(len(trimmed), 5)
         self.assertEqual(trimmed[0]["ev"], "e15")
         self.assertEqual(trimmed[-1]["ev"], "e19")
+
+
+class TestProjectImport(unittest.TestCase):
+    def test_imports_project_before_agent_mode_launch(self) -> None:
+        completed = mock.Mock(returncode=0, stderr="")
+        with mock.patch("llm_player.subprocess.run", return_value=completed) as run:
+            _ensure_project_imported("/Godot", "/project")
+
+        run.assert_called_once_with(
+            ["/Godot", "--headless", "--path", "/project", "--import"],
+            stdout=mock.ANY,
+            stderr=mock.ANY,
+            text=True,
+            timeout=120,
+        )
+
+    def test_import_failure_raises_with_tail(self) -> None:
+        completed = mock.Mock(returncode=1, stderr="a\nb\nc\n")
+        with mock.patch("llm_player.subprocess.run", return_value=completed):
+            with self.assertRaisesRegex(LlmPlayerError, "godot import failed"):
+                _ensure_project_imported("/Godot", "/project")
 
 
 if __name__ == "__main__":
