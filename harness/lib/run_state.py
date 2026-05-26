@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -92,7 +93,10 @@ class RunState:
         _validate_run_status(self.status)
         for sprint in self.sprints:
             _validate_sprint_status(sprint.status)
-        Path(path).write_text(json.dumps(asdict(self), indent=2, sort_keys=True) + "\n")
+        target = Path(path)
+        tmp = target.with_name(f".{target.name}.tmp")
+        tmp.write_text(json.dumps(asdict(self), indent=2, sort_keys=True) + "\n")
+        os.replace(tmp, target)
 
     def record(self, event: str, **payload: Any) -> None:
         entry = {**payload, "event": event, "ts": _utc_timestamp()}

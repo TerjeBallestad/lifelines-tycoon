@@ -74,7 +74,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
             "  ./harness/run.sh --resume <run-id>\n"
             "  ./harness/run.sh --replay <run-id> <sprint-N>\n\n"
             "Dry-run mode disables planner, generator, negotiation, and evaluator live execution.\n"
-            "Without --dry-run, PLANNER_LIVE, GENERATOR_LIVE, and EVALUATOR_LIVE decide live mode."
+            "Without --dry-run, PLANNER_LIVE plus GENERATOR_LIVE/NEGOTIATION_LIVE/EVALUATOR_LIVE decide live mode."
         ),
     )
     parser.add_argument("--dry-run", action="store_true", help="disable all live agent execution")
@@ -255,7 +255,11 @@ def _live_modes(dry_run: bool) -> tuple[bool, bool]:
 def _orchestration_live(dry_run: bool) -> bool:
     if dry_run:
         return False
-    return _env_bool("GENERATOR_LIVE", default=False) and _env_bool("EVALUATOR_LIVE", default=False)
+    return (
+        _env_bool("GENERATOR_LIVE", default=False)
+        and _env_bool("NEGOTIATION_LIVE", default=False)
+        and _env_bool("EVALUATOR_LIVE", default=False)
+    )
 
 
 def _evaluator_live(dry_run: bool) -> bool:
@@ -287,6 +291,7 @@ def _build_meta(
         "live": {
             "planner": planner_live,
             "generator": orchestration_live,
+            "negotiation": orchestration_live,
             "evaluator": orchestration_live,
         },
         "models": {

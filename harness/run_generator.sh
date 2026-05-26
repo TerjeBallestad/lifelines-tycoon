@@ -7,7 +7,7 @@
 #       --sprint <N> \
 #       --goal-file <path-to-goal.md> \
 #       --touch-surface <path-to-allowlist> \
-#       [--ready-timeout <seconds>]   # default 1800
+#       [--ready-timeout <seconds>] [--base-sha <sha>]   # default timeout 1800
 #
 # Effect:
 #   1. Scaffold sprint dir via init_sprint.sh.
@@ -27,6 +27,7 @@ GOAL_FILE=""
 TOUCH=""
 TIMEOUT_S="${HARNESS_READY_TIMEOUT:-1800}"
 ROUND=""
+BASE_SHA=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -36,6 +37,7 @@ while [ $# -gt 0 ]; do
         --touch-surface)  TOUCH="$2"; shift 2 ;;
         --ready-timeout)  TIMEOUT_S="$2"; shift 2 ;;
         --round)          ROUND="$2"; shift 2 ;;
+        --base-sha)       BASE_SHA="$2"; shift 2 ;;
         *) echo "run_generator: unknown arg: $1" >&2; exit 2 ;;
     esac
 done
@@ -144,7 +146,7 @@ bash "${REPO_ROOT}/harness/lib/init_sprint.sh" \
 
 echo "[run_generator] creating worktree…"
 WORKTREE_ABS=$(bash "${REPO_ROOT}/harness/lib/worktree_up.sh" "$RUN_ID" "$SPRINT_N" \
-    "${SPRINT_DIR_ABS}/touch_surface.allow")
+    "${SPRINT_DIR_ABS}/touch_surface.allow" "$BASE_SHA")
 echo "[run_generator] worktree: $WORKTREE_ABS"
 
 # Make sure no stale sentinel survives a previous run.

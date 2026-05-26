@@ -61,14 +61,47 @@ def collect_sprint_commits(repo: Path, base_sha: str, branch: str) -> list[str]:
 def cherry_pick_sprint(repo: Path, integration_branch: str, commits: list[str]) -> str:
     if not commits:
         return "NO_COMMITS"
+    _ensure_clean(repo)
+    _ensure_no_in_progress_operation(repo)
 
     git(repo, "switch", integration_branch)
     for commit in commits:
         result = git(repo, "cherry-pick", commit, check=False)
-        if result.returncode != 0:
+        if result.returncode == 0:
+            continue
+        if _is_cherry_pick_in_progress(repo):
             return "CONFLICT"
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            result.args,
+            output=result.stdout,
+            stderr=result.stderr,
+        )
 
     return "OK"
+
+
+def _ensure_clean(repo: Path) -> None:
+    status = git(repo, "status", "--porcelain").stdout.strip()
+    if status:
+        raise RuntimeError("git worktree must be clean before sprint integration")
+
+
+def _ensure_no_in_progress_operation(repo: Path) -> None:
+    git_dir = Path(git(repo, "rev-parse", "--git-dir").stdout.strip())
+    if not git_dir.is_absolute():
+        git_dir = repo / git_dir
+    markers = ["CHERRY_PICK_HEAD", "REBASE_HEAD", "MERGE_HEAD", "BISECT_LOG"]
+    present = [marker for marker in markers if (git_dir / marker).exists()]
+    if present:
+        raise RuntimeError(f"git operation in progress: {', '.join(present)}")
+
+
+def _is_cherry_pick_in_progress(repo: Path) -> bool:
+    git_dir = Path(git(repo, "rev-parse", "--git-dir").stdout.strip())
+    if not git_dir.is_absolute():
+        git_dir = repo / git_dir
+    return (git_dir / "CHERRY_PICK_HEAD").exists()
 
 
 def archive_sprint_branch(repo: Path, run_id: str, sprint: int, branch: str) -> str:

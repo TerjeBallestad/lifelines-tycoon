@@ -92,6 +92,7 @@ class TestRunOrchestrator(unittest.TestCase):
         self.assertIn("--dry-run", runner.calls[0])
         self.assertIn("--goal-file", runner.calls[0])
         self.assertIn("--touch-surface", runner.calls[0])
+        self.assertEqual(runner.calls[0][runner.calls[0].index("--base-sha") + 1], "base-sha")
         self.assertIn("goal 1", (self.repo / "harness" / "runs" / self.run_id / "sprint_1" / "goal.md").read_text())
         self.assertEqual(
             (self.repo / "harness" / "runs" / self.run_id / "sprint_1" / "touch_surface.allow").read_text(),
@@ -114,7 +115,7 @@ class TestRunOrchestrator(unittest.TestCase):
             ["commit-1"],
         )
 
-    def test_pivot_verdict_writes_context_and_retries_once(self) -> None:
+    def test_pivot_verdict_writes_context_and_halts_for_replan(self) -> None:
         runner = FakeRunner(
             self.repo,
             self.run_id,
@@ -137,15 +138,16 @@ class TestRunOrchestrator(unittest.TestCase):
 
         sprint_dir = self.repo / "harness" / "runs" / self.run_id / "sprint_1"
         context = (sprint_dir / "replan_context.md").read_text()
-        self.assertEqual(len(runner.calls), 2)
-        self.assertEqual(state.status, "COMPLETE")
+        self.assertEqual(len(runner.calls), 1)
+        self.assertEqual(state.status, "HALTED")
         self.assertEqual(state.sprints[0].attempt, 2)
-        self.assertEqual(state.sprints[0].status, "PASS")
+        self.assertEqual(state.sprints[0].status, "PIVOT")
+        self.assertEqual(state.history[-1]["event"], "sprint_replan_required")
         self.assertIn("goal 1", context)
         self.assertIn("Critique body", context)
         self.assertIn("Contract body", context)
 
-    def test_exit_code_two_marks_force_pivot_replans_and_retries(self) -> None:
+    def test_exit_code_two_marks_force_pivot_and_halts_for_replan(self) -> None:
         runner = FakeRunner(
             self.repo,
             self.run_id,
@@ -155,18 +157,9 @@ class TestRunOrchestrator(unittest.TestCase):
                     "force_pivot": {"reason": "phase_a_max_rounds_exceeded"},
                     "contract": "Rejected contract\n",
                 },
-                {"returncode": 0, "verdict": "PASS"},
             ],
         )
         orch = self._orchestrator(runner)
-        replan_calls: list[tuple[int, Path]] = []
-
-        def replan(sprint: int, context_path: Path) -> None:
-            replan_calls.append((sprint, context_path))
-            sprint_dir = self.repo / "harness" / "runs" / self.run_id / f"sprint_{sprint}"
-            (sprint_dir / "goal.md").write_text("# Sprint 1 — Replanned\n\n## Goal\nNarrower goal\n")
-
-        orch.replanner = replan
 
         with self._git_mocks():
             orch.init_run("Make decisions diverge.\n", _plan([False]))
@@ -181,14 +174,13 @@ class TestRunOrchestrator(unittest.TestCase):
             / "replan_context.md"
         )
         context = context_path.read_text()
-        self.assertEqual(len(runner.calls), 2)
-        self.assertEqual(replan_calls, [(1, context_path)])
-        self.assertEqual(state.status, "COMPLETE")
-        self.assertEqual(state.sprints[0].status, "PASS")
+        self.assertEqual(len(runner.calls), 1)
+        self.assertEqual(state.status, "HALTED")
+        self.assertEqual(state.sprints[0].status, "FORCE_PIVOT")
         self.assertEqual(state.sprints[0].attempt, 2)
+        self.assertEqual(state.history[-1]["event"], "sprint_replan_required")
         self.assertIn("phase_a_max_rounds_exceeded", context)
         self.assertIn("Rejected contract", context)
-        self.assertIn("Narrower goal", (context_path.parent / "goal.md").read_text())
 
     def test_reject_required_halts_run(self) -> None:
         runner = FakeRunner(self.repo, self.run_id, [{"returncode": 0, "verdict": "REJECT"}])

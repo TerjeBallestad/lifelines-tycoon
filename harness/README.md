@@ -74,7 +74,7 @@ EVALUATOR_LIVE=1 ./harness/run_sprint.sh \
 ./harness/test/smoke_run.sh
 
 # Real harness run
-PLANNER_LIVE=1 GENERATOR_LIVE=1 EVALUATOR_LIVE=1 ./harness/run.sh \
+PLANNER_LIVE=1 GENERATOR_LIVE=1 NEGOTIATION_LIVE=1 EVALUATOR_LIVE=1 ./harness/run.sh \
   "Improve day-one decision density without adding UI."
 
 # Resume
@@ -84,7 +84,9 @@ PLANNER_LIVE=1 GENERATOR_LIVE=1 EVALUATOR_LIVE=1 ./harness/run.sh \
 ./harness/run.sh --replay <run-id> <sprint-N>
 ```
 
-Plan 6 treats live agent execution as configurable. Dry-run and shimmed execution are first-class, and the planner wrapper fails early if its configured live command is unavailable.
+Useful flags: `--planner-shim <file>`, `--run-id <id>`, `--max-pivots N`, `--no-open`, `--resume <id>`, `--replay <id> <sprint-N>`. Create `harness/.kill` to stop before the next sprint.
+
+Plan 6 treats live agent execution as configurable. Dry-run and shimmed execution are first-class, and the planner wrapper fails early if its configured live command is unavailable. A `PIVOT` or `FORCE_PIVOT` writes `replan_context.md` and halts for an operator/planner edit rather than pretending to auto-retry stale sprint artifacts.
 
 ## Quick start
 
@@ -136,7 +138,7 @@ See `autoload/agent_bridge.gd` for the canonical handler list and `harness/lib/t
 
 ## What's NOT in Plan 1
 
-LLM-driven strategy player, planner, generator, evaluator, contract negotiation, rubric anchors, orchestrator, report.html. See `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md` §11 for upcoming plans.
+Plan 1 intentionally excludes the later agent stack: rubric anchors, generator/evaluator agents, contract negotiation, planner, orchestrator, and reports. Those landed across Plans 2–6; see the status table above.
 
 ## What's in Plan 2
 
@@ -211,7 +213,7 @@ Cost-control flags on `run_evaluator.sh`: `--strategies`, `--seeds`, `--skip-fre
 
 ### What's NOT in Plan 4
 
-Contract negotiation (Phase A — Plan 5), orchestrating evaluator agent (Opus driving the script — Plan 5), planner sprint decomposition (Plan 5), `report.html` (Plan 5), meta-evaluation regressions (Plan 6).
+Contract negotiation (Phase A — Plan 5), run-level planner/orchestrator/report flow (Plan 6), and meta-evaluation regressions (Plan 7).
 
 ## Spec coverage — Plan 4
 

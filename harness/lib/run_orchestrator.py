@@ -39,7 +39,6 @@ class RunOrchestrator:
         self.run_dir = self.repo / "harness" / "runs" / config.run_id
         self.state_path = self.run_dir / "run_state.json"
         self.runner = _default_runner
-        self.replanner = None
 
     def init_run(self, prompt_text: str, sprint_list: SprintList) -> RunState:
         validate_sprint_list(sprint_list)
@@ -105,19 +104,17 @@ class RunOrchestrator:
 
             try:
                 result = self.runner(
-                    self._sprint_command(sprint.number),
+                    self._sprint_command(sprint.number, state.base_sha),
                     cwd=self.repo,
                     timeout=self.config.sprint_timeout_seconds,
                 )
             except subprocess.TimeoutExpired:
-                if self._pivot_or_exhaust(
+                self._pivot_or_exhaust(
                     state,
                     sprint.number,
                     "PIVOT",
                     note="sprint_timeout",
-                    retry=True,
-                ):
-                    continue
+                )
                 return state
 
             if result.returncode == 0:
@@ -126,24 +123,20 @@ class RunOrchestrator:
                     continue
                 return state
             if result.returncode == 2:
-                if self._pivot_or_exhaust(
+                self._pivot_or_exhaust(
                     state,
                     sprint.number,
                     "FORCE_PIVOT",
                     note="force_pivot",
-                    retry=False,
-                ):
-                    continue
+                )
                 return state
             if result.returncode == 3:
-                if self._pivot_or_exhaust(
+                self._pivot_or_exhaust(
                     state,
                     sprint.number,
                     "PIVOT",
                     note="generator_failed",
-                    retry=True,
-                ):
-                    continue
+                )
                 return state
             if result.returncode == 4:
                 state.status = "HALTED"
@@ -199,7 +192,7 @@ class RunOrchestrator:
             "\n".join(sprint.touch_surface) + "\n"
         )
 
-    def _sprint_command(self, sprint_number: int) -> list[str]:
+    def _sprint_command(self, sprint_number: int, base_sha: str) -> list[str]:
         sprint_dir = self._sprint_dir(sprint_number)
         command = [
             "bash",
@@ -212,6 +205,8 @@ class RunOrchestrator:
             str(sprint_dir / "goal.md"),
             "--touch-surface",
             str(sprint_dir / "touch_surface.allow"),
+            "--base-sha",
+            base_sha,
         ]
         if not self.config.live:
             command.append("--dry-run")
@@ -228,14 +223,12 @@ class RunOrchestrator:
                 return "stop"
             return "continue"
         if verdict == "PIVOT":
-            if self._pivot_or_exhaust(
+            self._pivot_or_exhaust(
                 state,
                 sprint_number,
                 "PIVOT",
                 notes=notes,
-                retry=True,
-            ):
-                return "continue"
+            )
             return "stop"
         if verdict == "REJECT":
             self._handle_reject(state, sprint_number, notes)
@@ -300,7 +293,6 @@ class RunOrchestrator:
         *,
         note: str | None = None,
         notes: object = None,
-        retry: bool,
     ) -> bool:
         sprint = state._sprint(sprint_number)
         if not self._pivot_available(sprint):
@@ -332,6 +324,7 @@ class RunOrchestrator:
             return False
 
         self._write_replan_context(state, sprint_number, status.lower())
+        state.status = "HALTED"
         state.set_sprint_status(
             sprint_number,
             status,
@@ -339,26 +332,16 @@ class RunOrchestrator:
             notes=notes,
             note=note,
         )
+        context_path = self._sprint_dir(sprint_number) / "replan_context.md"
         state.record(
-            "sprint_pivoted",
+            "sprint_replan_required",
             sprint=sprint_number,
             status=status,
             next_attempt=state._sprint(sprint_number).attempt,
+            path=str(context_path),
         )
         self._save(state)
-        if status == "FORCE_PIVOT":
-            context_path = self._sprint_dir(sprint_number) / "replan_context.md"
-            if self.replanner is None:
-                state.status = "HALTED"
-                state.record("force_pivot_replan_required", sprint=sprint_number, path=str(context_path))
-                self._save(state)
-                return False
-            self.replanner(sprint_number, context_path)
-            state.set_sprint_status(sprint_number, "PENDING")
-            state.record("force_pivot_replanned", sprint=sprint_number, path=str(context_path))
-            self._save(state)
-            return True
-        return retry
+        return False
 
     def _handle_reject(
         self,
@@ -453,7 +436,7 @@ class RunOrchestrator:
 
     def _next_runnable_sprint(self, state: RunState) -> SprintRunState | None:
         for sprint in state.sprints:
-            if sprint.status in {"PENDING", "RUNNING", "PIVOT", "FORCE_PIVOT"}:
+            if sprint.status in {"PENDING", "RUNNING"}:
                 return sprint
         return None
 
