@@ -77,16 +77,17 @@ from pathlib import Path
 run_id, sprint, lib_dir = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 sys.path.insert(0, lib_dir)
 from negotiation_loop import NegotiationLoop, NegotiationOutcome
-from claude_agents import claude_generator_agent, claude_evaluator_agent  # ← Plan 5 wiring
+from claude_agents import negotiation_agents_from_env
 
 sprint_dir = Path(f"harness/runs/{run_id}/sprint_{sprint}")
 lock_path = Path(f"harness/.locks/contract_{run_id}_{sprint}.lock")
+generator, evaluator = negotiation_agents_from_env(run_id=run_id, sprint=sprint)
 
 loop = NegotiationLoop(
     sprint_dir=sprint_dir,
     lock_path=lock_path,
-    generator=claude_generator_agent(run_id=run_id, sprint=sprint),
-    evaluator=claude_evaluator_agent(run_id=run_id, sprint=sprint),
+    generator=generator,
+    evaluator=evaluator,
 )
 result = loop.run()
 

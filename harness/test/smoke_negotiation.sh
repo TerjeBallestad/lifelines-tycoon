@@ -29,55 +29,9 @@ features/case_file/
 test/harness/
 EOF
 
-# Override claude_agents.py with a scripted shim.
-cat > harness/lib/claude_agents.py <<'PY'
-"""SMOKE STUB — overrides production claude_agents.py inside the smoke workdir."""
-from __future__ import annotations
-from dataclasses import dataclass, field
-from pathlib import Path
-from negotiation_state import Turn
-
-# Programme: gen drafts NEGOTIATING (round 1), eval responds AGREED (round 2),
-# gen confirms AGREED unchanged (round 3) → terminal AGREED after 3 turns.
-_VALID_NEGOTIATING = """# Sprint 1 Contract — Decision density
-
-## Done means
-- [test] `test/harness/s1.gd::test_x` passes
-- [trace] events where ev=diagnostic_completed count >= 1
-
-## Status: NEGOTIATING
-"""
-_VALID_AGREED = _VALID_NEGOTIATING.replace("## Status: NEGOTIATING", "## Status: AGREED")
-
-_SCRIPT = {
-    "generator": [_VALID_NEGOTIATING, _VALID_AGREED],
-    "evaluator": [_VALID_AGREED],
-}
-
-
-@dataclass
-class _ScriptedAgent:
-    role: Turn
-    run_id: str
-    sprint: int
-    _calls: int = field(default=0, init=False)
-
-    def take_turn(self, sprint_dir: Path, round_number: int) -> None:
-        key = self.role.value
-        seq = _SCRIPT[key]
-        if self._calls >= len(seq):
-            raise RuntimeError(f"smoke stub exhausted for {key} at call {self._calls}")
-        (sprint_dir / "contract.md").write_text(seq[self._calls])
-        self._calls += 1
-
-
-def claude_generator_agent(*, run_id: str, sprint: int):
-    return _ScriptedAgent(role=Turn.GENERATOR, run_id=run_id, sprint=sprint)
-
-
-def claude_evaluator_agent(*, run_id: str, sprint: int):
-    return _ScriptedAgent(role=Turn.EVALUATOR, run_id=run_id, sprint=sprint)
-PY
+# Use the built-in non-Anthropic scripted Phase A agent path. This proves the
+# orchestrator can negotiate without patching in Claude-flavored test doubles.
+export NEGOTIATION_AGENT_MODE=scripted
 
 # Stub run_evaluator_phase_b.sh so we never actually run Plan 4 grading.
 cat > harness/lib/run_evaluator_phase_b.sh <<'BASH'
@@ -119,6 +73,6 @@ python3 -c "
 import json
 a = json.load(open('$SPRINT_DIR/agreement.json'))
 assert a['terminal_status'] == 'AGREED', a
-assert a['rounds_used'] == 3, a
+assert a['rounds_used'] == 2, a
 "
 echo "[smoke] OK"
