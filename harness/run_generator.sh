@@ -44,8 +44,10 @@ done
 
 if [ -z "$RUN_ID" ];    then echo "run_generator: missing --run-id" >&2;        exit 2; fi
 if [ -z "$SPRINT_N" ];  then echo "run_generator: missing --sprint" >&2;        exit 2; fi
-if [ -z "$GOAL_FILE" ]; then echo "run_generator: missing --goal-file" >&2;     exit 2; fi
-if [ -z "$TOUCH" ];     then echo "run_generator: missing --touch-surface" >&2; exit 2; fi
+if [ -z "$ROUND" ]; then
+    if [ -z "$GOAL_FILE" ]; then echo "run_generator: missing --goal-file" >&2;     exit 2; fi
+    if [ -z "$TOUCH" ];     then echo "run_generator: missing --touch-surface" >&2; exit 2; fi
+fi
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 SPRINT_DIR_REL="harness/runs/${RUN_ID}/sprint_${SPRINT_N}"
