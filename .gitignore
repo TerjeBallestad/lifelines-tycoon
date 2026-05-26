@@ -47,3 +47,5 @@ harness/.locks/*.lock
 # Harness Phase 6 runtime
 harness/runs/*/report.html.tmp
 harness/runs/*/.run.lock
+# Process audit artifacts are generated under harness/runs/<run-id>/ and stay gitignored:
+# audit.md, events.jsonl, sprint_*/agent_turns.jsonl, sprint_*/contract_turns/

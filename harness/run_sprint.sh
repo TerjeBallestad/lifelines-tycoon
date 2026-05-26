@@ -76,12 +76,15 @@ import sys, subprocess
 from pathlib import Path
 run_id, sprint, lib_dir = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 sys.path.insert(0, lib_dir)
+from audit_log import append_event, render_audit_markdown
 from negotiation_loop import NegotiationLoop, NegotiationOutcome
 from claude_agents import negotiation_agents_from_env
 
 sprint_dir = Path(f"harness/runs/{run_id}/sprint_{sprint}")
+run_dir = sprint_dir.parent
 lock_path = Path(f"harness/.locks/contract_{run_id}_{sprint}.lock")
 generator, evaluator = negotiation_agents_from_env(run_id=run_id, sprint=sprint)
+append_event(run_dir, "phase_a_started", sprint=sprint)
 
 loop = NegotiationLoop(
     sprint_dir=sprint_dir,
@@ -105,9 +108,13 @@ if result.outcome == NegotiationOutcome.FORCE_PIVOT:
         "run_id": run_id, "sprint": sprint, "rounds_used": result.rounds_used,
         "reason": "phase_a_max_rounds_exceeded",
     }, indent=2) + "\n")
+    append_event(run_dir, "phase_a_force_pivot", sprint=sprint, rounds_used=result.rounds_used, path=str(pivot))
+    render_audit_markdown(run_dir)
     print(f"[run_sprint] force-pivot after {result.rounds_used} rounds; see {pivot}", file=sys.stderr)
     sys.exit(2)
 
+append_event(run_dir, "phase_a_agreed", sprint=sprint, rounds_used=result.rounds_used, path=str(audit_path))
+render_audit_markdown(run_dir)
 print(f"[run_sprint] agreed after {result.rounds_used} rounds")
 PY
 PHASE_A=$?
@@ -121,6 +128,16 @@ GENERATOR_LIVE="$EVALUATOR_LIVE" ./harness/run_generator.sh \
   --touch-surface "$SPRINT_DIR/touch_surface.allow" \
   --base-sha "$BASE_SHA" \
   || { echo "[run_sprint] generator implementation failed" >&2; exit 3; }
+python3 - "$RUN_ID" "$SPRINT" "$LIB_DIR" <<'PY'
+import sys
+from pathlib import Path
+run_id, sprint, lib_dir = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+sys.path.insert(0, lib_dir)
+from audit_log import append_event, render_audit_markdown
+run_dir = Path(f"harness/runs/{run_id}")
+append_event(run_dir, "implementation_phase_completed", sprint=sprint)
+render_audit_markdown(run_dir)
+PY
 
 if [[ "$SKIP_PHASE_B" -eq 1 ]]; then
   echo "[run_sprint] --skip-eval-phase-b set; stopping before grading"
@@ -130,6 +147,15 @@ fi
 echo "[run_sprint] phase B-grade — evaluator grades implementation"
 bash "$LIB_DIR/run_evaluator_phase_b.sh" --run-id "$RUN_ID" --sprint "$SPRINT" \
   || { echo "[run_sprint] grading failed" >&2; exit 4; }
-
 VERDICT=$(python3 -c "import json; print(json.load(open('${SPRINT_DIR}/verdict.json'))['verdict'])")
+python3 - "$RUN_ID" "$SPRINT" "$LIB_DIR" "$VERDICT" <<'PY'
+import sys
+from pathlib import Path
+run_id, sprint, lib_dir, verdict = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+sys.path.insert(0, lib_dir)
+from audit_log import append_event, render_audit_markdown
+run_dir = Path(f"harness/runs/{run_id}")
+append_event(run_dir, "grading_phase_completed", sprint=sprint, verdict=verdict)
+render_audit_markdown(run_dir)
+PY
 echo "[run_sprint] verdict: $VERDICT"

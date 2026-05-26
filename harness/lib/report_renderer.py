@@ -53,6 +53,7 @@ def render_report(run_dir: Path, out_path: Path | None = None) -> Path:
             plan_error,
         ),
         _render_timeline(run_state.get("history", [])),
+        _render_process_audit(run_dir),
         _render_calibration_banner(run_dir, numbers),
     ]
 
@@ -94,6 +95,7 @@ def render_final_markdown(run_dir: Path) -> Path:
         "",
         f"Run verdict: {_md_cell(str(run_state.get('status', 'UNKNOWN')))}",
         f"Report: {_md_cell(str(report_path))}",
+        f"Audit: {_md_cell(str(run_dir / 'audit.md'))}",
         "",
     ]
 
@@ -262,7 +264,45 @@ def _render_timeline(history: Any) -> str:
             + "".join(rows)
             + "</tbody></table>"
         )
-    return f'<section class="section"><h2>Timeline</h2>{body}</section>'
+    return f'<section class="section"><h2>Run timeline</h2>{body}</section>'
+
+
+def _render_process_audit(run_dir: Path) -> str:
+    audit = _read_text(run_dir / "audit.md")
+    events = _read_jsonl(run_dir / "events.jsonl")
+    if not audit and not events:
+        body = "<p>No process audit recorded yet.</p>"
+    else:
+        body = (
+            '<p>Gitignored audit artifacts are available under this run directory. '
+            'Send <code>audit.md</code> or <code>events.jsonl</code> to Slack for remote review.</p>'
+        )
+        if events:
+            rows = []
+            for entry in events[-20:]:
+                detail = {
+                    key: value
+                    for key, value in entry.items()
+                    if key not in {"ts", "event", "sprint"}
+                }
+                rows.append(
+                    "<tr>"
+                    f"<td>{_e(entry.get('ts', 'n/a'))}</td>"
+                    f"<td>{_e(entry.get('event', 'n/a'))}</td>"
+                    f"<td>{_e(entry.get('sprint', ''))}</td>"
+                    f"<td>{_e(_json_compact(detail) if detail else '')}</td>"
+                    "</tr>"
+                )
+            body += (
+                '<table class="data"><thead><tr>'
+                "<th>Timestamp</th><th>Event</th><th>Sprint</th><th>Detail</th>"
+                "</tr></thead><tbody>"
+                + "".join(rows)
+                + "</tbody></table>"
+            )
+        if audit:
+            body += "<h3>audit.md</h3>" + _pre(audit)
+    return f'<section class="section"><h2>Process audit</h2>{body}</section>'
 
 
 def _render_calibration_banner(run_dir: Path, numbers: list[int]) -> str:
@@ -565,6 +605,24 @@ def _read_json(path: Path, *, default: Any) -> Any:
         return json.loads(path.read_text())
     except (OSError, json.JSONDecodeError):
         return default
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    try:
+        lines = path.read_text().splitlines()
+    except OSError:
+        return []
+    records: list[dict[str, Any]] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            records.append(value)
+    return records
 
 
 def _plain_score(verdict: dict[str, Any]) -> str:

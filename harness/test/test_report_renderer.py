@@ -38,6 +38,8 @@ class TestReportRenderer(unittest.TestCase):
         )
         self.assertIn("Calibration failure", html)
         self.assertIn("trace_001", html)
+        self.assertIn("Process audit", html)
+        self.assertIn("Harness Process Audit", html)
         self.assertNotIn("<script", html.lower())
         self.assertNotIn("</script", html.lower())
         self.assertNotIn("<link", html.lower())
@@ -52,6 +54,7 @@ class TestReportRenderer(unittest.TestCase):
         self.assertEqual(out, run_dir / "final.md")
         self.assertIn("Run verdict: COMPLETE", md)
         self.assertIn("report.html", md)
+        self.assertIn("audit.md", md)
         self.assertIn("Manual merge required", md)
         self.assertIn("| 1 | Day-one decision divergence | PASS_PENDING_MERGE | PASS | 84.0/84.0 |", md)
 
@@ -147,6 +150,10 @@ def _fake_run_dir(parent: Path) -> Path:
         + "\n"
     )
     (sprint_dir / "critique.md").write_text("Critique includes <script>alert('owned')</script>\n")
+    (run_dir / "events.jsonl").write_text(
+        json.dumps({"ts": "2026-05-23T00:01:30Z", "event": "negotiation_turn", "sprint": 1, "agent": "generator"}) + "\n"
+    )
+    (run_dir / "audit.md").write_text("# Harness Process Audit\n\n- negotiation_turn\n")
     (sprint_dir / "trace_findings.json").write_text(
         json.dumps({"all_pass": True, "items": [{"body": "events where ev=x count >= 1", "pass": True}]})
         + "\n"

@@ -33,6 +33,7 @@ Bridge is dormant unless the game is launched with `--agent-mode`.
 - `prompts/evaluator.md` — Opus harshness-tuned system prompt (Mode A + Mode B)
 - `lib/negotiation_state.py`, `negotiation_loop.py`, `contract_lock.py`, `contract_hash.py`, `contract_template.py`, `pre_grade_calibration.py`, `claude_agents.py`, `init_negotiation.sh`, `run_evaluator_phase_b.sh` — coordination layer
 - `test/smoke_negotiation.sh` — end-to-end dry-run
+- `lib/audit_log.py` — gitignored process audit logs (`events.jsonl`, `audit.md`, contract turn snapshots)
 - `prompts/generator.md` — augmented with Phase A round-aware directives
 - `run_generator.sh` — accepts `--round N` for Phase A single-turn invocation
 
@@ -50,6 +51,13 @@ Phase A agent selection is controlled by `NEGOTIATION_AGENT_MODE`:
 - `scripted` — deterministic local contract agreement; no LLM, no provider.
 - `command` — invoke `GENERATOR_PHASE_A_CMD` / `EVALUATOR_PHASE_A_CMD` with `HARNESS_CONTRACT`, `HARNESS_GOAL`, `HARNESS_ROUND`, etc. in the environment.
 - `claude` — legacy Claude CLI wrappers. This is opt-in, not required for dry-runs.
+
+Each run writes gitignored audit artifacts under `harness/runs/<run-id>/`:
+
+- `events.jsonl` — structured process events across planner/orchestration phases.
+- `audit.md` — Slack-friendly readable summary.
+- `sprint_<N>/agent_turns.jsonl` — per-sprint agent activity.
+- `sprint_<N>/contract_turns/round_XX_<agent>.md` — contract snapshots after each negotiation turn.
 
 ### Quick start (dry-run smoke)
 
