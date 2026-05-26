@@ -1,0 +1,14 @@
+{
+  "verdict": "REJECT",
+  "total": 42.0,
+  "max_total": 84.0,
+  "per_axis": {},
+  "floor_violations": [
+    "decision-density"
+  ],
+  "test_pass": true,
+  "trace_pass": true,
+  "notes": [
+    "floor violations on: decision-density"
+  ]
+}

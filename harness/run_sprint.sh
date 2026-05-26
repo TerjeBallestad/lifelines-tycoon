@@ -15,7 +15,7 @@
 #
 # Usage:
 #   run_sprint.sh --run-id <id> --sprint <N> --goal-file <path> --touch-surface <path>
-#                 [--max-rounds N] [--skip-eval-phase-b] [--dry-run]
+#                 [--max-rounds N] [--base-sha <sha>] [--skip-eval-phase-b] [--dry-run]
 set -euo pipefail
 
 RUN_ID=""
@@ -25,6 +25,7 @@ TOUCH_FILE=""
 MAX_ROUNDS=5
 SKIP_PHASE_B=0
 DRY_RUN=0
+BASE_SHA=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,6 +34,7 @@ while [[ $# -gt 0 ]]; do
     --goal-file)         GOAL_FILE="$2"; shift 2 ;;
     --touch-surface)     TOUCH_FILE="$2"; shift 2 ;;
     --max-rounds)        MAX_ROUNDS="$2"; shift 2 ;;
+    --base-sha)          BASE_SHA="$2"; shift 2 ;;
     --skip-eval-phase-b) SKIP_PHASE_B=1; shift ;;
     --dry-run)           DRY_RUN=1; shift ;;
     -h|--help)           grep '^# ' "$0" | sed 's/^# \?//'; exit 0 ;;
@@ -116,6 +118,7 @@ GENERATOR_LIVE="$EVALUATOR_LIVE" ./harness/run_generator.sh \
   --sprint "$SPRINT" \
   --goal-file "$SPRINT_DIR/goal.md" \
   --touch-surface "$SPRINT_DIR/touch_surface.allow" \
+  --base-sha "$BASE_SHA" \
   || { echo "[run_sprint] generator implementation failed" >&2; exit 3; }
 
 if [[ "$SKIP_PHASE_B" -eq 1 ]]; then

@@ -1,6 +1,6 @@
 # Harness — Adversarial Agent Loop
 
-Plan 1 of 6 from `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md`.
+Plans 1–7 from `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md`.
 
 This directory holds the orchestration + comms layer that drives the Lifelines economy prototype from external agents.
 
@@ -13,7 +13,7 @@ This directory holds the orchestration + comms layer that drives the Lifelines e
 | 3 | Generator agent + worktree loop | ✅ done |
 | 4 | Evaluator + strategy tournament | ✅ done |
 | 5 | Evaluator agent + Phase A negotiation | ✅ done |
-| 6 | Planner + orchestrator + report.html | pending |
+| 6 | Planner + orchestrator + report.html | ✅ done |
 | 7 | Meta-evaluation | pending |
 
 ## What's in Plan 1
@@ -55,11 +55,38 @@ EVALUATOR_LIVE=1 ./harness/run_sprint.sh \
 ./harness/test/smoke_negotiation.sh
 ```
 
-### Known limitations (Plan 6 follow-up)
+## What's in Plan 6
 
-- No planner agent yet: `run_sprint.sh` requires an operator-authored `goal.md` and `touch_surface.allow`. Plan 6 will produce these from a higher-level user prompt.
-- No multi-sprint orchestration. `run_sprint.sh` runs one sprint per invocation.
-- No `report.html`. Plan 7 renders the artifacts in `harness/runs/<run-id>/` into a single-file viewer.
+- `run.sh` — run-level planner/orchestrator/report CLI.
+- `prompts/planner.md` — sprint decomposition prompt.
+- `lib/planner_schema.py` — validates `sprint_list.md`.
+- `lib/planner_agent.py` — live/shimmed planner wrapper.
+- `lib/run_state.py` — resumable run state.
+- `lib/run_orchestrator.py` — sequential sprint loop around `run_sprint.sh`.
+- `lib/git_integration.py` — PASS cherry-pick/archive helpers.
+- `lib/report_renderer.py` — static `report.html` + `final.md`.
+- `test/smoke_run.sh` — end-to-end dry-run.
+
+### Quick start — Plan 6
+
+```bash
+# Dry-run smoke
+./harness/test/smoke_run.sh
+
+# Real harness run
+PLANNER_LIVE=1 GENERATOR_LIVE=1 NEGOTIATION_LIVE=1 EVALUATOR_LIVE=1 ./harness/run.sh \
+  "Improve day-one decision density without adding UI."
+
+# Resume
+./harness/run.sh --resume <run-id>
+
+# Re-grade one sprint
+./harness/run.sh --replay <run-id> <sprint-N>
+```
+
+Useful flags: `--planner-shim <file>`, `--run-id <id>`, `--max-pivots N`, `--no-open`, `--resume <id>`, `--replay <id> <sprint-N>`. Create `harness/.kill` to stop before the next sprint.
+
+Plan 6 treats live agent execution as configurable. Dry-run and shimmed execution are first-class, and the planner wrapper fails early if its configured live command is unavailable. A `PIVOT` or `FORCE_PIVOT` writes `replan_context.md` and halts for an operator/planner edit rather than pretending to auto-retry stale sprint artifacts.
 
 ## Quick start
 
@@ -111,7 +138,7 @@ See `autoload/agent_bridge.gd` for the canonical handler list and `harness/lib/t
 
 ## What's NOT in Plan 1
 
-LLM-driven strategy player, planner, generator, evaluator, contract negotiation, rubric anchors, orchestrator, report.html. See `docs/superpowers/specs/2026-05-20-adversarial-harness-design.md` §11 for upcoming plans.
+Plan 1 intentionally excludes the later agent stack: rubric anchors, generator/evaluator agents, contract negotiation, planner, orchestrator, and reports. Those landed across Plans 2–6; see the status table above.
 
 ## What's in Plan 2
 
@@ -186,7 +213,7 @@ Cost-control flags on `run_evaluator.sh`: `--strategies`, `--seeds`, `--skip-fre
 
 ### What's NOT in Plan 4
 
-Contract negotiation (Phase A — Plan 5), orchestrating evaluator agent (Opus driving the script — Plan 5), planner sprint decomposition (Plan 5), `report.html` (Plan 5), meta-evaluation regressions (Plan 6).
+Contract negotiation (Phase A — Plan 5), run-level planner/orchestrator/report flow (Plan 6), and meta-evaluation regressions (Plan 7).
 
 ## Spec coverage — Plan 4
 

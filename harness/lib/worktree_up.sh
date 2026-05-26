@@ -2,10 +2,10 @@
 # Create an isolated worktree for one sprint.
 #
 # Usage:
-#   worktree_up.sh <run-id> <sprint-N> <touch-surface-allowlist-path>
+#   worktree_up.sh <run-id> <sprint-N> <touch-surface-allowlist-path> [base-sha]
 #
 # Effect:
-#   - Creates branch `harness/<run-id>/sprint_<N>` off main HEAD if missing.
+#   - Creates branch `harness/<run-id>/sprint_<N>` off the supplied base SHA if missing.
 #   - Adds worktree at `.worktrees/harness/<run-id>/sprint_<N>/`.
 #   - Installs pre-commit hooks via install_worktree_hooks.sh.
 #   - Symlinks the *primary repo's* `harness/runs/<run-id>` into the worktree at
@@ -15,9 +15,10 @@
 
 set -euo pipefail
 
-RUN_ID="${1:?usage: worktree_up.sh <run-id> <sprint-N> <allowlist>}"
-SPRINT_N="${2:?usage: worktree_up.sh <run-id> <sprint-N> <allowlist>}"
-ALLOWLIST="${3:?usage: worktree_up.sh <run-id> <sprint-N> <allowlist>}"
+RUN_ID="${1:?usage: worktree_up.sh <run-id> <sprint-N> <allowlist> [base-sha]}"
+SPRINT_N="${2:?usage: worktree_up.sh <run-id> <sprint-N> <allowlist> [base-sha]}"
+ALLOWLIST="${3:?usage: worktree_up.sh <run-id> <sprint-N> <allowlist> [base-sha]}"
+BASE_SHA="${4:-}"
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE_REL=".worktrees/harness/${RUN_ID}/sprint_${SPRINT_N}"
@@ -37,8 +38,10 @@ if [ -d "$WORKTREE_ABS" ]; then
     exit 0
 fi
 
-# Branch off main (not the current branch — the orchestrator may have its own work).
-BASE_SHA=$(git rev-parse main)
+# Branch off the run's recorded base. Standalone Plan 3 use falls back to main.
+if [ -z "$BASE_SHA" ]; then
+    BASE_SHA=$(git rev-parse main)
+fi
 
 mkdir -p "$(dirname "$WORKTREE_ABS")"
 if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
