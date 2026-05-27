@@ -38,6 +38,10 @@ func test_snapshot_economy_capacity() -> void:
 	var e: Dictionary = snap["economy"]
 	assert_true(e.has("capacity_current"))
 	assert_true(e.has("capacity_max"))
+	assert_true(e.has("resources"))
+	assert_eq(e["resources"].get("trust"), 1.0)
+	assert_eq(e["resources"].get("dice"), 1.0)
+	assert_eq(e["resources"].get("knowledge"), 0.0)
 
 func test_snapshot_catalog_has_available_lists() -> void:
 	var snap: Dictionary = bridge.build_snapshot()
@@ -49,3 +53,22 @@ func test_snapshot_catalog_has_available_lists() -> void:
 	assert_eq(typeof(cat["diagnostics_available"]), TYPE_ARRAY)
 	assert_eq(typeof(cat["away_actions_available"]), TYPE_ARRAY)
 	assert_eq(typeof(cat["schedule_pending"]), TYPE_ARRAY)
+
+func test_phone_practice_catalog_exposes_visible_resource_arbitrage() -> void:
+	World.case_file.tags[&"skill_gap:phone"] = true
+	World.case_file.tags[&"trauma:strangers"] = true
+	bridge.reveal_hidden = false
+	var snap: Dictionary = bridge.build_snapshot()
+	var phone := _find_catalog_item(snap["catalog"]["interventions_available"], "int_phone_practice")
+	assert_false(phone.is_empty())
+	assert_eq(phone["resource_costs"].get("trust"), 2.0)
+	assert_eq(phone["resource_costs"].get("dice"), 1.0)
+	assert_eq(phone["resource_effects"].get("knowledge"), 2.0)
+	assert_true(bool(phone.get("affordable", false)))
+	assert_false(phone.has("hidden_resource_subsidies"))
+
+func _find_catalog_item(items: Array, id: String) -> Dictionary:
+	for item: Dictionary in items:
+		if String(item.get("id", "")) == id:
+			return item
+	return {}

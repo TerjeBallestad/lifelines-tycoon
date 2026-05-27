@@ -118,8 +118,14 @@ func _run_intervention_impl(i: Intervention) -> bool:
     if client.overskudd < i.overskudd_cost:
         EventBus.action_failed.emit(&"client_refuses")
         return false
+    if not economy.can_spend_resources(i.resource_costs, i.hidden_resource_subsidies):
+        EventBus.action_failed.emit(&"no_resources")
+        return false
     economy.spend(i.caseworker_cost)
     client.overskudd = max(0.0, client.overskudd - i.overskudd_cost)
+    var resource_delta := economy.apply_resource_delta(i.resource_costs, i.resource_effects, i.hidden_resource_subsidies, i.hidden_resource_effects)
+    if not resource_delta.is_empty():
+        EventBus.economy_resources_changed.emit(economy.resources.duplicate(true), resource_delta, i.id)
     for k: StringName in i.needs_effects.keys():
         var cur: float = client.needs.get(k, 0.0)
         client.needs[k] = clamp(cur + float(i.needs_effects[k]), 0.0, 1.0)

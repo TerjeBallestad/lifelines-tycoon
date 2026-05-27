@@ -171,6 +171,37 @@ func test_multiple_away_actions_accumulate_return_report() -> void:
 	assert_gte(report.get("changes", []).size(), 3)
 	assert_eq(report.get("cause_ids", []).size(), 2)
 
+func test_intervention_resource_arbitrage_uses_hidden_subsidy() -> void:
+	watch_signals(EventBus)
+	w.economy.resources = {&"trust": 1.0, &"dice": 1.0, &"knowledge": 0.0}
+	var i := _make_int(&"i_phone", 1.0, 10.0, [], {}, {&"phone": 1})
+	i.resource_costs = {&"trust": 2.0, &"dice": 1.0}
+	i.hidden_resource_subsidies = {&"trust": 1.0}
+	i.resource_effects = {&"knowledge": 2.0}
+
+	assert_true(w._run_intervention_impl(i))
+	assert_almost_eq(w.economy.resources[&"trust"], 0.0, 0.0001)
+	assert_almost_eq(w.economy.resources[&"dice"], 0.0, 0.0001)
+	assert_almost_eq(w.economy.resources[&"knowledge"], 2.0, 0.0001)
+	assert_eq(w.client.skills[&"phone"], 1)
+	assert_signal_emitted_with_parameters(EventBus, "economy_resources_changed", [w.economy.resources, {&"trust": -1.0, &"dice": -1.0, &"knowledge": 2.0}, &"i_phone"])
+
+func test_intervention_resource_shortage_fails_before_mutation() -> void:
+	watch_signals(EventBus)
+	w.economy.resources = {&"trust": 1.0, &"dice": 1.0, &"knowledge": 0.0}
+	var before_capacity: float = w.economy.capacity_current
+	var i := _make_int(&"i_phone", 1.0, 10.0, [], {}, {&"phone": 1})
+	i.resource_costs = {&"trust": 2.0, &"dice": 1.0}
+	i.resource_effects = {&"knowledge": 2.0}
+
+	assert_false(w._run_intervention_impl(i))
+	assert_almost_eq(w.economy.capacity_current, before_capacity, 0.0001)
+	assert_almost_eq(w.economy.resources[&"trust"], 1.0, 0.0001)
+	assert_almost_eq(w.economy.resources[&"dice"], 1.0, 0.0001)
+	assert_almost_eq(w.economy.resources[&"knowledge"], 0.0, 0.0001)
+	assert_eq(w.client.skills.get(&"phone", 0), 0)
+	assert_signal_emitted_with_parameters(EventBus, "action_failed", [&"no_resources"])
+
 func _joined(values: Array) -> String:
 	var out := ""
 	for value: Variant in values:

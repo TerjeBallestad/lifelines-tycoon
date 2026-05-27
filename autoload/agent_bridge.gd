@@ -72,6 +72,7 @@ func _economy_snapshot() -> Dictionary:
 	return {
 		"capacity_current": e.capacity_current,
 		"capacity_max": e.capacity_max,
+		"resources": _stringify_dict_keys(e.resources),
 	}
 
 func _catalog_snapshot() -> Dictionary:
@@ -86,13 +87,19 @@ func _catalog_snapshot() -> Dictionary:
 		})
 	var intervs: Array = []
 	for i: Intervention in Catalog.available_interventions(World.case_file):
-		intervs.append({
+		var item := {
 			"id": String(i.id),
 			"label": i.label,
 			"gate_met": true,
-			"affordable": World.economy.can_spend(i.caseworker_cost) and World.client.overskudd >= i.overskudd_cost,
+			"affordable": World.economy.can_spend(i.caseworker_cost) and World.client.overskudd >= i.overskudd_cost and World.economy.can_spend_resources(i.resource_costs, i.hidden_resource_subsidies),
 			"costs": {"hours": i.caseworker_cost, "overskudd": i.overskudd_cost},
-		})
+			"resource_costs": _stringify_dict_keys(i.resource_costs),
+			"resource_effects": _stringify_dict_keys(i.resource_effects),
+		}
+		if reveal_hidden:
+			item["hidden_resource_subsidies"] = _stringify_dict_keys(i.hidden_resource_subsidies)
+			item["hidden_resource_effects"] = _stringify_dict_keys(i.hidden_resource_effects)
+		intervs.append(item)
 	return {
 		"diagnostics_available": diags,
 		"interventions_available": intervs,
@@ -214,6 +221,7 @@ func start_event_capture() -> void:
 	EventBus.day_ended.connect(_on_day_ended)
 	EventBus.overskudd_changed.connect(_on_overskudd_changed)
 	EventBus.caseworker_capacity_changed.connect(_on_capacity_changed)
+	EventBus.economy_resources_changed.connect(_on_economy_resources_changed)
 	EventBus.case_file_updated.connect(_on_case_file_updated)
 	EventBus.diagnostic_completed.connect(_on_diagnostic_completed)
 	EventBus.intervention_completed.connect(_on_intervention_completed)
@@ -229,6 +237,7 @@ func stop_event_capture() -> void:
 	EventBus.day_ended.disconnect(_on_day_ended)
 	EventBus.overskudd_changed.disconnect(_on_overskudd_changed)
 	EventBus.caseworker_capacity_changed.disconnect(_on_capacity_changed)
+	EventBus.economy_resources_changed.disconnect(_on_economy_resources_changed)
 	EventBus.case_file_updated.disconnect(_on_case_file_updated)
 	EventBus.diagnostic_completed.disconnect(_on_diagnostic_completed)
 	EventBus.intervention_completed.disconnect(_on_intervention_completed)
@@ -256,6 +265,14 @@ func _on_overskudd_changed(client_id: StringName, v: float) -> void:
 
 func _on_capacity_changed(current: float, max_val: float) -> void:
 	_push_event({"ev": "caseworker_capacity_changed", "current": current, "max": max_val})
+
+func _on_economy_resources_changed(resources: Dictionary, delta: Dictionary, source_id: StringName) -> void:
+	_push_event({
+		"ev": "economy_resources_changed",
+		"resources": _stringify_dict_keys(resources),
+		"delta": _stringify_dict_keys(delta),
+		"source_id": String(source_id),
+	})
 
 func _on_case_file_updated(entry_id: StringName) -> void:
 	_push_event({"ev": "case_file_updated", "entry": String(entry_id)})

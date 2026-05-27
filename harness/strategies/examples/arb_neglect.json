@@ -1,0 +1,10 @@
+{
+  "name": "arb_neglect",
+  "description": "Does no care/resource-arbitrage work; advances time as a dumb baseline.",
+  "default": {"op": "snapshot"},
+  "checkpoints": [
+    {"at": {"d": 1, "h": 0.0}, "ops": [{"op": "advance", "game_hours": 6.0}]},
+    {"at": {"d": 1, "h": 6.0}, "ops": [{"op": "advance", "game_hours": 6.0}]}
+  ],
+  "stop_at": {"d": 1, "h": 12.0}
+}

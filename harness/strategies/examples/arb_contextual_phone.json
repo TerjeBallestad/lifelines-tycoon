@@ -1,0 +1,11 @@
+{
+  "name": "arb_contextual_phone",
+  "description": "Creates one away-time phone clue, returns promptly, then spends the unlocked teach-phone moment tiltak.",
+  "default": {"op": "snapshot"},
+  "checkpoints": [
+    {"at": {"d": 1, "h": 0.0}, "ops": [{"op": "away", "id": "desk_nav_backlog"}]},
+    {"at": {"d": 1, "h": 3.0}, "ops": [{"op": "return"}]},
+    {"at": {"d": 1, "h": 3.1}, "ops": [{"op": "interv", "id": "int_phone_practice"}]}
+  ],
+  "stop_at": {"d": 1, "h": 5.0}
+}

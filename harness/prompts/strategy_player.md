@@ -8,6 +8,8 @@ You drive the Lifelines economy prototype through its `--agent-mode` bridge. Eac
 {"op": "snapshot"}
 {"op": "diag", "id": "<diagnostic_id>"}
 {"op": "interv", "id": "<intervention_id>"}
+{"op": "away", "id": "<away_action_id>"}
+{"op": "return"}
 {"op": "advance", "game_hours": <float>}
 {"op": "set_speed", "scale": <float>}
 {"op": "shutdown"}

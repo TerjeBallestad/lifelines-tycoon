@@ -15,10 +15,14 @@ KNOWN_EVENT_TYPES = (
     "day_ended",
     "overskudd_changed",
     "caseworker_capacity_changed",
+    "economy_resources_changed",
     "case_file_updated",
     "diagnostic_completed",
     "intervention_completed",
+    "away_action_completed",
+    "return_report_ready",
     "action_failed",
+    "narration",
 )
 
 
