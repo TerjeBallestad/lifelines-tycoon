@@ -12,6 +12,8 @@ func _ready() -> void:
 	EventBus.day_ended.connect(_on_day_ended)
 	EventBus.diagnostic_completed.connect(func(id: StringName) -> void: _log("✓ Diagnostic: %s" % id))
 	EventBus.intervention_completed.connect(func(id: StringName) -> void: _log("✓ Intervention: %s" % id))
+	EventBus.away_action_completed.connect(func(id: StringName) -> void: _log("↷ Away action: %s" % id))
+	EventBus.return_report_ready.connect(_on_return_report_ready)
 	EventBus.case_file_updated.connect(func(id: StringName) -> void: _log("📓 Case file: %s" % id))
 	EventBus.action_failed.connect(func(reason: StringName) -> void: _log("⚠ Action failed: %s" % reason))
 	_refresh_header()
@@ -30,6 +32,14 @@ func _on_day_started(day: int) -> void:
 
 func _on_day_ended(day: int) -> void:
 	_log("— End of day %d —" % day)
+
+func _on_return_report_ready(report: Dictionary) -> void:
+	_log("⌂ Return report")
+	for change: Variant in report.get("changes", []):
+		_log("  - %s" % String(change))
+	var next_decision := String(report.get("next_decision", ""))
+	if next_decision != "":
+		_log("  → %s" % next_decision)
 
 func _log(line: String) -> void:
 	action_log.append_text(line + "\n")

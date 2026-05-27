@@ -62,3 +62,16 @@ func test_schedule_queue_returns_due_items_without_frame_process() -> void:
 	assert_eq(due.size(), 1)
 	assert_eq(due[0].id, item.id)
 	assert_eq(queue.pending_count(&"apartment"), 0)
+
+func test_schedule_queue_drains_overdue_items_on_next_window() -> void:
+	var c := ScheduledConsequence.new()
+	c.id = &"late_consequence"
+	c.domain = &"apartment"
+	c.due_after_hours = 2.0
+
+	var queue := ScheduleQueue.new()
+	queue.schedule_consequence_after(0.0, c, &"test_source")
+	var due := queue.due_between(&"apartment", 3.0, 6.0)
+	assert_eq(due.size(), 1)
+	assert_eq(due[0].consequence_id, &"late_consequence")
+	assert_eq(queue.pending_count(&"apartment"), 0)

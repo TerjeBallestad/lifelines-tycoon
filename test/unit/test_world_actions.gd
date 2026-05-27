@@ -148,6 +148,29 @@ func test_away_action_advances_time_and_returns_due_consequence_delta() -> void:
 	var second_report: Dictionary = w.return_to_apartment()
 	assert_false(bool(second_report.get("has_delta", true)))
 
+func test_overdue_scheduled_consequence_resolves_on_next_away_action() -> void:
+	Clock.advance(3.0)
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 1)
+
+	var ok: bool = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 0)
+	var report: Dictionary = w.return_to_apartment()
+	assert_eq(report.get("events", []).size(), 1)
+	assert_eq(String(report.get("events", [])[0].get("id", "")), "apt_phone_window")
+
+func test_multiple_away_actions_accumulate_return_report() -> void:
+	var ok: bool = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+	ok = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+
+	var report: Dictionary = w.return_to_apartment()
+	assert_almost_eq(float(report.get("away_hours", 0.0)), 6.0, 0.001)
+	assert_eq(report.get("events", []).size(), 1)
+	assert_gte(report.get("changes", []).size(), 3)
+	assert_eq(report.get("cause_ids", []).size(), 2)
+
 func _joined(values: Array) -> String:
 	var out := ""
 	for value: Variant in values:

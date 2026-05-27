@@ -54,7 +54,9 @@ func _run_away_action_impl(action: AwayAction) -> bool:
     Sim.advance_away_time(action.away_hours)
     var events := _resolve_due_consequences(action.domain, start_hour, Clock.total_game_hours)
     var pending := _pending_schedule_preview(action.domain)
-    _pending_return_report = _build_return_report(action, before, _snapshot_for_report(), events, pending)
+    var report := _build_return_report(action, before, _snapshot_for_report(), events, pending)
+    _pending_return_report = _merge_return_reports(_pending_return_report, report)
+    EventBus.away_action_completed.emit(action.id)
     return true
 
 func return_to_apartment() -> Dictionary:
@@ -69,6 +71,7 @@ func return_to_apartment() -> Dictionary:
         }
     var report := _pending_return_report.duplicate(true)
     _pending_return_report = {}
+    EventBus.return_report_ready.emit(report)
     return report
 
 func try_run_diagnostic(id: StringName) -> bool:
@@ -197,6 +200,7 @@ func _build_return_report(action: AwayAction, before: Dictionary, after: Diction
     return {
         "has_delta": true,
         "cause_id": String(action.id),
+        "cause_ids": [String(action.id)],
         "away_hours": action.away_hours,
         "domain": String(action.domain),
         "events": events.duplicate(true),
@@ -205,6 +209,28 @@ func _build_return_report(action: AwayAction, before: Dictionary, after: Diction
         "why": action.report_why,
         "next_decision": action.next_decision_hint,
     }
+
+func _merge_return_reports(existing: Dictionary, incoming: Dictionary) -> Dictionary:
+    if existing.is_empty() or not bool(existing.get("has_delta", false)):
+        return incoming.duplicate(true)
+    var merged := existing.duplicate(true)
+    var cause_ids: Array = merged.get("cause_ids", [])
+    if cause_ids.is_empty() and merged.has("cause_id"):
+        cause_ids.append(String(merged.get("cause_id", "")))
+    for cause_id: Variant in incoming.get("cause_ids", [incoming.get("cause_id", "")]):
+        cause_ids.append(String(cause_id))
+    merged["cause_ids"] = cause_ids
+    merged["cause_id"] = String(cause_ids[cause_ids.size() - 1])
+    merged["away_hours"] = float(merged.get("away_hours", 0.0)) + float(incoming.get("away_hours", 0.0))
+    var changes: Array = merged.get("changes", [])
+    changes.append_array(incoming.get("changes", []))
+    merged["changes"] = changes
+    var events: Array = merged.get("events", [])
+    events.append_array(incoming.get("events", []))
+    merged["events"] = events
+    merged["pending"] = incoming.get("pending", []).duplicate(true)
+    merged["next_decision"] = incoming.get("next_decision", merged.get("next_decision", ""))
+    return merged
 
 func _snapshot_for_report() -> Dictionary:
     return {

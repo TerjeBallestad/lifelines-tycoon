@@ -44,4 +44,8 @@ func test_snapshot_catalog_has_available_lists() -> void:
 	var cat: Dictionary = snap["catalog"]
 	assert_true(cat.has("diagnostics_available"))
 	assert_true(cat.has("interventions_available"))
+	assert_true(cat.has("away_actions_available"))
+	assert_true(cat.has("schedule_pending"))
 	assert_eq(typeof(cat["diagnostics_available"]), TYPE_ARRAY)
+	assert_eq(typeof(cat["away_actions_available"]), TYPE_ARRAY)
+	assert_eq(typeof(cat["schedule_pending"]), TYPE_ARRAY)

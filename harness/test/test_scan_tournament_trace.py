@@ -90,6 +90,27 @@ class TestEvaluateRule(unittest.TestCase):
             result = evaluate_rule(rule, [events])
             self.assertTrue(result.passed)
             self.assertEqual(result.observed, 1)
+    def test_gameplay_every_rule_ignores_process_audit_events_file(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            gameplay = Path(td) / "strategy_trace.jsonl"
+            audit = Path(td) / "events.jsonl"
+            gameplay.write_text(json.dumps({"ev": "diagnostic_completed", "id": "diag_a"}) + "\n")
+            audit.write_text(json.dumps({"event": "phase_a_agreed", "sprint": 1}) + "\n")
+            rule = parse_trace_rule("in every strategy: events where ev=diagnostic_completed count >= 1")
+            result = evaluate_rule(rule, [gameplay, audit])
+            self.assertTrue(result.passed)
+            self.assertEqual(result.per_trace, {"strategy_trace": 1})
+
+    def test_process_event_rule_ignores_gameplay_trace_files(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            gameplay = Path(td) / "strategy_trace.jsonl"
+            audit = Path(td) / "events.jsonl"
+            gameplay.write_text(json.dumps({"ev": "diagnostic_completed", "id": "diag_a"}) + "\n")
+            audit.write_text(json.dumps({"event": "phase_a_agreed", "sprint": 1}) + "\n")
+            rule = parse_trace_rule("events where event=phase_a_agreed count >= 1")
+            result = evaluate_rule(rule, [gameplay, audit])
+            self.assertTrue(result.passed)
+            self.assertEqual(result.per_trace, {"events": 1})
 
 
 class TestRunAll(unittest.TestCase):

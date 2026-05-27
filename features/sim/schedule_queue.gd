@@ -35,7 +35,7 @@ func due_between(domain: StringName, start_hours: float, end_hours: float) -> Ar
     var due: Array[ScheduledItem] = []
     var pending: Array[ScheduledItem] = []
     for item: ScheduledItem in _items:
-        if item.domain == domain and item.due_at_hours > start_hours and item.due_at_hours <= end_hours:
+        if item.domain == domain and item.due_at_hours <= end_hours:
             due.append(item)
         else:
             pending.append(item)

@@ -83,8 +83,15 @@ def _event_matches(obj: dict, flt: dict[str, str]) -> bool:
     return True
 
 
-def _count_events(trace_path: Path, flt: dict[str, str]) -> int:
-    n = 0
+def _primary_event_field(flt: dict[str, str]) -> str | None:
+    if "ev" in flt:
+        return "ev"
+    if "event" in flt:
+        return "event"
+    return None
+
+
+def _iter_event_objects(trace_path: Path):
     with trace_path.open() as fh:
         for line in fh:
             line = line.strip()
@@ -98,8 +105,21 @@ def _count_events(trace_path: Path, flt: dict[str, str]) -> int:
                 continue
             if "ev" not in obj and "event" not in obj:
                 continue
-            if _event_matches(obj, flt):
-                n += 1
+            yield obj
+
+
+def _trace_uses_vocabulary(trace_path: Path, flt: dict[str, str]) -> bool:
+    primary = _primary_event_field(flt)
+    if primary is None:
+        return True
+    return any(primary in obj for obj in _iter_event_objects(trace_path))
+
+
+def _count_events(trace_path: Path, flt: dict[str, str]) -> int:
+    n = 0
+    for obj in _iter_event_objects(trace_path):
+        if _event_matches(obj, flt):
+            n += 1
     return n
 
 
@@ -137,8 +157,9 @@ class RuleResult:
 
 
 def evaluate_rule(rule: TraceRule, trace_files: list[Path]) -> RuleResult:
+    relevant_files = [tf for tf in trace_files if _trace_uses_vocabulary(tf, rule.event_filter)]
     per_trace: dict[str, int] = {}
-    for tf in trace_files:
+    for tf in relevant_files:
         per_trace[tf.stem] = _count_events(tf, rule.event_filter)
     if rule.quantifier == Quantifier.ANY:
         observed = max(per_trace.values()) if per_trace else 0

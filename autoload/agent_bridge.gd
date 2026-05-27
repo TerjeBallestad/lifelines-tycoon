@@ -96,7 +96,22 @@ func _catalog_snapshot() -> Dictionary:
 	return {
 		"diagnostics_available": diags,
 		"interventions_available": intervs,
+		"away_actions_available": _away_actions_snapshot(),
+		"schedule_pending": World._pending_schedule_preview(&"apartment"),
 	}
+
+func _away_actions_snapshot() -> Array:
+	var actions: Array = []
+	for a: AwayAction in Catalog.away_actions.values():
+		actions.append({
+			"id": String(a.id),
+			"label": a.label,
+			"affordable": World.economy.can_spend(a.caseworker_cost),
+			"costs": {"hours": a.caseworker_cost},
+			"away_hours": a.away_hours,
+			"domain": String(a.domain),
+		})
+	return actions
 
 # ---------------------------------------------------------------- helpers
 
@@ -123,6 +138,10 @@ func handle_command(cmd: Dictionary) -> Dictionary:
 			return _handle_diag(cmd)
 		"interv":
 			return _handle_interv(cmd)
+		"away":
+			return _handle_away(cmd)
+		"return":
+			return _handle_return(cmd)
 		"advance":
 			return _handle_advance(cmd)
 		"set_speed":
@@ -152,6 +171,19 @@ func _handle_interv(cmd: Dictionary) -> Dictionary:
 		return {"ok": false, "err": "unknown_id"}
 	var success: bool = World.try_assign_intervention(id_sn)
 	return {"ok": success}
+
+func _handle_away(cmd: Dictionary) -> Dictionary:
+	var id_str: String = String(cmd.get("id", ""))
+	if id_str == "":
+		return {"ok": false, "err": "missing_id"}
+	var id_sn: StringName = StringName(id_str)
+	if not Catalog.away_actions.has(id_sn):
+		return {"ok": false, "err": "unknown_id"}
+	var success: bool = World.try_run_away_action(id_sn)
+	return {"ok": success}
+
+func _handle_return(_cmd: Dictionary) -> Dictionary:
+	return {"ok": true, "report": World.return_to_apartment()}
 
 func _handle_set_speed(cmd: Dictionary) -> Dictionary:
 	var scale: float = float(cmd.get("scale", 0.0))
@@ -186,6 +218,8 @@ func start_event_capture() -> void:
 	EventBus.case_file_updated.connect(_on_case_file_updated)
 	EventBus.diagnostic_completed.connect(_on_diagnostic_completed)
 	EventBus.intervention_completed.connect(_on_intervention_completed)
+	EventBus.away_action_completed.connect(_on_away_action_completed)
+	EventBus.return_report_ready.connect(_on_return_report_ready)
 	EventBus.action_failed.connect(_on_action_failed)
 
 func stop_event_capture() -> void:
@@ -199,6 +233,8 @@ func stop_event_capture() -> void:
 	EventBus.case_file_updated.disconnect(_on_case_file_updated)
 	EventBus.diagnostic_completed.disconnect(_on_diagnostic_completed)
 	EventBus.intervention_completed.disconnect(_on_intervention_completed)
+	EventBus.away_action_completed.disconnect(_on_away_action_completed)
+	EventBus.return_report_ready.disconnect(_on_return_report_ready)
 	EventBus.action_failed.disconnect(_on_action_failed)
 
 func drain_events() -> Array:
@@ -230,6 +266,16 @@ func _on_diagnostic_completed(id: StringName) -> void:
 
 func _on_intervention_completed(id: StringName) -> void:
 	_push_event({"ev": "intervention_completed", "id": String(id)})
+
+func _on_away_action_completed(id: StringName) -> void:
+	_push_event({"ev": "away_action_completed", "id": String(id)})
+
+func _on_return_report_ready(report: Dictionary) -> void:
+	_push_event({
+		"ev": "return_report_ready",
+		"events": report.get("events", []).size(),
+		"away_hours": float(report.get("away_hours", 0.0)),
+	})
 
 func _on_action_failed(reason: StringName) -> void:
 	_push_event({"ev": "action_failed", "reason": String(reason)})
