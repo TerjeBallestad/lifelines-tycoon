@@ -109,14 +109,14 @@ func test_intervention_applies_cognitive_effects() -> void:
 	assert_true(w._run_intervention_impl(i))
 	assert_almost_eq(w.client.cognitive[&"willpower"], 0.6, 0.0001)
 
-func test_desk_backlog_advances_away_time_and_returns_apartment_delta() -> void:
-	assert_eq(w.scheduled_apartment_event_count(), 1)
+func test_away_action_advances_time_and_returns_due_consequence_delta() -> void:
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 1)
 
-	var ok: bool = w.try_process_desk_backlog()
+	var ok: bool = w.try_run_away_action(&"desk_nav_backlog")
 	assert_true(ok)
 	assert_almost_eq(Clock.total_game_hours, 3.0, 0.001)
 	assert_almost_eq(w.economy.capacity_current, 5.0, 0.001)
-	assert_eq(w.scheduled_apartment_event_count(), 0)
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 0)
 	assert_true(w.case_file.has_entry(&"obs_phone_unanswered"))
 	var phone_tags: Array[StringName] = [&"skill_gap:phone", &"trauma:strangers"]
 	assert_true(w.case_file.has_all_tags(phone_tags))
@@ -129,17 +129,18 @@ func test_desk_backlog_advances_away_time_and_returns_apartment_delta() -> void:
 
 	var report: Dictionary = w.return_to_apartment()
 	assert_true(bool(report.get("has_delta", false)))
-	assert_eq(String(report.get("cause_id", "")), String(w.DESK_BACKLOG_ACTION_ID))
-	assert_eq(report.get("away_hours", 0.0), w.DESK_BACKLOG_AWAY_HOURS)
+	assert_eq(String(report.get("cause_id", "")), "desk_nav_backlog")
+	assert_eq(report.get("away_hours", 0.0), 3.0)
+	assert_eq(String(report.get("domain", "")), "apartment")
 
 	var events: Array = report.get("events", [])
 	assert_eq(events.size(), 1)
-	assert_eq(String(events[0].get("id", "")), String(w.APARTMENT_PHONE_EVENT_ID))
+	assert_eq(String(events[0].get("id", "")), "apt_phone_window")
 
 	var report_text := _joined(report.get("changes", [])) + "\n" + String(report.get("why", "")) + "\n" + String(report.get("next_decision", ""))
 	assert_true(report_text.find("Phone unanswered") >= 0)
 	assert_true(report_text.find("desk") >= 0)
-	assert_true(report_text.find("Phone Call Practice") >= 0)
+	assert_true(report_text.find("home signal") >= 0)
 
 	var second_report: Dictionary = w.return_to_apartment()
 	assert_false(bool(second_report.get("has_delta", true)))

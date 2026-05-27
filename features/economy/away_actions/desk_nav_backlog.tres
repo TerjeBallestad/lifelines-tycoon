@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AwayAction" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/economy/away_action.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"desk_nav_backlog"
+label = "Process desk backlog"
+description = "Spend focused caseworker time at the office, while home consequences continue to unfold."
+caseworker_cost = 1.0
+away_hours = 3.0
+domain = &"apartment"
+report_why = "Scheduled apartment consequences came due while attention stayed at the desk."
+next_decision_hint = "Address the new home signal now, or keep caseworker time for diagnostics and risk more consequences landing unseen."
