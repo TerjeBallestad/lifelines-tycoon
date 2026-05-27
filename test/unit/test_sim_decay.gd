@@ -4,6 +4,7 @@ var sim: Node
 var w: Node
 
 func before_each() -> void:
+	Clock.reset()
 	sim = get_node("/root/Sim")
 	w = get_node("/root/World")
 	w.reset_for_test()
@@ -50,3 +51,26 @@ func test_day_boundary_refills_capacity() -> void:
 	sim._last_seen_day = Clock.day
 	Clock.advance(25.0)
 	assert_almost_eq(w.economy.capacity_current, w.economy.capacity_max, 0.0001)
+
+func test_clock_tick_applies_sim_decay_once() -> void:
+	var start_energy: float = w.client.needs[&"energy"]
+	Clock.advance(1.0)
+	var expected_energy: float = clamp(start_energy + w.decay.needs_per_hour[&"energy"], 0.0, 1.0)
+	assert_almost_eq(w.client.needs[&"energy"], expected_energy, 0.0001)
+
+func test_sim_start_uses_clock_as_only_live_process_authority() -> void:
+	assert_false(sim.is_processing())
+	sim.start()
+	assert_false(sim.is_processing())
+	assert_true(Clock.is_processing())
+	Clock._process(1.0)
+	sim.stop()
+	assert_almost_eq(Clock.total_game_hours, 24.0 / 60.0, 0.0001)
+
+func test_manual_advance_and_away_time_share_clock_tick_path() -> void:
+	var start_energy: float = w.client.needs[&"energy"]
+	Clock.advance(1.0)
+	Sim.advance_away_time(1.0)
+	var expected_energy: float = clamp(start_energy + w.decay.needs_per_hour[&"energy"] * 2.0, 0.0, 1.0)
+	assert_almost_eq(w.client.needs[&"energy"], expected_energy, 0.0001)
+	assert_almost_eq(Clock.total_game_hours, 2.0, 0.0001)

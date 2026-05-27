@@ -199,7 +199,6 @@ func _handle_advance(cmd: Dictionary) -> Dictionary:
 	if hrs == 0.0:
 		return {"ok": true}
 	Clock.advance(hrs)
-	Sim.apply_tick(hrs)
 	return {"ok": true}
 
 # ---------------------------------------------------------------- events

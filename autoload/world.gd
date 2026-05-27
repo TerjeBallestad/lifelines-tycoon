@@ -136,7 +136,6 @@ func _run_intervention_impl(i: Intervention) -> bool:
 func start_new_day(day: int) -> void:
     economy.refill_to_max()
     EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
-    EventBus.day_started.emit(day)
 
 func try_surface_observation() -> CaseEntry:
     var candidates: Array[CaseEntry] = Catalog.observation_candidates(client, case_file)

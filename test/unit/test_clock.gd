@@ -32,7 +32,10 @@ func test_advance_crosses_day_boundary_and_emits() -> void:
 	c.advance(25.0)
 	assert_eq(c.day, 2)
 	assert_almost_eq(c.hour_of_day, 1.0, 0.0001)
+	assert_signal_emitted_with_parameters(EventBus, "day_ended", [1])
 	assert_signal_emitted_with_parameters(EventBus, "day_started", [2])
+	assert_signal_emit_count(EventBus, "day_started", 1)
+	assert_signal_emitted_with_parameters(EventBus, "tick", [25.0])
 
 func test_pause_blocks_tick() -> void:
 	var c := _clock()
@@ -40,3 +43,22 @@ func test_pause_blocks_tick() -> void:
 	c.paused = true
 	var hrs: float = c.real_to_game_hours_when_unpaused(1.0)
 	assert_almost_eq(hrs, 0.0, 0.0001)
+
+func test_pause_and_speed_emit_local_clock_signals() -> void:
+	var c := _clock()
+	c.reset()
+	watch_signals(EventBus)
+	c.paused = true
+	c.time_scale = 3.0
+	assert_signal_emitted_with_parameters(EventBus, "pause_changed", [true])
+	assert_signal_emitted_with_parameters(EventBus, "speed_changed", [3.0])
+
+func test_live_process_advances_once_through_clock() -> void:
+	var c := _clock()
+	c.reset()
+	watch_signals(EventBus)
+	c.start()
+	c._process(1.0)
+	c.stop()
+	assert_almost_eq(c.total_game_hours, 24.0 / 60.0, 0.0001)
+	assert_signal_emit_count(EventBus, "tick", 1)
