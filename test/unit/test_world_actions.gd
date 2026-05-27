@@ -132,10 +132,13 @@ func test_away_action_advances_time_and_returns_due_consequence_delta() -> void:
 	assert_eq(String(report.get("cause_id", "")), "desk_nav_backlog")
 	assert_eq(report.get("away_hours", 0.0), 3.0)
 	assert_eq(String(report.get("domain", "")), "apartment")
+	assert_eq(report.get("pending", []).size(), 0)
 
 	var events: Array = report.get("events", [])
 	assert_eq(events.size(), 1)
 	assert_eq(String(events[0].get("id", "")), "apt_phone_window")
+	assert_eq(String(events[0].get("source_id", "")), "initial_schedule")
+	assert_almost_eq(float(events[0].get("due_at_hours", 0.0)), 2.0, 0.001)
 
 	var report_text := _joined(report.get("changes", [])) + "\n" + String(report.get("why", "")) + "\n" + String(report.get("next_decision", ""))
 	assert_true(report_text.find("Phone unanswered") >= 0)

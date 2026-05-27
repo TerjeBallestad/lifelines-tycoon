@@ -43,3 +43,22 @@ func test_scheduled_consequence_defaults() -> void:
 	assert_eq(c.id, &"consequence_test")
 	assert_eq(c.domain, &"apartment")
 	assert_eq(c.needs_effects[&"security"], -0.1)
+
+func test_schedule_queue_returns_due_items_without_frame_process() -> void:
+	var c := ScheduledConsequence.new()
+	c.id = &"consequence_test"
+	c.domain = &"apartment"
+	c.due_after_hours = 2.0
+
+	var queue := ScheduleQueue.new()
+	var item := queue.schedule_consequence_after(10.0, c, &"test_source")
+	assert_eq(item.consequence_id, &"consequence_test")
+	assert_eq(item.source_id, &"test_source")
+	assert_almost_eq(item.due_at_hours, 12.0, 0.001)
+	assert_eq(queue.pending_count(&"apartment"), 1)
+	assert_eq(queue.due_between(&"apartment", 10.0, 11.9).size(), 0)
+	assert_eq(queue.pending_count(&"apartment"), 1)
+	var due := queue.due_between(&"apartment", 10.0, 12.0)
+	assert_eq(due.size(), 1)
+	assert_eq(due[0].id, item.id)
+	assert_eq(queue.pending_count(&"apartment"), 0)

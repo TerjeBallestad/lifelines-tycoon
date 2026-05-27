@@ -7,7 +7,7 @@ var client: ClientState
 var case_file: CaseFile
 var economy: EconomyState
 var decay: ClientDecay
-var _scheduled_consequences: Array[Dictionary] = []
+var schedule_queue: ScheduleQueue
 var _pending_return_report: Dictionary = {}
 
 func _ready() -> void:
@@ -27,17 +27,11 @@ func reset_for_test() -> void:
     var loaded_decay := load(CLIENT_DECAY_PATH) as ClientDecay
     decay = loaded_decay if loaded_decay != null else ClientDecay.new()
     _pending_return_report = {}
-    _scheduled_consequences = _instantiate_consequences()
+    schedule_queue = ScheduleQueue.new()
+    _seed_initial_schedule()
 
 func scheduled_consequence_count(domain: StringName = &"") -> int:
-    if domain == &"":
-        return _scheduled_consequences.size()
-    var count := 0
-    for scheduled: Dictionary in _scheduled_consequences:
-        var consequence := scheduled.get("consequence") as ScheduledConsequence
-        if consequence != null and consequence.domain == domain:
-            count += 1
-    return count
+    return schedule_queue.pending_count(domain)
 
 func try_process_desk_backlog() -> bool:
     return try_run_away_action(&"desk_nav_backlog")
@@ -59,7 +53,8 @@ func _run_away_action_impl(action: AwayAction) -> bool:
     EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
     Sim.advance_away_time(action.away_hours)
     var events := _resolve_due_consequences(action.domain, start_hour, Clock.total_game_hours)
-    _pending_return_report = _build_return_report(action, before, _snapshot_for_report(), events)
+    var pending := _pending_schedule_preview(action.domain)
+    _pending_return_report = _build_return_report(action, before, _snapshot_for_report(), events, pending)
     return true
 
 func return_to_apartment() -> Dictionary:
@@ -68,6 +63,7 @@ func return_to_apartment() -> Dictionary:
             "has_delta": false,
             "changes": [],
             "events": [],
+            "pending": _pending_schedule_preview(&"apartment"),
             "why": "No away-time action has changed the apartment since the last return.",
             "next_decision": "Choose a desk action or inspect Elling at home before spending capacity.",
         }
@@ -147,30 +143,19 @@ func try_surface_observation() -> CaseEntry:
     EventBus.case_file_updated.emit(pick.id)
     return pick
 
-func _instantiate_consequences() -> Array[Dictionary]:
-    var scheduled: Array[Dictionary] = []
+func _seed_initial_schedule() -> void:
     for consequence: ScheduledConsequence in Catalog.consequences.values():
-        scheduled.append({
-            "id": consequence.id,
-            "due_at": Clock.total_game_hours + consequence.due_after_hours,
-            "consequence": consequence,
-        })
-    return scheduled
+        schedule_queue.schedule_consequence_after(Clock.total_game_hours, consequence, &"initial_schedule")
 
 func _resolve_due_consequences(domain: StringName, start_hour: float, end_hour: float) -> Array[Dictionary]:
     var resolved: Array[Dictionary] = []
-    var remaining: Array[Dictionary] = []
-    for scheduled: Dictionary in _scheduled_consequences:
-        var consequence := scheduled.get("consequence") as ScheduledConsequence
-        var due_at := float(scheduled.get("due_at", 0.0))
-        if consequence != null and consequence.domain == domain and due_at > start_hour and due_at <= end_hour:
-            resolved.append(_apply_consequence(consequence))
-        else:
-            remaining.append(scheduled)
-    _scheduled_consequences = remaining
+    for item: ScheduledItem in schedule_queue.due_between(domain, start_hour, end_hour):
+        var consequence := Catalog.consequences.get(item.consequence_id) as ScheduledConsequence
+        if consequence != null:
+            resolved.append(_apply_consequence(item, consequence))
     return resolved
 
-func _apply_consequence(consequence: ScheduledConsequence) -> Dictionary:
+func _apply_consequence(item: ScheduledItem, consequence: ScheduledConsequence) -> Dictionary:
     for k: StringName in consequence.needs_effects.keys():
         var cur: float = client.needs.get(k, 0.0)
         client.needs[k] = clamp(cur + float(consequence.needs_effects[k]), 0.0, 1.0)
@@ -181,12 +166,29 @@ func _apply_consequence(consequence: ScheduledConsequence) -> Dictionary:
         EventBus.case_file_updated.emit(entry.id)
     return {
         "id": String(consequence.id),
+        "scheduled_item_id": String(item.id),
+        "source_id": String(item.source_id),
+        "due_at_hours": item.due_at_hours,
         "title": consequence.label,
         "observation_id": String(observation_id),
         "summary": consequence.summary,
     }
 
-func _build_return_report(action: AwayAction, before: Dictionary, after: Dictionary, events: Array[Dictionary]) -> Dictionary:
+func _pending_schedule_preview(domain: StringName) -> Array[Dictionary]:
+    var pending: Array[Dictionary] = []
+    for item: ScheduledItem in schedule_queue.peek(domain, 3):
+        var consequence := Catalog.consequences.get(item.consequence_id) as ScheduledConsequence
+        pending.append({
+            "id": String(item.id),
+            "consequence_id": String(item.consequence_id),
+            "source_id": String(item.source_id),
+            "due_at_hours": item.due_at_hours,
+            "hours_from_now": max(0.0, item.due_at_hours - Clock.total_game_hours),
+            "title": consequence.label if consequence != null else String(item.consequence_id),
+        })
+    return pending
+
+func _build_return_report(action: AwayAction, before: Dictionary, after: Dictionary, events: Array[Dictionary], pending: Array[Dictionary]) -> Dictionary:
     var changes: Array[String] = [
         "Caseworker capacity %.1f -> %.1f." % [before.get("capacity", 0.0), after.get("capacity", 0.0)],
     ]
@@ -198,6 +200,7 @@ func _build_return_report(action: AwayAction, before: Dictionary, after: Diction
         "away_hours": action.away_hours,
         "domain": String(action.domain),
         "events": events.duplicate(true),
+        "pending": pending.duplicate(true),
         "changes": changes,
         "why": action.report_why,
         "next_decision": action.next_decision_hint,
