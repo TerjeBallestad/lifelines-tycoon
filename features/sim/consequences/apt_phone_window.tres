@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ScheduledConsequence" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/sim/scheduled_consequence.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"apt_phone_window"
+label = "Phone unanswered"
+domain = &"apartment"
+due_after_hours = 2.0
+needs_effects = {&"social": -0.04, &"security": -0.06}
+observation_id = &"obs_phone_unanswered"
+summary = "Phone unanswered: Elling watched the line ring out while you were away."

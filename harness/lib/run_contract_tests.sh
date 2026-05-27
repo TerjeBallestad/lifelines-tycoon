@@ -46,14 +46,14 @@ OUT="${SPRINT_DIR}/test_results.json"
 if [ ! -f "$CONTRACT" ]; then echo "run_contract_tests: missing contract.md: $CONTRACT" >&2; exit 2; fi
 
 # Extract [test] item bodies (one per line) using Plan 3's parser.
-python3 - "$CONTRACT" "$OUT" "$GODOT" "$PROJECT" <<PYEOF
+python3 - "$CONTRACT" "$OUT" "$GODOT" "$PROJECT" "$REPO_ROOT" <<'PYEOF'
 import json, re, subprocess, sys
 from pathlib import Path
 
-sys.path.insert(0, "${REPO_ROOT}/harness/lib")
+contract_path, out_path, godot, project, repo_root = sys.argv[1:6]
+sys.path.insert(0, str(Path(repo_root) / "harness" / "lib"))
 from contract_schema import parse_contract  # type: ignore
 
-contract_path, out_path, godot, project = sys.argv[1:5]
 contract = parse_contract(Path(contract_path).read_text())
 test_items = [(i, it) for i, it in enumerate(contract.items) if it.kind == "test"]
 

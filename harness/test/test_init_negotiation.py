@@ -96,6 +96,18 @@ class TestInitNegotiation(unittest.TestCase):
         cp = self._run("--force")
         self.assertEqual(cp.returncode, 0, cp.stderr)
 
+    def test_existing_identical_goal_and_allow_files_are_safe(self) -> None:
+        sprint_dir = self.cwd / "harness" / "runs" / "test-run" / "sprint_1"
+        sprint_dir.mkdir(parents=True)
+        (sprint_dir / "goal.md").write_text(GOAL_MD)
+        (sprint_dir / "touch_surface.allow").write_text(TOUCH_ALLOW)
+        self.goal = sprint_dir / "goal.md"
+        self.allow = sprint_dir / "touch_surface.allow"
+
+        cp = self._run()
+        self.assertEqual(cp.returncode, 0, cp.stderr)
+        self.assertTrue((sprint_dir / "contract.md").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

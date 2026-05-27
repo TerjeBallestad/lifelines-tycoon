@@ -19,6 +19,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Protocol
 
+from audit_log import append_event, snapshot_contract_turn
 from contract_hash import hash_contract_file
 from contract_lock import contract_lock
 from contract_schema import parse_contract, ContractSchemaError
@@ -91,10 +92,14 @@ class NegotiationLoop:
                     f"agent role mismatch: expected {actor.value}, got {agent.role.value}"
                 )
 
+            round_number = state.current_round() + 1
+            before_hash = _contract_hash_or_none(contract_path)
+            before_status = _contract_status_or_missing(contract_path)
+
             # The agent edits the contract in its own process. The loop releases
-            # the lock while the agent runs (long-lived claude subprocess); the
-            # agent's wrapper must take the lock itself for read+write.
-            agent.take_turn(self.sprint_dir, round_number=state.current_round() + 1)
+            # the lock while the agent runs (long-lived subprocess); the agent's
+            # wrapper must take the lock itself for read+write where needed.
+            agent.take_turn(self.sprint_dir, round_number=round_number)
 
             with contract_lock(str(self.lock_path), timeout=10.0):
                 if not contract_path.exists():
@@ -102,8 +107,22 @@ class NegotiationLoop:
                         f"agent {actor.value} did not write contract.md"
                     )
                 raw = contract_path.read_text()
+                snapshot_path = snapshot_contract_turn(
+                    self.sprint_dir,
+                    round_number=round_number,
+                    actor=actor.value,
+                    contract_text=raw,
+                )
                 if SEED_MARKER in raw and self._marker_rejections < self.max_marker_retries:
                     self._marker_rejections += 1
+                    append_event(
+                        self.sprint_dir.parent,
+                        "negotiation_turn_rejected_marker",
+                        sprint=_sprint_number(self.sprint_dir),
+                        round=round_number,
+                        agent=actor.value,
+                        snapshot=str(snapshot_path),
+                    )
                     # Do NOT record the turn; force the same actor to retry.
                     continue
                 try:
@@ -111,9 +130,29 @@ class NegotiationLoop:
                 except ContractSchemaError:
                     if self._schema_rejections < self.max_schema_retries:
                         self._schema_rejections += 1
+                        append_event(
+                            self.sprint_dir.parent,
+                            "negotiation_turn_rejected_schema",
+                            sprint=_sprint_number(self.sprint_dir),
+                            round=round_number,
+                            agent=actor.value,
+                            snapshot=str(snapshot_path),
+                        )
                         continue
                     raise
                 contract_hash = hash_contract_file(contract_path)
+
+            append_event(
+                self.sprint_dir.parent,
+                "negotiation_turn",
+                sprint=_sprint_number(self.sprint_dir),
+                round=round_number,
+                agent=actor.value,
+                status_before=before_status,
+                status_after=contract.status,
+                contract_changed=before_hash != contract_hash,
+                snapshot=str(snapshot_path),
+            )
 
             state = state.record_turn(
                 actor=actor,
@@ -121,3 +160,29 @@ class NegotiationLoop:
                 contract_hash=contract_hash,
             )
             state.to_file(state_path)
+
+
+def _contract_status_or_missing(contract_path: Path) -> str:
+    if not contract_path.exists():
+        return "missing"
+    try:
+        return parse_contract(contract_path.read_text()).status
+    except ContractSchemaError:
+        return "invalid"
+
+
+def _contract_hash_or_none(contract_path: Path) -> str | None:
+    if not contract_path.exists():
+        return None
+    try:
+        return hash_contract_file(contract_path)
+    except ContractSchemaError:
+        return None
+
+
+def _sprint_number(sprint_dir: Path) -> int | str:
+    raw = sprint_dir.name.removeprefix("sprint_")
+    try:
+        return int(raw)
+    except ValueError:
+        return raw

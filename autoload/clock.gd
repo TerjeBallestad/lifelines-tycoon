@@ -1,11 +1,24 @@
 extends Node
-
 const REAL_SECONDS_PER_GAME_DAY := 60.0
 const GAME_HOURS_PER_DAY := 24.0
 const GAME_HOURS_PER_REAL_SECOND := GAME_HOURS_PER_DAY / REAL_SECONDS_PER_GAME_DAY
 
-var time_scale: float = 1.0
-var paused: bool = false
+var time_scale: float = 1.0:
+	set(value):
+		var next: float = max(0.0, value)
+		if is_equal_approx(time_scale, next):
+			time_scale = next
+			return
+		time_scale = next
+		EventBus.speed_changed.emit(time_scale)
+
+var paused: bool = false:
+	set(value):
+		if paused == value:
+			return
+		paused = value
+		EventBus.pause_changed.emit(paused)
+
 var day: int = 1
 var hour_of_day: float = 0.0
 var total_game_hours: float = 0.0
@@ -27,7 +40,6 @@ func _process(delta: float) -> void:
 	var hrs := real_to_game_hours_when_unpaused(delta)
 	if hrs > 0.0:
 		advance(hrs)
-		EventBus.tick.emit(hrs)
 
 func real_to_game_hours(real_seconds: float) -> float:
 	return real_seconds * GAME_HOURS_PER_REAL_SECOND * time_scale
@@ -37,12 +49,16 @@ func real_to_game_hours_when_unpaused(real_seconds: float) -> float:
 	return real_to_game_hours(real_seconds)
 
 func advance(game_hours: float) -> void:
+	if game_hours <= 0.0:
+		return
 	total_game_hours += game_hours
 	hour_of_day += game_hours
 	while hour_of_day >= GAME_HOURS_PER_DAY:
+		EventBus.day_ended.emit(day)
 		hour_of_day -= GAME_HOURS_PER_DAY
 		day += 1
 		EventBus.day_started.emit(day)
+	EventBus.tick.emit(game_hours)
 
 func reset() -> void:
 	time_scale = 1.0
@@ -50,4 +66,5 @@ func reset() -> void:
 	day = 1
 	hour_of_day = 0.0
 	total_game_hours = 0.0
+	_running = false
 	set_process(false)

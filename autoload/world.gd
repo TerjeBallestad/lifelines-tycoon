@@ -7,6 +7,8 @@ var client: ClientState
 var case_file: CaseFile
 var economy: EconomyState
 var decay: ClientDecay
+var schedule_queue: ScheduleQueue
+var _pending_return_report: Dictionary = {}
 
 func _ready() -> void:
     reset_for_test()
@@ -24,6 +26,53 @@ func reset_for_test() -> void:
     economy = EconomyState.new()
     var loaded_decay := load(CLIENT_DECAY_PATH) as ClientDecay
     decay = loaded_decay if loaded_decay != null else ClientDecay.new()
+    _pending_return_report = {}
+    schedule_queue = ScheduleQueue.new()
+    _seed_initial_schedule()
+
+func scheduled_consequence_count(domain: StringName = &"") -> int:
+    return schedule_queue.pending_count(domain)
+
+func try_process_desk_backlog() -> bool:
+    return try_run_away_action(&"desk_nav_backlog")
+
+func try_run_away_action(id: StringName) -> bool:
+    var action := Catalog.away_actions.get(id) as AwayAction
+    if action == null:
+        EventBus.action_failed.emit(&"unknown_id")
+        return false
+    return _run_away_action_impl(action)
+
+func _run_away_action_impl(action: AwayAction) -> bool:
+    if not economy.can_spend(action.caseworker_cost):
+        EventBus.action_failed.emit(&"no_capacity")
+        return false
+    var before := _snapshot_for_report()
+    var start_hour := Clock.total_game_hours
+    economy.spend(action.caseworker_cost)
+    EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
+    Sim.advance_away_time(action.away_hours)
+    var events := _resolve_due_consequences(action.domain, start_hour, Clock.total_game_hours)
+    var pending := _pending_schedule_preview(action.domain)
+    var report := _build_return_report(action, before, _snapshot_for_report(), events, pending)
+    _pending_return_report = _merge_return_reports(_pending_return_report, report)
+    EventBus.away_action_completed.emit(action.id)
+    return true
+
+func return_to_apartment() -> Dictionary:
+    if _pending_return_report.is_empty():
+        return {
+            "has_delta": false,
+            "changes": [],
+            "events": [],
+            "pending": _pending_schedule_preview(&"apartment"),
+            "why": "No away-time action has changed the apartment since the last return.",
+            "next_decision": "Choose a desk action or inspect Elling at home before spending capacity.",
+        }
+    var report := _pending_return_report.duplicate(true)
+    _pending_return_report = {}
+    EventBus.return_report_ready.emit(report)
+    return report
 
 func try_run_diagnostic(id: StringName) -> bool:
     var d: Diagnostic = Catalog.diagnostics.get(id)
@@ -87,7 +136,6 @@ func _run_intervention_impl(i: Intervention) -> bool:
 func start_new_day(day: int) -> void:
     economy.refill_to_max()
     EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
-    EventBus.day_started.emit(day)
 
 func try_surface_observation() -> CaseEntry:
     var candidates: Array[CaseEntry] = Catalog.observation_candidates(client, case_file)
@@ -96,3 +144,94 @@ func try_surface_observation() -> CaseEntry:
     case_file.add_entry(pick)
     EventBus.case_file_updated.emit(pick.id)
     return pick
+
+func _seed_initial_schedule() -> void:
+    for consequence: ScheduledConsequence in Catalog.consequences.values():
+        schedule_queue.schedule_consequence_after(Clock.total_game_hours, consequence, &"initial_schedule")
+
+func _resolve_due_consequences(domain: StringName, start_hour: float, end_hour: float) -> Array[Dictionary]:
+    var resolved: Array[Dictionary] = []
+    for item: ScheduledItem in schedule_queue.due_between(domain, start_hour, end_hour):
+        var consequence := Catalog.consequences.get(item.consequence_id) as ScheduledConsequence
+        if consequence != null:
+            resolved.append(_apply_consequence(item, consequence))
+    return resolved
+
+func _apply_consequence(item: ScheduledItem, consequence: ScheduledConsequence) -> Dictionary:
+    for k: StringName in consequence.needs_effects.keys():
+        var cur: float = client.needs.get(k, 0.0)
+        client.needs[k] = clamp(cur + float(consequence.needs_effects[k]), 0.0, 1.0)
+    var observation_id := consequence.observation_id
+    var entry := Catalog.observations.get(observation_id) as CaseEntry
+    if entry != null:
+        case_file.add_entry(entry)
+        EventBus.case_file_updated.emit(entry.id)
+    return {
+        "id": String(consequence.id),
+        "scheduled_item_id": String(item.id),
+        "source_id": String(item.source_id),
+        "due_at_hours": item.due_at_hours,
+        "title": consequence.label,
+        "observation_id": String(observation_id),
+        "summary": consequence.summary,
+    }
+
+func _pending_schedule_preview(domain: StringName) -> Array[Dictionary]:
+    var pending: Array[Dictionary] = []
+    for item: ScheduledItem in schedule_queue.peek(domain, 3):
+        var consequence := Catalog.consequences.get(item.consequence_id) as ScheduledConsequence
+        pending.append({
+            "id": String(item.id),
+            "consequence_id": String(item.consequence_id),
+            "source_id": String(item.source_id),
+            "due_at_hours": item.due_at_hours,
+            "hours_from_now": max(0.0, item.due_at_hours - Clock.total_game_hours),
+            "title": consequence.label if consequence != null else String(item.consequence_id),
+        })
+    return pending
+
+func _build_return_report(action: AwayAction, before: Dictionary, after: Dictionary, events: Array[Dictionary], pending: Array[Dictionary]) -> Dictionary:
+    var changes: Array[String] = [
+        "Caseworker capacity %.1f -> %.1f." % [before.get("capacity", 0.0), after.get("capacity", 0.0)],
+    ]
+    for event: Dictionary in events:
+        changes.append(String(event.get("summary", "A scheduled consequence resolved.")))
+    return {
+        "has_delta": true,
+        "cause_id": String(action.id),
+        "cause_ids": [String(action.id)],
+        "away_hours": action.away_hours,
+        "domain": String(action.domain),
+        "events": events.duplicate(true),
+        "pending": pending.duplicate(true),
+        "changes": changes,
+        "why": action.report_why,
+        "next_decision": action.next_decision_hint,
+    }
+
+func _merge_return_reports(existing: Dictionary, incoming: Dictionary) -> Dictionary:
+    if existing.is_empty() or not bool(existing.get("has_delta", false)):
+        return incoming.duplicate(true)
+    var merged := existing.duplicate(true)
+    var cause_ids: Array = merged.get("cause_ids", [])
+    if cause_ids.is_empty() and merged.has("cause_id"):
+        cause_ids.append(String(merged.get("cause_id", "")))
+    for cause_id: Variant in incoming.get("cause_ids", [incoming.get("cause_id", "")]):
+        cause_ids.append(String(cause_id))
+    merged["cause_ids"] = cause_ids
+    merged["cause_id"] = String(cause_ids[cause_ids.size() - 1])
+    merged["away_hours"] = float(merged.get("away_hours", 0.0)) + float(incoming.get("away_hours", 0.0))
+    var changes: Array = merged.get("changes", [])
+    changes.append_array(incoming.get("changes", []))
+    merged["changes"] = changes
+    var events: Array = merged.get("events", [])
+    events.append_array(incoming.get("events", []))
+    merged["events"] = events
+    merged["pending"] = incoming.get("pending", []).duplicate(true)
+    merged["next_decision"] = incoming.get("next_decision", merged.get("next_decision", ""))
+    return merged
+
+func _snapshot_for_report() -> Dictionary:
+    return {
+        "capacity": economy.capacity_current,
+    }

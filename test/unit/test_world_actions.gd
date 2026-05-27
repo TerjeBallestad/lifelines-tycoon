@@ -28,6 +28,8 @@ func _make_int(id: StringName, cw: float, ov: float, gate: Array[StringName], n_
 	return i
 
 func before_each() -> void:
+	Clock.reset()
+	Sim.reset_for_test()
 	w = get_node("/root/World")
 	w.reset_for_test()
 	w.client.needs = {&"energy": 1.0, &"hunger": 1.0, &"bladder": 1.0, &"social": 1.0, &"security": 1.0}
@@ -106,3 +108,73 @@ func test_intervention_applies_cognitive_effects() -> void:
 	w.client.cognitive[&"willpower"] = 0.5
 	assert_true(w._run_intervention_impl(i))
 	assert_almost_eq(w.client.cognitive[&"willpower"], 0.6, 0.0001)
+
+func test_away_action_advances_time_and_returns_due_consequence_delta() -> void:
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 1)
+
+	var ok: bool = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+	assert_almost_eq(Clock.total_game_hours, 3.0, 0.001)
+	assert_almost_eq(w.economy.capacity_current, 5.0, 0.001)
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 0)
+	assert_true(w.case_file.has_entry(&"obs_phone_unanswered"))
+	var phone_tags: Array[StringName] = [&"skill_gap:phone", &"trauma:strangers"]
+	assert_true(w.case_file.has_all_tags(phone_tags))
+
+	var phone_practice_available := false
+	for intervention: Intervention in Catalog.available_interventions(w.case_file):
+		if intervention.id == &"int_phone_practice":
+			phone_practice_available = true
+	assert_true(phone_practice_available)
+
+	var report: Dictionary = w.return_to_apartment()
+	assert_true(bool(report.get("has_delta", false)))
+	assert_eq(String(report.get("cause_id", "")), "desk_nav_backlog")
+	assert_eq(report.get("away_hours", 0.0), 3.0)
+	assert_eq(String(report.get("domain", "")), "apartment")
+	assert_eq(report.get("pending", []).size(), 0)
+
+	var events: Array = report.get("events", [])
+	assert_eq(events.size(), 1)
+	assert_eq(String(events[0].get("id", "")), "apt_phone_window")
+	assert_eq(String(events[0].get("source_id", "")), "initial_schedule")
+	assert_almost_eq(float(events[0].get("due_at_hours", 0.0)), 2.0, 0.001)
+
+	var report_text := _joined(report.get("changes", [])) + "\n" + String(report.get("why", "")) + "\n" + String(report.get("next_decision", ""))
+	assert_true(report_text.find("Phone unanswered") >= 0)
+	assert_true(report_text.find("desk") >= 0)
+	assert_true(report_text.find("home signal") >= 0)
+
+	var second_report: Dictionary = w.return_to_apartment()
+	assert_false(bool(second_report.get("has_delta", true)))
+
+func test_overdue_scheduled_consequence_resolves_on_next_away_action() -> void:
+	Clock.advance(3.0)
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 1)
+
+	var ok: bool = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+	assert_eq(w.scheduled_consequence_count(&"apartment"), 0)
+	var report: Dictionary = w.return_to_apartment()
+	assert_eq(report.get("events", []).size(), 1)
+	assert_eq(String(report.get("events", [])[0].get("id", "")), "apt_phone_window")
+
+func test_multiple_away_actions_accumulate_return_report() -> void:
+	var ok: bool = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+	ok = w.try_run_away_action(&"desk_nav_backlog")
+	assert_true(ok)
+
+	var report: Dictionary = w.return_to_apartment()
+	assert_almost_eq(float(report.get("away_hours", 0.0)), 6.0, 0.001)
+	assert_eq(report.get("events", []).size(), 1)
+	assert_gte(report.get("changes", []).size(), 3)
+	assert_eq(report.get("cause_ids", []).size(), 2)
+
+func _joined(values: Array) -> String:
+	var out := ""
+	for value: Variant in values:
+		if out != "":
+			out += "\n"
+		out += String(value)
+	return out

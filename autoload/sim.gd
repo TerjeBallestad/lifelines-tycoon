@@ -10,20 +10,18 @@ var _running: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
-	set_process(false)  # disabled until start() — keeps tests deterministic
+	set_process(false)  # Clock owns advancement; Sim only reacts to tick events.
+	EventBus.tick.connect(_on_tick)
 	EventBus.day_started.connect(_on_day_started)
 	_last_seen_day = Clock.day
 
 func start() -> void:
 	_running = true
-	set_process(true)
 	Clock.start()
 
-func _process(delta: float) -> void:
-	var hrs := Clock.real_to_game_hours_when_unpaused(delta)
-	if hrs <= 0.0: return
-	Clock.advance(hrs)
-	apply_tick(hrs)
+func stop() -> void:
+	_running = false
+	Clock.stop()
 
 func apply_tick(game_hours: float) -> void:
 	var client: ClientState = World.client
@@ -43,11 +41,18 @@ func apply_tick(game_hours: float) -> void:
 		_hours_since_observation -= OBSERVATION_INTERVAL_HOURS
 		World.try_surface_observation()
 
+func advance_away_time(game_hours: float) -> void:
+	Clock.advance(game_hours)
+
 func reset_for_test() -> void:
 	set_process(false)
+	_running = false
 	_hours_since_observation = 0.0
 	_last_emitted_overskudd = -1.0
 	_last_seen_day = Clock.day
+
+func _on_tick(game_hours: float) -> void:
+	apply_tick(game_hours)
 
 func _on_day_started(day: int) -> void:
 	if day == _last_seen_day: return

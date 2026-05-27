@@ -2,16 +2,22 @@ extends Node
 
 const DIAGNOSTICS_DIR := "res://features/economy/diagnostics"
 const INTERVENTIONS_DIR := "res://features/economy/interventions"
+const AWAY_ACTIONS_DIR := "res://features/economy/away_actions"
 const OBSERVATIONS_DIR := "res://features/case_file/seed"
+const CONSEQUENCES_DIR := "res://features/sim/consequences"
 
 var diagnostics: Dictionary = {}    # StringName -> Diagnostic
 var interventions: Dictionary = {}  # StringName -> Intervention
+var away_actions: Dictionary = {}   # StringName -> AwayAction
 var observations: Dictionary = {}   # StringName -> CaseEntry
+var consequences: Dictionary = {}   # StringName -> ScheduledConsequence
 
 func _ready() -> void:
     _load_dir(DIAGNOSTICS_DIR, diagnostics)
     _load_dir(INTERVENTIONS_DIR, interventions)
+    _load_dir(AWAY_ACTIONS_DIR, away_actions)
     _load_dir(OBSERVATIONS_DIR, observations)
+    _load_dir(CONSEQUENCES_DIR, consequences)
 
 func _load_dir(dir_path: String, target: Dictionary) -> void:
     var dir := DirAccess.open(dir_path)
@@ -23,7 +29,7 @@ func _load_dir(dir_path: String, target: Dictionary) -> void:
         if res == null:
             push_warning("Catalog: failed to load %s" % fname)
             continue
-        if not (res is Diagnostic or res is Intervention or res is CaseEntry):
+        if not (res is Diagnostic or res is Intervention or res is AwayAction or res is CaseEntry or res is ScheduledConsequence):
             push_warning("Catalog: unexpected resource type for %s" % fname)
             continue
         target[res.id] = res

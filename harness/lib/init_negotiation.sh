@@ -54,8 +54,16 @@ if [[ -e "$SPRINT_DIR/contract.md" && "$FORCE" -ne 1 ]]; then
 fi
 
 mkdir -p "$SPRINT_DIR" "harness/.locks"
-cp "$GOAL_FILE"  "$SPRINT_DIR/goal.md"
-cp "$TOUCH_FILE" "$SPRINT_DIR/touch_surface.allow"
+copy_if_different() {
+  local src="$1"
+  local dest="$2"
+  if [[ -e "$dest" ]] && cmp -s "$src" "$dest"; then
+    return 0
+  fi
+  cp "$src" "$dest"
+}
+copy_if_different "$GOAL_FILE"  "$SPRINT_DIR/goal.md"
+copy_if_different "$TOUCH_FILE" "$SPRINT_DIR/touch_surface.allow"
 
 # Seed contract.md via the Python template module.
 python3 - "$RUN_ID" "$SPRINT" "$SPRINT_DIR/goal.md" "$SPRINT_DIR/contract.md" "$LIB_DIR" <<'PY'

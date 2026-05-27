@@ -12,6 +12,10 @@ func _rebuild() -> void:
 		child.queue_free()
 	if World.case_file == null or World.economy == null or World.client == null:
 		return
+	add_child(_section_label("Away actions"))
+	for a: AwayAction in Catalog.away_actions.values():
+		add_child(_build_away_button(a))
+	add_child(_build_return_button())
 	add_child(_section_label("Diagnostics"))
 	for d: Diagnostic in Catalog.diagnostics.values():
 		add_child(_build_diag_button(d))
@@ -23,6 +27,23 @@ func _section_label(text: String) -> Label:
 	var l := Label.new()
 	l.text = "— %s —" % text
 	return l
+
+func _build_away_button(a: AwayAction) -> Button:
+	var b := Button.new()
+	if not World.economy.can_spend(a.caseworker_cost):
+		b.text = "%s  %.1fh / %.1fh away (short %.1fh)" % [a.label, a.caseworker_cost, a.away_hours, a.caseworker_cost - World.economy.capacity_current]
+		b.disabled = true
+	else:
+		b.text = "%s  %.1fh / %.1fh away" % [a.label, a.caseworker_cost, a.away_hours]
+		b.pressed.connect(func() -> void: World.try_run_away_action(a.id))
+	b.tooltip_text = a.description
+	return b
+
+func _build_return_button() -> Button:
+	var b := Button.new()
+	b.text = "Return to apartment"
+	b.pressed.connect(func() -> void: World.return_to_apartment())
+	return b
 
 func _build_diag_button(d: Diagnostic) -> Button:
 	var b := Button.new()
