@@ -34,7 +34,7 @@ from strategy_schema import parse_strategy_file, Strategy  # noqa: E402
 from trace_schema import validate_event_line, SchemaError  # noqa: E402
 
 
-VALID_OPS = {"snapshot", "diag", "interv", "advance", "set_speed", "shutdown"}
+VALID_OPS = {"snapshot", "diag", "interv", "away", "return", "advance", "set_speed", "shutdown"}
 MAX_CHECKPOINTS = 200  # hard cap on rounds per playtest
 
 

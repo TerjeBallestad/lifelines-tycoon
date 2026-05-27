@@ -1,0 +1,11 @@
+{
+  "name": "arb_desk_spammer",
+  "description": "Processes desk backlog twice before returning, testing whether raw throughput outperforms contextual care.",
+  "default": {"op": "snapshot"},
+  "checkpoints": [
+    {"at": {"d": 1, "h": 0.0}, "ops": [{"op": "away", "id": "desk_nav_backlog"}]},
+    {"at": {"d": 1, "h": 3.0}, "ops": [{"op": "away", "id": "desk_nav_backlog"}]},
+    {"at": {"d": 1, "h": 6.0}, "ops": [{"op": "return"}]}
+  ],
+  "stop_at": {"d": 1, "h": 7.0}
+}

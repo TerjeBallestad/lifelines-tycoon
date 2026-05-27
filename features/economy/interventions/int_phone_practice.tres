@@ -13,3 +13,7 @@ gate_tags = [&"skill_gap:phone", &"trauma:strangers"]
 needs_effects = {&"security": -0.10}
 skill_effects = {&"phone": 1}
 cognitive_effects = {}
+resource_costs = {&"trust": 2.0, &"dice": 1.0}
+resource_effects = {&"knowledge": 2.0}
+hidden_resource_subsidies = {&"trust": 1.0}
+hidden_resource_effects = {}
