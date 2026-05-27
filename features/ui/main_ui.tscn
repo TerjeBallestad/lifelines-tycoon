@@ -32,6 +32,10 @@ unique_name_in_owner = true
 text = "Capacity 6.0 / 6.0"
 script = ExtResource("3")
 
+[node name="ResourceLabel" type="Label" parent="HBox/LeftPanel"]
+unique_name_in_owner = true
+text = "Trust 1  Dice 1  Knowledge 0"
+
 [node name="ActionLog" type="RichTextLabel" parent="HBox/LeftPanel"]
 unique_name_in_owner = true
 size_flags_vertical = 3
