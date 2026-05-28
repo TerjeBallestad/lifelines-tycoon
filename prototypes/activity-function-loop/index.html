@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lifelines Tycoon — Activity Function Loop Prototype</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #111216;
+      --panel: #181c23;
+      --panel2: #222836;
+      --ink: #eee8dc;
+      --muted: #a9b0bf;
+      --line: #343b4b;
+      --accent: #e2b85f;
+      --good: #8fd694;
+      --warn: #e6ca78;
+      --bad: #e58c88;
+      --blue: #91b7ff;
+      --paper: #e8ddc4;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% -10%, #283247 0, rgba(40,50,71,0) 36rem),
+        linear-gradient(180deg, #101115, #14171d 45%, #0d0f13);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    header {
+      padding: 20px 24px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(14, 15, 19, .86);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+    }
+    h1 { margin: 0; font-size: 22px; }
+    .subtitle { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    main {
+      display: grid;
+      grid-template-columns: 340px minmax(440px, 1fr) 410px;
+      gap: 14px;
+      padding: 16px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    section, .card {
+      background: rgba(24,28,35,.96);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.24);
+    }
+    section { padding: 15px; }
+    h2 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+    h3 { margin: 0 0 7px; font-size: 18px; }
+    h4 { margin: 14px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing:.08em; color: var(--accent); }
+    ul { margin: 6px 0 0 18px; padding: 0; }
+    li { margin: 5px 0; }
+    .activity-title { font-size: 23px; font-weight: 800; margin-bottom: 4px; }
+    .tag-row { display:flex; flex-wrap: wrap; gap: 6px; margin: 9px 0; }
+    .tag { border: 1px solid var(--line); border-radius: 999px; padding: 3px 7px; font-size: 12px; color: var(--muted); background: rgba(255,255,255,.035); }
+    .tag.good { color: var(--good); border-color: rgba(143,214,148,.35); }
+    .tag.warn { color: var(--warn); border-color: rgba(230,202,120,.35); }
+    .tag.bad { color: var(--bad); border-color: rgba(229,140,136,.35); }
+    .tag.blue { color: var(--blue); border-color: rgba(145,183,255,.35); }
+    .empty { color: #697284; font-style: italic; }
+    .dice-row { display:flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .die {
+      width: 48px; height: 48px; border-radius: 12px;
+      border: 1px solid #8f846e;
+      background: linear-gradient(180deg, #fff7e8, #d3c5a8);
+      color: #211a10; font-size: 23px; font-weight: 900;
+      box-shadow: 0 4px 0 #8b7a5f;
+      cursor: pointer;
+      transition: transform .12s ease, outline .12s ease, opacity .12s ease;
+    }
+    .die:hover { transform: translateY(-2px); }
+    .die.selected { outline: 3px solid var(--accent); transform: translateY(-3px); }
+    .die.used { opacity: .28; cursor: not-allowed; filter: grayscale(1); transform: none; box-shadow: none; }
+    .actions { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .action { padding: 13px; cursor: pointer; min-height: 178px; transition: border-color .12s ease, background .12s ease, transform .12s ease; }
+    .action:hover { border-color: #59657d; background: var(--panel2); transform: translateY(-1px); }
+    .action.active { border-color: var(--accent); background: #262837; }
+    .small { color: var(--muted); font-size: 13px; }
+    .preview, .apartment {
+      min-height: 150px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      background: #11151d;
+      border-radius: 12px;
+    }
+    .formula { margin-top: 10px; padding: 10px; border-left: 3px solid var(--blue); background: rgba(145,183,255,.08); color: #dce7ff; font-size: 13px; }
+    .commit { width:100%; border:0; border-radius: 10px; padding: 11px 13px; margin: 10px 0 16px; background: var(--accent); color: #1f1707; font-weight: 900; cursor:pointer; }
+    .commit:disabled { opacity: .35; cursor:not-allowed; }
+    .apartment {
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px) 0 0/44px 44px,
+        linear-gradient(180deg, #151922, #101319);
+      position: relative;
+      overflow: hidden;
+    }
+    .room-row { display:flex; gap: 10px; align-items:flex-end; margin-top: 14px; }
+    .figure { width: 46px; height: 86px; border-radius: 22px 22px 10px 10px; background: #66728a; position: relative; flex: none; }
+    .figure::before { content:""; position:absolute; width: 30px; height:30px; border-radius:50%; background:#d5b48c; left:8px; top:-22px; }
+    .figure.frank { background:#5d735f; }
+    .shelf { flex:1; height: 86px; border:1px solid #504735; background: rgba(232,221,196,.08); display:grid; grid-template-columns: repeat(12, 1fr); align-items:end; gap:2px; padding:8px; }
+    .book { background: var(--paper); border-radius:2px 2px 0 0; min-height:18px; }
+    .book:nth-child(2n){ background:#b8c1a3; height:55px; } .book:nth-child(3n){ background:#c9987f; height:40px; } .book:nth-child(5n){ background:#8fa1bd; height:68px; }
+    .folder { width: 72px; height: 48px; background: #506ca0; border-radius: 5px; border: 2px solid #7190c4; position: relative; flex:none; }
+    .folder::before { content:"Gro"; position:absolute; color:#dce7ff; font-weight:800; font-size:13px; left:22px; top:13px; }
+    .log { list-style:none; padding:0; margin: 8px 0 0; max-height: 260px; overflow:auto; }
+    .log li { border-bottom: 1px solid rgba(255,255,255,.07); padding: 8px 0; margin:0; }
+    .log strong { display:block; color: var(--ink); }
+    .state-grid { display:grid; gap:8px; margin: 8px 0 12px; }
+    .state-row { display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid rgba(255,255,255,.06); padding-bottom:7px; }
+    .state-row span:first-child { color: var(--muted); }
+    .state-row span:last-child { font-weight:800; text-align:right; }
+    .danger { color: var(--bad); } .gain { color: var(--good); } .warn-text { color: var(--warn); }
+    @media (max-width: 1100px) { main { grid-template-columns:1fr; } header { position: static; } .actions { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Activity Function Loop: Gro Clippings</h1>
+    <div class="subtitle">Observe behavior → infer function → prescribe carefully → review the apartment evidence. No DSM Pokémon.</div>
+  </header>
+  <main>
+    <section>
+      <h2>Activity menu</h2>
+      <div class="activity-title">Collects Gro clippings</div>
+      <div class="tag-row">
+        <span class="tag blue">Observed activity</span>
+        <span class="tag warn" id="confidenceTag">Function unknown</span>
+        <span class="tag" id="skillTag">Skill path hidden</span>
+      </div>
+      <h4>Known</h4>
+      <ul id="knownList">
+        <li>Keeps newspaper pieces in a blue folder.</li>
+        <li>Returns to the folder after radio news.</li>
+      </ul>
+      <h4>Unknown</h4>
+      <ul id="unknownList">
+        <li>Comfort, political interest, memory anchor, script, or avoidance?</li>
+        <li>Why does the folder close when Grete enters?</li>
+      </ul>
+      <h4>Working function</h4>
+      <div id="functionBox" class="empty">No working function yet. Probe the behavior, not the person.</div>
+      <h4>Missing / brittle skill</h4>
+      <div id="skillBox" class="empty">Unknown. Do not prescribe from vibes.</div>
+      <h4>Practice path</h4>
+      <div id="pathBox" class="empty">Locked until the function is understood.</div>
+    </section>
+
+    <section>
+      <h2>Case Desk — rolled attention windows</h2>
+      <div class="dice-row" id="diceRow"></div>
+      <p class="small">Each die is one finite window of state attention. Higher faces give cleaner observation, safer probing, or better scaffolded tiltak.</p>
+
+      <div class="state-grid">
+        <div class="state-row"><span>Trust baseline</span><span id="trustState">Guarded</span></div>
+        <div class="state-row"><span>Function confidence</span><span id="functionState">None</span></div>
+        <div class="state-row"><span>Life width</span><span id="widthState">Narrow</span></div>
+      </div>
+
+      <h2>Actions around this activity</h2>
+      <div class="actions" id="actions"></div>
+    </section>
+
+    <section>
+      <h2>Apartment window / preview</h2>
+      <div class="preview" id="preview">Select a die and an action. The preview should explain depth, trust risk, and what apartment evidence you expect to see.</div>
+      <button class="commit" id="commit" disabled>Commit attention window</button>
+
+      <h2>Apartment evidence</h2>
+      <div class="apartment" id="apartment">
+        <strong>16:20 — apartment quiet</strong>
+        <p class="small">Elling sits near the radio. The blue folder is on the table, closed but not put away.</p>
+        <div class="room-row"><div class="figure"></div><div class="folder"></div><div class="shelf" id="shelf"></div></div>
+      </div>
+
+      <h2 style="margin-top:14px">Review log</h2>
+      <ul class="log" id="log"><li><strong>Initial observation</strong>Activity surfaced: collects Gro clippings. Meaning unknown.</li></ul>
+    </section>
+  </main>
+
+<script>
+const state = {
+  dice: [1,2,4,5,6].map((value,id)=>({id,value,used:false})),
+  selectedDieId: null,
+  activeActionId: null,
+  trust: 'Guarded',
+  trustDelta: 0,
+  confidence: 0,
+  lifeWidth: 'Narrow',
+  flags: new Set(),
+};
+
+const actions = [
+  {
+    id:'observeRadio', kind:'observe', title:'Observe during radio news', useful:'2+', difficulty:2, risk:'Low trust risk',
+    copy:'Spend a window watching the timing around radio news and the folder. Evidence, not interpretation.',
+    low:{title:'Thin observation', scene:'He touches the folder after the news, but the window ends before he opens it.', known:'The activity clusters around radio news.', log:'You learned timing, not function.'},
+    mid:{title:'Pattern seen', scene:'He clips a paragraph from a speech interview, reads it twice, then files it under “taler”.', known:'Re-read clippings are mostly speeches/interviews.', function:'Possible Script function: public language made repeatable.', log:'The folder may not be about politics as content. It may be about language as scaffold.'},
+    high:{title:'Function clue', scene:'When the presenter stumbles, Elling finds Gro’s phrasing and whispers the sentence until his shoulders drop.', known:'Gro phrasing appears to regulate public-language uncertainty.', function:'Security through scripted public language.', skill:'Brittle skill: unscripted public/social language.', path:'Practice path: familiar script → Frank reading aloud → short original sentence.', log:'The activity looks like Security + Script, not clutter.'}
+  },
+  {
+    id:'frankAsk', kind:'probe', title:'Frank asks about Gro', useful:'4+', difficulty:4, risk:'Information high; trust risk if blunt',
+    copy:'Frank asks what the folder is for. Direct probe. Useful, but Elling may close down if the window is weak.',
+    low:{title:'Too direct', scene:'Frank says “What is the folder for?” Elling says “Nothing” and places both hands on it.', strain:true, known:'Direct questioning closes the folder.', log:'Useful failure: direct questions are a poor first tool here.'},
+    mid:{title:'One sentence gained', scene:'Frank asks which clipping matters. Elling points to a televised answer: “She does not hurry.”', known:'Elling attends to how Gro answers, not just what she says.', function:'Possible Script function.', log:'A careful question reveals speech tempo as the clue.'},
+    high:{title:'Shared reading', scene:'Frank reads one paragraph aloud. Elling corrects the pause before the second sentence, then relaxes.', known:'Elling uses Gro’s phrasing as a repeatable social script.', function:'Script + Security.', skill:'Brittle skill: making language under social pressure.', path:'Practice path: shared reading → adapted sentence → own phrasing.', trustGain:true, log:'Frank can become a bridge if he participates instead of interrogating.'}
+  },
+  {
+    id:'askGrete', kind:'probe', title:'Ask Grete when it started', useful:'3+', difficulty:3, risk:'Low direct pressure; possible family filter',
+    copy:'Ask Grete for history without making Elling perform an answer.',
+    low:{title:'Family shorthand', scene:'Grete says “He has always liked order” and changes the subject.', known:'Grete frames it as harmless order.', log:'A weak window gets family shorthand, not history.'},
+    mid:{title:'Origin clue', scene:'Grete remembers it started after a failed municipal phone appointment.', known:'The archive intensified after a failed institutional call.', function:'Possible Security after public failure.', log:'The clippings may compensate for an institutional language failure.'},
+    high:{title:'Dependency mapped', scene:'Grete admits she removes old papers when the folder overflows, then regrets it for days.', known:'Grete secretly curates the archive to keep the apartment stable.', function:'Security through controlled language archive.', skill:'Missing skill: tolerating archive change / negotiating boundaries.', path:'Practice path: visible archive rules agreed with Elling and Grete.', log:'Grete is hidden subsidy and hidden risk.'}
+  },
+  {
+    id:'archiveBox', kind:'prescribe', title:'Offer archive box + clipping time', useful:'3+', difficulty:3, risk:'Preserves function; modest widening',
+    copy:'Do not forbid the behavior. Give it structure and shared rules so the function survives with less household friction.',
+    low:{title:'Box refused politely', scene:'Elling leaves the box by the door. The blue folder stays on the table.', known:'Container change needs consent, not delivery.', log:'A weak scaffold is just an object.'},
+    mid:{title:'Structure accepted', scene:'The box stays open. Elling moves three clippings into it, then returns the blue folder to the table.', function:'Security preserved through visible structure.', skill:'Practice: tolerating small archive change.', path:'Next path: scheduled clipping time with Frank present.', trustGain:true, widthGain:true, log:'The tiltak preserves the job the behavior does while reducing friction.'},
+    high:{title:'Shared archive rule', scene:'Frank and Elling label three sections: speeches, interviews, things to copy. Grete stops hovering at the doorway.', function:'Security + Script confirmed.', skill:'Practice: organizing shared meaning without losing control.', path:'Unlock: poetry scaffold / public-language practice.', trustGain:true, widthGain:true, log:'The archive becomes a bridge instead of a trap.'}
+  },
+  {
+    id:'forbid', kind:'prescribe', title:'Forbid archive', useful:'never tidy enough', difficulty:6, risk:'Bad-but-plausible institutional tidiness',
+    copy:'Remove the clippings to reduce clutter. This looks clean on paper. It may damage the function underneath.',
+    low:{title:'Visible clutter reduced', scene:'The table is clear. Elling sits beside the radio without turning it on.', harm:true, known:'Removing the archive removes a stabilizer.', log:'The apartment is tidier and Elling’s life is narrower. Classic institutional faceplant.'},
+    mid:{title:'Security drops', scene:'The folder is gone. Elling starts sorting books by author, height, and then color until midnight.', harm:true, function:'The archive was serving Security.', skill:'Missing replacement: safer transition / expression skill.', log:'Suppressing the behavior displaced the function into another ritual.'},
+    high:{title:'Managed harm, still harm', scene:'Frank explains the removal gently. Elling nods and says “It is probably better.” He does not touch the phone that evening.', harm:true, function:'Archive provided Security + Script.', log:'Even well-executed suppression narrows the person if it does not replace the function.'}
+  },
+  {
+    id:'poetry', kind:'prescribe', title:'Poetry-writing scaffold', useful:'5+', difficulty:5, risk:'Widening path; requires trust and function clue',
+    copy:'Use Gro clippings as a bridge into writing original lines. This is not “stop clipping”; it is transform function into expression.',
+    low:{title:'Too early', scene:'Elling copies one sentence exactly, then folds the paper into the blue folder.', known:'Original language is not available yet.', log:'The idea is promising, but the skill path is premature.'},
+    mid:{title:'First adapted line', scene:'He changes one word from the clipping and watches Frank read it aloud.', function:'Script can become Expression with support.', skill:'Practice: adapting borrowed language.', path:'Next: two-line poem using one borrowed phrase.', trustGain:true, widthGain:true, log:'The activity widens without being erased.'},
+    high:{title:'Expression opens', scene:'Elling writes two dry lines about the radio voice “not waiting for people.” He asks Frank not to show Grete yet.', function:'Expression emerging from Script + Security.', skill:'Writing / external expression + social boundary.', path:'Unlock: private poem ritual → selected sharing → public-language practice.', trustGain:true, widthGain:true, log:'This is rehabilitation: same self, wider life.'}
+  }
+];
+
+const diceRow = document.getElementById('diceRow');
+const actionsEl = document.getElementById('actions');
+const previewEl = document.getElementById('preview');
+const commitBtn = document.getElementById('commit');
+const knownList = document.getElementById('knownList');
+const functionBox = document.getElementById('functionBox');
+const skillBox = document.getElementById('skillBox');
+const pathBox = document.getElementById('pathBox');
+const logEl = document.getElementById('log');
+const apartment = document.getElementById('apartment');
+const shelf = document.getElementById('shelf');
+
+for (let i=0;i<12;i++){ const b=document.createElement('div'); b.className='book'; b.style.height=(24+((i*17)%50))+'px'; shelf.appendChild(b); }
+
+function selectedDie(){ return state.dice.find(d => d.id === state.selectedDieId && !d.used) || null; }
+function activeAction(){ return actions.find(a => a.id === state.activeActionId) || null; }
+function tier(die, action){ if(!die) return 'low'; const margin = die.value - action.difficulty; if(margin >= 1) return 'high'; if(margin >= -1) return 'mid'; return 'low'; }
+function tierLabel(t){ return t === 'high' ? 'deep / clean window' : t === 'mid' ? 'partial but useful' : 'thin / risky window'; }
+
+function renderDice(){
+  diceRow.innerHTML='';
+  state.dice.forEach(die=>{
+    const btn=document.createElement('button');
+    btn.className='die'+(die.used?' used':'')+(state.selectedDieId===die.id?' selected':'');
+    btn.textContent=die.value; btn.disabled=die.used;
+    btn.onclick=()=>{ state.selectedDieId=die.id; render(); };
+    diceRow.appendChild(btn);
+  });
+}
+function renderActions(){
+  actionsEl.innerHTML='';
+  actions.forEach(a=>{
+    const el=document.createElement('article');
+    el.className='card action'+(state.activeActionId===a.id?' active':'');
+    const kindClass = a.kind === 'prescribe' ? 'warn' : a.kind === 'probe' ? 'blue' : 'good';
+    el.innerHTML=`<h3>${a.title}</h3><div class="tag-row"><span class="tag ${kindClass}">${a.kind}</span><span class="tag">Useful die: ${a.useful}</span><span class="tag ${a.id==='forbid'?'bad':''}">${a.risk}</span></div><p class="small">${a.copy}</p>`;
+    el.onmouseenter=()=>preview(a.id);
+    el.onclick=()=>{ state.activeActionId=a.id; render(); };
+    actionsEl.appendChild(el);
+  });
+}
+function preview(actionId){
+  const action=actions.find(a=>a.id===actionId); const die=selectedDie();
+  if(!action) return;
+  if(!die){ previewEl.innerHTML=`<strong>${action.title}</strong><p>${action.copy}</p><p class="small">Select a die to forecast evidence depth and trust risk.</p>`; commitBtn.disabled=true; return; }
+  const t=tier(die, action); const out=action[t];
+  previewEl.innerHTML=`<strong>${action.title} with die ${die.value}: ${tierLabel(t)}</strong><p>${out.scene}</p><div class="formula">Die ${die.value} vs difficulty ${action.difficulty}. ${action.kind} window. Risk: ${action.risk}.</div><p class="small">Expected desk update: ${out.function || out.skill || out.path || out.known || out.log}</p>`;
+  commitBtn.disabled=false;
+}
+function addKnown(text){ if(!text) return; const exists=[...knownList.children].some(li=>li.textContent===text); if(!exists){ const li=document.createElement('li'); li.textContent=text; knownList.appendChild(li); } }
+function setText(el, text, klass){ if(!text) return; el.className=klass||''; el.textContent=text; }
+function addLog(title, body, klass){ const li=document.createElement('li'); li.innerHTML=`<strong>${title}</strong><span class="${klass||''}">${body}</span>`; logEl.prepend(li); }
+function setApartment(action, out, die, t){
+  const frank = ['frankAsk','archiveBox','poetry','forbid'].includes(action.id) ? '<div class="figure frank" title="Frank"></div>' : '';
+  apartment.innerHTML=`<strong>Attention window: die ${die.value} → ${action.title}</strong><p class="small">${out.scene}</p><div class="room-row"><div class="figure"></div>${frank}<div class="folder"></div><div class="shelf">${Array.from({length:12},(_,i)=>`<div class="book" style="height:${24+((i*17)%50)}px"></div>`).join('')}</div></div>`;
+}
+function commit(){
+  const die=selectedDie(); const action=activeAction(); if(!die||!action) return;
+  const t=tier(die, action); const out=action[t]; die.used=true; state.selectedDieId=null;
+  addKnown(out.known);
+  if(out.function){ state.confidence += t==='high'?2:1; setText(functionBox, out.function, ''); document.getElementById('confidenceTag').textContent = state.confidence >= 3 ? 'Function likely' : 'Function emerging'; document.getElementById('confidenceTag').className='tag good'; }
+  if(out.skill){ setText(skillBox, out.skill, ''); document.getElementById('skillTag').textContent='Skill path visible'; document.getElementById('skillTag').className='tag blue'; }
+  if(out.path){ setText(pathBox, out.path, ''); }
+  if(out.trustGain){ state.trust = state.trust === 'Guarded' ? 'Cautiously warmer' : 'Warmer'; }
+  if(out.strain){ state.trust = 'Strained'; }
+  if(out.harm){ state.trust = 'Strained'; state.lifeWidth='Narrower'; }
+  if(out.widthGain){ state.lifeWidth = state.lifeWidth === 'Narrow' ? 'Slightly wider' : 'Wider'; }
+  document.getElementById('trustState').textContent=state.trust;
+  document.getElementById('functionState').textContent=state.confidence === 0 ? 'None' : state.confidence < 3 ? 'Emerging' : 'Likely';
+  document.getElementById('widthState').textContent=state.lifeWidth;
+  setApartment(action, out, die, t);
+  addLog(`Die ${die.value} → ${action.title}: ${out.title}`, out.log, out.harm || out.strain ? 'danger' : out.widthGain || out.trustGain ? 'gain' : '');
+  render();
+  previewEl.innerHTML=`<strong>Committed: die ${die.value} → ${action.title}</strong><p>${out.scene}</p><p class="small">${out.log}</p>`;
+}
+function render(){ renderDice(); renderActions(); const a=activeAction(); if(a) preview(a.id); else commitBtn.disabled=true; }
+commitBtn.onclick=commit;
+render();
+</script>
+</body>
+</html>
