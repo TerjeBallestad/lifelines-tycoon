@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lifelines Tycoon — Case Desk Dice Prototype</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #0f1115;
+      --panel: #171b22;
+      --panel-2: #202633;
+      --ink: #e8e3d7;
+      --muted: #9ea6b6;
+      --line: #333b4d;
+      --accent: #e0b35a;
+      --good: #8fd694;
+      --warn: #e6c66a;
+      --bad: #e58c88;
+      --blue: #8fb6ff;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #1d2533, var(--bg) 38rem);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    header {
+      padding: 22px 28px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(15, 17, 21, 0.82);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      backdrop-filter: blur(10px);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: .02em; }
+    .subtitle { color: var(--muted); margin-top: 4px; font-size: 14px; }
+    main {
+      display: grid;
+      grid-template-columns: 320px minmax(420px, 1fr) 390px;
+      gap: 16px;
+      padding: 18px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    section, .card {
+      background: rgba(23, 27, 34, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+    section { padding: 16px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 12px; }
+    h3 { margin: 0 0 6px; font-size: 18px; }
+    .state-grid { display: grid; gap: 10px; }
+    .state-row { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid rgba(255,255,255,.06); padding-bottom: 9px; }
+    .state-row:last-child { border-bottom: 0; }
+    .label { color: var(--muted); }
+    .value { color: var(--ink); font-weight: 650; text-align: right; }
+    .knowledge-list, .case-list, .log-list { padding-left: 18px; margin: 8px 0 0; color: var(--ink); }
+    .knowledge-list li, .case-list li { margin-bottom: 8px; }
+    .dice-row { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 14px; }
+    .die {
+      appearance: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      border: 1px solid #556077;
+      background: linear-gradient(180deg, #f5efe2, #cfc4ae);
+      color: #1d1a14;
+      font-size: 23px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #8d8068;
+      transition: transform .12s ease, box-shadow .12s ease, outline .12s ease;
+    }
+    .die:hover { transform: translateY(-2px); }
+    .die.selected { outline: 3px solid var(--accent); transform: translateY(-3px); box-shadow: 0 7px 0 #8d8068; }
+    .die.used { opacity: .28; cursor: not-allowed; filter: grayscale(1); transform: none; box-shadow: none; }
+    .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+    .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .action {
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color .12s ease, background .12s ease, transform .12s ease;
+      min-height: 190px;
+    }
+    .action:hover { transform: translateY(-1px); border-color: #59657d; background: var(--panel-2); }
+    .action.active { border-color: var(--accent); background: #242534; }
+    .meta { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+    .pill { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; border-radius: 999px; background: rgba(255,255,255,.035); }
+    .pill.good { color: var(--good); border-color: rgba(143,214,148,.35); }
+    .pill.warn { color: var(--warn); border-color: rgba(230,198,106,.35); }
+    .pill.bad { color: var(--bad); border-color: rgba(229,140,136,.35); }
+    .small { color: var(--muted); font-size: 13px; }
+    .preview-box { padding: 14px; background: #11151d; border: 1px solid var(--line); border-radius: 12px; min-height: 145px; }
+    .formula { margin-top: 10px; padding: 10px; background: rgba(143,182,255,.08); border-left: 3px solid var(--blue); color: #dbe6ff; font-size: 13px; }
+    .commit {
+      width: 100%; margin-top: 12px; padding: 11px 14px; border-radius: 10px;
+      border: 0; background: var(--accent); color: #211806; font-weight: 800; cursor: pointer;
+    }
+    .commit:disabled { opacity: .35; cursor: not-allowed; }
+    .log-list { list-style: none; padding-left: 0; max-height: 390px; overflow: auto; }
+    .log-list li { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .result-title { font-weight: 800; display:block; margin-bottom: 2px; }
+    .delta { color: var(--good); }
+    .strain { color: var(--bad); }
+    footer { padding: 0 20px 24px; color: var(--muted); max-width: 1440px; margin: 0 auto; font-size: 13px; }
+    @media (max-width: 1050px) { main { grid-template-columns: 1fr; } .actions { grid-template-columns: 1fr; } header { position: static; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Case Desk: Elling Pettersen</h1>
+    <div class="subtitle">Disposable dice-placement prototype — Knowledge unlocks, Trust modifies, dice are one-use state capacity.</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Case state</h2>
+      <div class="state-grid">
+        <div class="state-row"><span class="label">Trust baseline</span><span class="value" id="trustLabel">Guarded</span></div>
+        <div class="state-row"><span class="label">Trust modifier</span><span class="value" id="trustMod">−1</span></div>
+        <div class="state-row"><span class="label">Knowledge</span><span class="value" id="knowledgeCount">3 findings</span></div>
+        <div class="state-row"><span class="label">Caseworker day</span><span class="value">5 dice rolled</span></div>
+      </div>
+
+      <h2 style="margin-top:20px">Knowledge unlocks</h2>
+      <ul class="knowledge-list" id="knowledgeList">
+        <li><strong>Phone avoidance</strong> — Phone Practice visible.</li>
+        <li><strong>Reading interest</strong> — Reading Follow-up visible.</li>
+        <li><strong>Apartment routine</strong> — Hjemmebesøk visible.</li>
+      </ul>
+
+      <h2 style="margin-top:20px">Case file</h2>
+      <ul class="case-list" id="caseFile">
+        <li>The phone rings; Elling waits until it stops.</li>
+        <li>Grete answers most calls before he reaches the hallway.</li>
+        <li>Books are alphabetized, then re-sorted by spine height.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Today’s rolled dice</h2>
+      <div class="dice-row" id="diceRow"></div>
+      <p class="hint">Click a die, then inspect or commit an action. Each die can be assigned once.</p>
+
+      <h2 style="margin-top:18px">Available work / tiltak</h2>
+      <div class="actions" id="actions"></div>
+    </section>
+
+    <section>
+      <h2>Preview</h2>
+      <div class="preview-box" id="preview">
+        Select a die and hover/click an action. The prototype should tell you what the case desk thinks will happen, and why.
+      </div>
+      <button class="commit" id="commit" disabled>Assign selected die</button>
+
+      <h2 style="margin-top:20px">Result log</h2>
+      <ul class="log-list" id="log">
+        <li><span class="result-title">Morning intake</span>Five dice rolled: 1, 2, 3, 5, 6. Elling’s trust baseline is guarded.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    This is not a production UI. It is a pressure test for the decision: which single die goes where when Knowledge has unlocked options and Trust makes one of them fragile?
+  </footer>
+
+  <script>
+    const state = {
+      dice: [1, 2, 3, 5, 6].map((value, id) => ({ id, value, used: false })),
+      selectedDieId: null,
+      activeActionId: null,
+      trust: 'Guarded',
+      trustMod: -1,
+      knowledge: 3,
+    };
+
+    const actions = [
+      {
+        id: 'phone',
+        title: 'Phone Practice',
+        unlockedBy: 'phone avoidance',
+        trust: 'fragile',
+        difficulty: 5,
+        goodDie: '5+',
+        risk: 'Low die may produce refusal, but failure still reveals where the call breaks.',
+        copy: 'Practice one scripted call with a friendly contact. This is known-relevant, but Elling does not yet trust the system with the vulnerable part.',
+        outcomes: {
+          fail: {
+            title: 'Refusal with useful evidence',
+            body: 'Elling accepts the printed script, then places it beside the phone without touching the receiver.',
+            delta: 'Knowledge +1: the block starts before dialing. Trust unchanged.',
+            note: 'The problem starts before dialing; the receiver itself is the threshold.'
+          },
+          partial: {
+            title: 'Rehearsal, no call',
+            body: 'He reads the first line twice. The actual call is postponed without drama.',
+            delta: 'Knowledge +1. Phone skill unchanged. Trust stable.',
+            note: 'Script rehearsal is tolerable; live contact is not yet tolerable.'
+          },
+          success: {
+            title: 'Structured attempt succeeds',
+            body: 'With the strongest caseworker attention, Elling completes a thirty-second call to Grete.',
+            delta: 'Phone skill +1. Knowledge +1. Trust edges upward.',
+            note: 'A high-quality scaffold makes the first call survivable.'
+          }
+        }
+      },
+      {
+        id: 'reading',
+        title: 'Reading Follow-up',
+        unlockedBy: 'reading interest',
+        trust: 'stable',
+        difficulty: 2,
+        goodDie: '2+',
+        risk: 'Safe place to use a low or middling die; less progress, less relational risk.',
+        copy: 'Ask a librarian to prepare a predictable shelf route and a held book. Low pressure, familiar interest.',
+        outcomes: {
+          fail: { title: 'Administrative miss', body: 'The request is filed late. Nothing breaks; nothing moves.', delta: 'No change.', note: 'Reading remains safe, but the state did not show up cleanly.' },
+          partial: { title: 'Small reliable bridge', body: 'A book is held under his name. He does not collect it yet.', delta: 'Trust +1 signal. Knowledge unchanged.', note: 'Predictable systems appear to matter.' },
+          success: { title: 'Safe contact established', body: 'The librarian recognizes the pattern and offers the same shelf every Thursday.', delta: 'Trust +1. Knowledge +1.', note: 'Routine may be a better scaffold than encouragement.' }
+        }
+      },
+      {
+        id: 'visit',
+        title: 'Hjemmebesøk',
+        unlockedBy: 'apartment routine',
+        trust: 'uncertain',
+        difficulty: 4,
+        goodDie: '4+',
+        risk: 'May reveal more about the apartment; a poor die risks door hesitation and a thinner report.',
+        copy: 'Send a caseworker for a home visit. The apartment may explain more than a form can.',
+        outcomes: {
+          fail: { title: 'Door hesitation', body: 'Elling opens the door chain-width, says Grete is not home, and closes it carefully.', delta: 'Knowledge +1. Trust −1 strain.', note: 'Door contact is its own skill gap.' },
+          partial: { title: 'Threshold observation', body: 'No full visit, but the hallway shoes are aligned by use, not by owner.', delta: 'Knowledge +1.', note: 'Household routines are compensating for uncertainty.' },
+          success: { title: 'Apartment pattern found', body: 'The visit shows labels on drawers and a phone placed where it can be heard but not easily reached.', delta: 'Knowledge +2.', note: 'The apartment is organized around avoiding improvisation.' }
+        }
+      },
+      {
+        id: 'desk',
+        title: 'NAV Desk Backlog',
+        unlockedBy: 'always available',
+        trust: 'neutral',
+        difficulty: 1,
+        goodDie: 'any',
+        risk: 'Always productive, but attention stays at the desk while home consequences continue unseen.',
+        copy: 'Process forms, schedule calls, clear municipal friction. Safe, useful, and never the whole answer.',
+        outcomes: {
+          fail: { title: 'Paper moved, person not seen', body: 'The queue shrinks by one. Elling remains unchanged.', delta: 'Capacity converted into future scheduling. No case insight.', note: 'The desk can always absorb attention.' },
+          partial: { title: 'Backlog cleared', body: 'A delayed form is resolved. The apartment phone window passes while you are away.', delta: 'Future action unlocked. New pending consequence.', note: 'Throughput creates unseen time.' },
+          success: { title: 'Clean administrative runway', body: 'The backlog clears enough to schedule a safer support window tomorrow.', delta: 'Knowledge +1 planning note.', note: 'Good administration matters, but it is indirect care.' }
+        }
+      }
+    ];
+
+    const diceRow = document.getElementById('diceRow');
+    const actionsEl = document.getElementById('actions');
+    const previewEl = document.getElementById('preview');
+    const commitBtn = document.getElementById('commit');
+    const logEl = document.getElementById('log');
+    const caseFileEl = document.getElementById('caseFile');
+    const knowledgeCountEl = document.getElementById('knowledgeCount');
+
+    function effectiveValue(dieValue, action) {
+      const trustEffect = action.id === 'phone' ? state.trustMod : action.id === 'visit' ? -0.5 : 0;
+      return dieValue + trustEffect;
+    }
+
+    function bandFor(dieValue, action) {
+      const effective = effectiveValue(dieValue, action);
+      if (effective >= action.difficulty) return 'success';
+      if (effective >= action.difficulty - 2) return 'partial';
+      return 'fail';
+    }
+
+    function bandLabel(band) {
+      return band === 'success' ? 'likely success' : band === 'partial' ? 'partial / informative' : 'likely refusal or miss';
+    }
+
+    function renderDice() {
+      diceRow.innerHTML = '';
+      state.dice.forEach(die => {
+        const btn = document.createElement('button');
+        btn.className = 'die' + (die.used ? ' used' : '') + (state.selectedDieId === die.id ? ' selected' : '');
+        btn.textContent = die.value;
+        btn.disabled = die.used;
+        btn.addEventListener('click', () => {
+          if (!die.used) state.selectedDieId = die.id;
+          render();
+        });
+        diceRow.appendChild(btn);
+      });
+    }
+
+    function renderActions() {
+      actionsEl.innerHTML = '';
+      actions.forEach(action => {
+        const card = document.createElement('article');
+        card.className = 'card action' + (state.activeActionId === action.id ? ' active' : '');
+        card.innerHTML = `
+          <h3>${action.title}</h3>
+          <div class="meta">
+            <span class="pill good">Unlocked: ${action.unlockedBy}</span>
+            <span class="pill ${action.trust === 'fragile' ? 'bad' : action.trust === 'uncertain' ? 'warn' : 'good'}">Trust: ${action.trust}</span>
+            <span class="pill">Useful die: ${action.goodDie}</span>
+          </div>
+          <p class="small">${action.copy}</p>
+          <p class="small"><strong>Risk:</strong> ${action.risk}</p>
+        `;
+        card.addEventListener('mouseenter', () => preview(action.id));
+        card.addEventListener('click', () => { state.activeActionId = action.id; render(); });
+        actionsEl.appendChild(card);
+      });
+    }
+
+    function selectedDie() {
+      return state.dice.find(d => d.id === state.selectedDieId && !d.used) || null;
+    }
+
+    function activeAction() {
+      return actions.find(a => a.id === state.activeActionId) || null;
+    }
+
+    function preview(actionId) {
+      const action = actions.find(a => a.id === actionId);
+      const die = selectedDie();
+      if (!action) return;
+      if (!die) {
+        previewEl.innerHTML = `<strong>${action.title}</strong><p>${action.copy}</p><p class="hint">Select a die to see the causal forecast.</p>`;
+        commitBtn.disabled = true;
+        return;
+      }
+      const effective = effectiveValue(die.value, action);
+      const band = bandFor(die.value, action);
+      const outcome = action.outcomes[band];
+      previewEl.innerHTML = `
+        <strong>${action.title} with die ${die.value}: ${bandLabel(band)}</strong>
+        <p>${outcome.body}</p>
+        <div class="formula">Die ${die.value} ${action.id === 'phone' ? '+ Trust modifier −1' : action.id === 'visit' ? '+ Trust modifier −0.5' : '+ Trust modifier 0'} = effective ${effective}. Difficulty ${action.difficulty}.</div>
+        <p class="hint">Expected result: ${outcome.delta}</p>
+      `;
+      commitBtn.disabled = false;
+    }
+
+    function commit() {
+      const die = selectedDie();
+      const action = activeAction();
+      if (!die || !action) return;
+      const band = bandFor(die.value, action);
+      const outcome = action.outcomes[band];
+      die.used = true;
+      state.selectedDieId = null;
+
+      if (outcome.delta.includes('Knowledge +')) state.knowledge += Number((outcome.delta.match(/Knowledge \+(\d+)/) || [0, 1])[1]);
+      if (outcome.delta.includes('Trust −')) { state.trust = 'Strained'; state.trustMod = -2; }
+      if (outcome.delta.includes('Trust +')) { state.trust = 'Cautiously warmer'; state.trustMod = 0; }
+
+      const logItem = document.createElement('li');
+      logItem.innerHTML = `<span class="result-title">Die ${die.value} → ${action.title}: ${outcome.title}</span>${outcome.body}<br><span class="${outcome.delta.includes('−') ? 'strain' : 'delta'}">${outcome.delta}</span>`;
+      logEl.prepend(logItem);
+
+      const caseItem = document.createElement('li');
+      caseItem.textContent = outcome.note;
+      caseFileEl.appendChild(caseItem);
+
+      render();
+      previewEl.innerHTML = `<strong>Committed: die ${die.value} → ${action.title}</strong><p>${outcome.body}</p><p class="hint">${outcome.delta}</p>`;
+    }
+
+    function renderState() {
+      document.getElementById('trustLabel').textContent = state.trust;
+      document.getElementById('trustMod').textContent = state.trustMod > 0 ? `+${state.trustMod}` : `${state.trustMod}`;
+      knowledgeCountEl.textContent = `${state.knowledge} findings`;
+    }
+
+    function render() {
+      renderState();
+      renderDice();
+      renderActions();
+      const action = activeAction();
+      if (action) preview(action.id);
+      else commitBtn.disabled = true;
+    }
+
+    commitBtn.addEventListener('click', commit);
+    render();
+  </script>
+</body>
+</html>
