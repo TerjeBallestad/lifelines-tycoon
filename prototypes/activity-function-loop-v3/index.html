@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lifelines Tycoon — Activity Function Loop V3</title>
+  <style>
+    :root { --bg:#101318; --panel:#171c24; --panel2:#1f2631; --text:#eef2f6; --muted:#9aa6b2; --line:#344052; --gold:#d8b25d; --blue:#7eb6ff; --green:#88d18a; --red:#ee7b74; --violet:#c59cff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { padding:18px 22px; border-bottom:1px solid var(--line); background:#0c0f14; }
+    h1 { margin:0 0 4px; font-size:22px; }
+    h2 { margin:0 0 12px; font-size:16px; color:var(--gold); }
+    h3 { margin:14px 0 8px; font-size:14px; color:var(--blue); }
+    p { margin:6px 0; }
+    .muted { color:var(--muted); }
+    .wrap { display:grid; grid-template-columns: 1.05fr 1.15fr 1fr; gap:12px; padding:12px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; min-height:120px; }
+    .subpanel { background:var(--panel2); border:1px solid #2d3747; border-radius:8px; padding:10px; margin:8px 0; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .pill { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:999px; padding:4px 8px; color:var(--muted); }
+    .pill.good { color:var(--green); border-color:#426b48; }
+    .pill.warn { color:var(--gold); border-color:#6d5b2d; }
+    .pill.bad { color:var(--red); border-color:#74423f; }
+    button { color:var(--text); background:#202838; border:1px solid #4a5870; border-radius:8px; padding:8px 10px; cursor:pointer; text-align:left; }
+    button:hover:not(:disabled) { border-color:var(--blue); background:#253149; }
+    button:disabled { opacity:.38; cursor:not-allowed; }
+    button.selected { outline:2px solid var(--gold); background:#302a1c; }
+    .die { min-width:42px; text-align:center; font-weight:700; font-size:18px; }
+    .card { display:block; width:100%; margin:8px 0; }
+    .danger { border-color:#6c3735; }
+    .success { border-color:#3d6b44; }
+    .tiny { font-size:12px; color:var(--muted); }
+    ul { margin:6px 0 8px 20px; padding:0; }
+    li { margin:3px 0; }
+    .log { max-height:260px; overflow:auto; border-top:1px solid var(--line); padding-top:8px; }
+    .log p { border-left:3px solid #3d4a5d; padding-left:8px; }
+    .apartment { background:linear-gradient(180deg, #151922, #11151c); }
+    .meter { height:8px; background:#293241; border-radius:999px; overflow:hidden; margin:4px 0 10px; }
+    .meter > span { display:block; height:100%; background:var(--green); width:50%; }
+    .note { border-left:4px solid var(--violet); padding-left:10px; color:#d9cbff; }
+    @media (max-width: 1050px) { .wrap { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Activity Function Loop V3</h1>
+  <p class="muted">Question: can “weird behavior” become “understandable function” through desk probing, apartment evidence, and review?</p>
+</header>
+<main class="wrap">
+  <section class="panel">
+    <h2>Case Desk</h2>
+    <div class="subpanel">
+      <h3>Activity: Collects Gro clippings</h3>
+      <p>Elling keeps newspaper pieces and magazine interviews about Gro in a blue folder.</p>
+      <ul id="knownList">
+        <li>Folder is checked after radio news.</li>
+        <li>Folder is hidden when Grete enters.</li>
+        <li>Several clippings are speeches or interviews, not just dates.</li>
+      </ul>
+      <p class="tiny">Unresolved possibilities: Security? Script? Control? Expression? Avoidance?</p>
+    </div>
+
+    <h3>Resources</h3>
+    <div class="row">
+      <span class="pill warn">Knowledge: <b id="knowledge">0</b></span>
+      <span class="pill good">Trust: <b id="trust">2</b>/5 baseline</span>
+      <span class="pill">Working function: <b id="functionState">Unknown</b></span>
+    </div>
+    <p class="tiny">Dice are one-use state attention windows. Trust changes receptiveness; it is not spent.</p>
+
+    <h3>Today's dice</h3>
+    <div class="row" id="diceRow"></div>
+
+    <h3>Probe with a die</h3>
+    <div id="probeList"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Tiltak choice</h2>
+    <p class="muted">Pick a die, then commit an intervention. Some options unlock only after enough functional understanding.</p>
+    <div id="interventionList"></div>
+    <div class="subpanel">
+      <h3>Preview</h3>
+      <p id="preview">Select a die and an intervention.</p>
+      <button id="commitBtn" disabled>Commit selected tiltak</button>
+    </div>
+    <div class="subpanel note">
+      <b>What this prototype tests</b>
+      <p>Not whether the UI is pretty. Whether an apparently odd activity can become a mechanical understanding that changes a state decision.</p>
+    </div>
+  </section>
+
+  <section class="panel apartment">
+    <h2>Apartment Evidence</h2>
+    <div class="subpanel">
+      <h3>Current scene</h3>
+      <p id="scene">16:20 — apartment quiet. Elling sits near the radio. The blue folder is on the table, closed but not put away.</p>
+      <div class="meter"><span id="widthMeter" style="width:28%"></span></div>
+      <p class="tiny">Life width: <span id="widthText">narrow but stable</span></p>
+    </div>
+
+    <div class="subpanel">
+      <h3>Review</h3>
+      <p><b>Working function:</b> <span id="reviewFunction">Unknown. The folder may be comfort, script, control, expression, or avoidance.</span></p>
+      <p><b>Confidence:</b> <span id="confidence">low</span></p>
+      <p><b>Next desk choice:</b> <span id="nextChoice">Probe before prescribing.</span></p>
+    </div>
+
+    <h3>Evidence / review log</h3>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+<script>
+const state = {
+  dice: [2,4,5,6],
+  used: [],
+  selectedDie: null,
+  selectedIntervention: null,
+  knowledge: 0,
+  trust: 2,
+  functionStage: 'Unknown',
+  evidence: []
+};
+
+const probes = [
+  { id:'radio', label:'Observe before and after radio news', min:2, text:'After radio news, Elling checks whether Gro used a phrase from an old speech. He copies one line onto a scrap, then stops pacing.', k:1, fn:'Script suspected' },
+  { id:'grete', label:'Ask Grete when the folder becomes a problem', min:3, text:'Grete says moving the folder causes more repeated questions, not less. When it has a named place, he asks fewer times whether Gro might call.', k:1, fn:'Security suspected' },
+  { id:'direct', label:'Frank asks what “not finished” means', min:5, text:'Elling says the sentences are “almost usable” and asks if a prime minister can begin a poem by accident.', k:2, fn:'Script + Expression' }
+];
+
+const interventions = [
+  { id:'forbid', label:'Forbid archive', klass:'danger', needs:0, text:'Reduce fixation. Remove folder from table. Encourage forward movement.', preview:'Tidy, defensible, dangerous. Suppresses the visible behavior without replacing its job.' },
+  { id:'box', label:'Archive box / scheduled clipping time', klass:'success', needs:1, text:'Give the folder a named place and a predictable clipping window.', preview:'Preserves the stabilizer, reduces household friction, tests whether structure widens the day.' },
+  { id:'talk', label:'Frank discusses Gro speeches', klass:'', needs:1, text:'Frank asks about one speech and listens without correcting.', preview:'High information, mild trust risk. Tests whether the archive is also public-language rehearsal.' },
+  { id:'poetry', label:'Poetry-writing scaffold', klass:'success', needs:3, text:'Use one clipping as a safe first line. Folder stays available, but the output moves outward.', preview:'Converts script into expression. Requires enough Knowledge and a strong attention window.' }
+];
+
+function log(msg) {
+  const el = document.getElementById('log');
+  const p = document.createElement('p');
+  p.textContent = msg;
+  el.prepend(p);
+}
+
+function render() {
+  document.getElementById('knowledge').textContent = state.knowledge;
+  document.getElementById('trust').textContent = state.trust;
+  document.getElementById('functionState').textContent = state.functionStage;
+
+  const diceRow = document.getElementById('diceRow');
+  diceRow.innerHTML = '';
+  state.dice.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'die' + (state.selectedDie === d ? ' selected' : '');
+    b.textContent = d;
+    b.disabled = state.used.includes(d);
+    b.title = state.used.includes(d) ? 'Already assigned' : 'Assign this attention window';
+    b.onclick = () => { state.selectedDie = d; render(); };
+    diceRow.appendChild(b);
+  });
+
+  const probeList = document.getElementById('probeList');
+  probeList.innerHTML = '';
+  probes.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'card';
+    b.disabled = !state.selectedDie || state.used.includes(state.selectedDie) || state.selectedDie < p.min || state.evidence.includes(p.id);
+    b.innerHTML = `<b>${p.label}</b><br><span class="tiny">Requires die ${p.min}+ · reveals function evidence</span>`;
+    b.onclick = () => useProbe(p);
+    probeList.appendChild(b);
+  });
+
+  const list = document.getElementById('interventionList');
+  list.innerHTML = '';
+  interventions.forEach(i => {
+    const b = document.createElement('button');
+    b.className = 'card ' + i.klass + (state.selectedIntervention === i.id ? ' selected' : '');
+    b.disabled = state.knowledge < i.needs;
+    b.innerHTML = `<b>${i.label}</b><br>${i.text}<br><span class="tiny">Needs Knowledge ${i.needs}</span>`;
+    b.onclick = () => { state.selectedIntervention = i.id; render(); };
+    list.appendChild(b);
+  });
+
+  const selected = interventions.find(i => i.id === state.selectedIntervention);
+  document.getElementById('preview').textContent = selected ? selected.preview : 'Select a die and an intervention.';
+  document.getElementById('commitBtn').disabled = !state.selectedDie || state.used.includes(state.selectedDie) || !selected;
+}
+
+function useProbe(p) {
+  state.used.push(state.selectedDie);
+  state.evidence.push(p.id);
+  state.knowledge += p.k;
+  state.functionStage = p.fn;
+  if (p.id === 'direct') state.trust = Math.max(1, state.trust - 1);
+  const li = document.createElement('li');
+  li.textContent = p.text;
+  document.getElementById('knownList').appendChild(li);
+  document.getElementById('scene').textContent = 'Frank watches quietly. The folder is not the whole event; it changes what Elling can do after it.';
+  document.getElementById('reviewFunction').textContent = p.fn + ': the folder appears to help Elling borrow usable public language and settle transitions.';
+  document.getElementById('confidence').textContent = state.knowledge >= 3 ? 'medium' : 'low-medium';
+  document.getElementById('nextChoice').textContent = state.knowledge >= 3 ? 'Choose whether to preserve structure or convert it into expression.' : 'You can try a structure-preserving intervention, but expression is still under-evidenced.';
+  log(`Die ${state.selectedDie} probe → ${p.text}`);
+  state.selectedDie = null;
+  render();
+}
+
+function commit() {
+  const d = state.selectedDie;
+  const i = interventions.find(x => x.id === state.selectedIntervention);
+  if (!d || !i || state.used.includes(d)) return;
+  state.used.push(d);
+  if (i.id === 'forbid') {
+    state.trust = Math.max(0, state.trust - 1);
+    state.functionStage = 'Function harmed';
+    document.getElementById('scene').textContent = '18:05 — the table is tidy. Elling asks Grete whether Gro called four times, then checks the radio schedule instead.';
+    document.getElementById('reviewFunction').textContent = 'The clippings were not only clutter. They were a stabilizer and language script. Removing them displaced the need.';
+    document.getElementById('confidence').textContent = 'medium, learned the hard way';
+    document.getElementById('nextChoice').textContent = 'Restore a named archive place before pushing expression.';
+    document.getElementById('widthMeter').style.width = '18%';
+    document.getElementById('widthText').textContent = 'tidier but narrower';
+    log(`Die ${d} → Forbid archive: visible clutter falls, repeated reassurance rises.`);
+  } else if (i.id === 'box') {
+    state.trust = Math.min(5, state.trust + 1);
+    state.knowledge = Math.max(state.knowledge, 2);
+    state.functionStage = 'Security + Script';
+    document.getElementById('scene').textContent = '17:10 — Elling places the folder in the blue box, checks it once, then lets Grete wipe the table.';
+    document.getElementById('reviewFunction').textContent = 'Named structure preserves security while reducing household friction.';
+    document.getElementById('confidence').textContent = 'medium';
+    document.getElementById('nextChoice').textContent = 'Try a low-pressure expression scaffold next.';
+    document.getElementById('widthMeter').style.width = '46%';
+    document.getElementById('widthText').textContent = 'stable, slightly wider';
+    log(`Die ${d} → Archive box: same function, less friction, more room.`);
+  } else if (i.id === 'talk') {
+    state.knowledge += 1;
+    state.functionStage = 'Script evidence';
+    document.getElementById('scene').textContent = '19:00 — Frank asks about one sentence. Elling corrects his wording, then reads the line aloud twice.';
+    document.getElementById('reviewFunction').textContent = 'The archive carries usable public language. Direct interest helps if it does not grab control.';
+    document.getElementById('confidence').textContent = 'medium';
+    document.getElementById('nextChoice').textContent = 'Expression path is now credible.';
+    document.getElementById('widthMeter').style.width = '52%';
+    document.getElementById('widthText').textContent = 'contact opened';
+    log(`Die ${d} → Discuss Gro speeches: function points toward script and contact.`);
+  } else if (i.id === 'poetry') {
+    state.trust = Math.min(5, state.trust + 1);
+    state.functionStage = 'Expression opens';
+    document.getElementById('scene').textContent = '20:15 — one clipping becomes a first line. Elling leaves the folder closed and asks Frank whether “almost usable” is a Norwegian genre.';
+    document.getElementById('reviewFunction').textContent = 'This is rehabilitation: same self, wider life. The archive becomes a bridge rather than a room.';
+    document.getElementById('confidence').textContent = 'high';
+    document.getElementById('nextChoice').textContent = 'Schedule a weekly writing ritual; keep the folder available, not central.';
+    document.getElementById('widthMeter').style.width = '72%';
+    document.getElementById('widthText').textContent = 'wider, still Elling';
+    log(`Die ${d} → Poetry scaffold: script turns into expression.`);
+  }
+  state.selectedDie = null;
+  state.selectedIntervention = null;
+  render();
+}
+
+document.getElementById('commitBtn').onclick = commit;
+log('Start: activity observed, function unknown. Do not prescribe before you understand what job it does.');
+render();
+</script>
+</body>
+</html>
