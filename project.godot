@@ -38,7 +38,6 @@ window/size/window_width_override=3200
 window/size/window_height_override=1800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/dpi/allow_hidpi=true
 
 [editor_plugins]
 
