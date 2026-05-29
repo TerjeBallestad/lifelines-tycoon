@@ -45,29 +45,29 @@
 <body>
 <header>
   <h1>Activity Function Loop V3</h1>
-  <p class="muted">Question: can “weird behavior” become “understandable function” through desk probing, apartment evidence, and review?</p>
+  <p class="muted">Question: can the player move from “Elling has a strange Gro folder” to “I understand what this activity does for him, so I can choose a less harmful intervention”?</p>
 </header>
 <main class="wrap">
   <section class="panel">
     <h2>Case Desk</h2>
     <div class="subpanel">
-      <h3>Activity: Collects Gro clippings</h3>
-      <p>Elling keeps newspaper pieces and magazine interviews about Gro in a blue folder.</p>
+      <h3>Activity: Elling collects Gro clippings</h3>
+      <p>Elling cuts out newspaper and magazine pictures of Gro Harlem Brundtland — mostly portraits, campaign photos, and interviews — and keeps them in a blue folder.</p>
       <ul id="knownList">
-        <li>Folder is checked after radio news.</li>
-        <li>Folder is hidden when Grete enters.</li>
-        <li>Several clippings are speeches or interviews, not just dates.</li>
+        <li>He handles the folder after radio news and Arbeiderpartiet items.</li>
+        <li>He hides it when Grete enters, then asks whether she touched it.</li>
+        <li>The feeling is admiration and safety, not a simple sexual fixation.</li>
       </ul>
-      <p class="tiny">Unresolved possibilities: Security? Script? Control? Expression? Avoidance?</p>
+      <p class="tiny">Unresolved possibilities: comfort? public language? welfare-state faith? control? poetry seed? avoidance?</p>
     </div>
 
-    <h3>Resources</h3>
+    <h3>Read of the case</h3>
     <div class="row">
-      <span class="pill warn">Knowledge: <b id="knowledge">0</b></span>
-      <span class="pill good">Trust: <b id="trust">2</b>/5 baseline</span>
-      <span class="pill">Working function: <b id="functionState">Unknown</b></span>
+      <span class="pill warn">Case understanding: <b id="knowledge">0</b> clues</span>
+      <span class="pill good">Rapport: <b id="rapport">steady</b></span>
+      <span class="pill">Working read: <b id="functionState">Unknown</b></span>
     </div>
-    <p class="tiny">Dice are one-use state attention windows. Trust changes receptiveness; it is not spent.</p>
+    <p class="tiny">Dice are not locks. Pick a die to improve the odds of reading the situation or landing a tiltak. Higher die = better attention window.</p>
 
     <h3>Today's dice</h3>
     <div class="row" id="diceRow"></div>
@@ -78,7 +78,7 @@
 
   <section class="panel">
     <h2>Tiltak choice</h2>
-    <p class="muted">Pick a die, then commit an intervention. Some options unlock only after enough functional understanding.</p>
+    <p class="muted">Pick a die, then commit an intervention. Better case understanding raises the odds; weak understanding does not block you, it just makes you dangerous.</p>
     <div id="interventionList"></div>
     <div class="subpanel">
       <h3>Preview</h3>
@@ -87,7 +87,7 @@
     </div>
     <div class="subpanel note">
       <b>What this prototype tests</b>
-      <p>Not whether the UI is pretty. Whether an apparently odd activity can become a mechanical understanding that changes a state decision.</p>
+      <p>The player is not “curing Gro clippings.” The player is trying to understand what job the activity does in Elling’s life before touching it.</p>
     </div>
   </section>
 
@@ -102,7 +102,7 @@
 
     <div class="subpanel">
       <h3>Review</h3>
-      <p><b>Working function:</b> <span id="reviewFunction">Unknown. The folder may be comfort, script, control, expression, or avoidance.</span></p>
+      <p><b>Working read:</b> <span id="reviewFunction">Unknown. Gro may be comfort, public language, political mother-symbol, poetry seed, or avoidance.</span></p>
       <p><b>Confidence:</b> <span id="confidence">low</span></p>
       <p><b>Next desk choice:</b> <span id="nextChoice">Probe before prescribing.</span></p>
     </div>
@@ -118,23 +118,35 @@ const state = {
   selectedDie: null,
   selectedIntervention: null,
   knowledge: 0,
-  trust: 2,
+  rapport: 2,
   functionStage: 'Unknown',
   evidence: []
 };
 
+const rapportLabels = ['broken', 'fragile', 'steady', 'warm', 'trusted', 'anchored'];
+
 const probes = [
-  { id:'radio', label:'Observe before and after radio news', min:2, text:'After radio news, Elling checks whether Gro used a phrase from an old speech. He copies one line onto a scrap, then stops pacing.', k:1, fn:'Script suspected' },
-  { id:'grete', label:'Ask Grete when the folder becomes a problem', min:3, text:'Grete says moving the folder causes more repeated questions, not less. When it has a named place, he asks fewer times whether Gro might call.', k:1, fn:'Security suspected' },
-  { id:'direct', label:'Frank asks what “not finished” means', min:5, text:'Elling says the sentences are “almost usable” and asks if a prime minister can begin a poem by accident.', k:2, fn:'Script + Expression' }
+  { id:'radio', label:'Observe the radio-news ritual', base:42, text:'After radio news, Elling checks whether Gro used a phrase from an old speech. He copies one line onto a scrap, then stops pacing.', miss:'You only catch the surface: folder opened, folder closed. The activity still looks like hoarding.', k:1, fn:'Public-language script suspected' },
+  { id:'grete', label:'Ask Grete what happens when the folder is moved', base:36, text:'Grete says moving the folder causes more repeated questions, not less. When it has a named place, he asks fewer times whether Gro or Gerhardsen would approve.', miss:'Grete shrugs: “It is one of his things.” You learn that removing it annoys everyone, but not why.', k:1, fn:'Security ritual suspected' },
+  { id:'politics', label:'Sort which clippings he keeps', base:32, text:'The keeper pile is Gro, Gerhardsen, hospitals, speeches, and Labour crowds. It is not celebrity collecting; it is the welfare state made touchable.', miss:'The pile blurs into “old politicians.” You miss the pattern: Gro and Arbeiderpartiet as a safe public parent.', k:2, fn:'Welfare-state symbol suspected' },
+  { id:'direct', label:'Frank asks what “not finished” means', base:26, text:'Elling says the sentences are “almost usable” and asks if a prime minister can begin a poem by accident.', miss:'Elling closes the folder and says Frank is making fun. The question was too direct for today.', k:2, fn:'Script + expression' }
 ];
 
 const interventions = [
-  { id:'forbid', label:'Forbid archive', klass:'danger', needs:0, text:'Reduce fixation. Remove folder from table. Encourage forward movement.', preview:'Tidy, defensible, dangerous. Suppresses the visible behavior without replacing its job.' },
-  { id:'box', label:'Archive box / scheduled clipping time', klass:'success', needs:1, text:'Give the folder a named place and a predictable clipping window.', preview:'Preserves the stabilizer, reduces household friction, tests whether structure widens the day.' },
-  { id:'talk', label:'Frank discusses Gro speeches', klass:'', needs:1, text:'Frank asks about one speech and listens without correcting.', preview:'High information, mild trust risk. Tests whether the archive is also public-language rehearsal.' },
-  { id:'poetry', label:'Poetry-writing scaffold', klass:'success', needs:3, text:'Use one clipping as a safe first line. Folder stays available, but the output moves outward.', preview:'Converts script into expression. Requires enough Knowledge and a strong attention window.' }
+  { id:'forbid', label:'Remove the folder from the table', klass:'danger', needs:0, base:22, text:'Treat it as clutter/fixation. Tidy the apartment and redirect Elling away from Gro.', preview:'Legible to the system, probably wrong for Elling. Low-knowledge action with bad downside.', success:'The table is clear for an hour, but Elling checks the radio schedule instead. You removed the object, not the need.', fail:'Elling asks four times whether Gro called. The folder was doing work you had not understood.', good:false },
+  { id:'named_place', label:'Give the Gro folder a named place', klass:'success', needs:1, base:44, text:'Make a blue box labelled “Gro / speeches / pictures.” It stays available, but stops owning the table.', preview:'Preserves the stabilizer while testing whether a clear home for the folder reduces friction.', success:'Elling places the folder in the blue box, checks it once, then lets Grete wipe the table.', fail:'He accepts the box, then moves the folder back. The place is right, but the timing is not trusted yet.', good:true },
+  { id:'clipping_time', label:'Agree on a clipping routine after radio news', klass:'success', needs:1, base:40, text:'Protect ten minutes after radio news for Gro clippings, then close the folder together.', preview:'The point is predictability around the radio ritual, not bureaucratic scheduling.', success:'After the radio item, Elling clips one picture, files it, and leaves the folder closed through dinner.', fail:'The timer makes him defensive. The routine needs to feel like respect, not surveillance.', good:true },
+  { id:'talk', label:'Frank asks about one Gro speech', klass:'', needs:1, base:34, text:'Frank asks what Gro was trying to say in one clipping and listens without correcting.', preview:'High information, mild rapport risk. Tests whether the archive is also public-language rehearsal.', success:'Elling corrects Frank’s wording, then reads the line aloud twice. Contact opens through the speech.', fail:'Elling answers like he is being examined. You learn that interest must be slower and more specific.', good:true },
+  { id:'poetry', label:'Use one clipping as a poem prompt', klass:'success', needs:3, base:26, text:'Let one Gro sentence become a safe first line. The folder stays available; the output moves outward.', preview:'Converts admiration/script into expression. Strong upside, but only after the function is understood.', success:'One clipping becomes a first line. Elling asks whether “almost usable” is a Norwegian genre.', fail:'The poem prompt feels like theft. The folder snaps shut. You pushed expression before safety held.', good:true }
 ];
+
+function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+function selectedDieValue() { return state.selectedDie || 0; }
+function odds(base, extraKnowledge = 0) {
+  return clamp(base + selectedDieValue() * 7 + state.rapport * 5 + (state.knowledge + extraKnowledge) * 6, 5, 95);
+}
+function rollPercent() { return Math.floor(Math.random() * 100) + 1; }
+function rapportText() { return rapportLabels[clamp(state.rapport, 0, rapportLabels.length - 1)]; }
 
 function log(msg) {
   const el = document.getElementById('log');
@@ -145,7 +157,7 @@ function log(msg) {
 
 function render() {
   document.getElementById('knowledge').textContent = state.knowledge;
-  document.getElementById('trust').textContent = state.trust;
+  document.getElementById('rapport').textContent = rapportText();
   document.getElementById('functionState').textContent = state.functionStage;
 
   const diceRow = document.getElementById('diceRow');
@@ -155,7 +167,7 @@ function render() {
     b.className = 'die' + (state.selectedDie === d ? ' selected' : '');
     b.textContent = d;
     b.disabled = state.used.includes(d);
-    b.title = state.used.includes(d) ? 'Already assigned' : 'Assign this attention window';
+    b.title = state.used.includes(d) ? 'Already assigned' : `Assign this attention window (+${d * 7}% odds)`;
     b.onclick = () => { state.selectedDie = d; render(); };
     diceRow.appendChild(b);
   });
@@ -165,8 +177,10 @@ function render() {
   probes.forEach(p => {
     const b = document.createElement('button');
     b.className = 'card';
-    b.disabled = !state.selectedDie || state.used.includes(state.selectedDie) || state.selectedDie < p.min || state.evidence.includes(p.id);
-    b.innerHTML = `<b>${p.label}</b><br><span class="tiny">Requires die ${p.min}+ · reveals function evidence</span>`;
+    const already = state.evidence.includes(p.id);
+    b.disabled = !state.selectedDie || state.used.includes(state.selectedDie) || already;
+    const chance = state.selectedDie ? odds(p.base) : p.base + state.rapport * 5 + state.knowledge * 6;
+    b.innerHTML = `<b>${p.label}</b><br><span class="tiny">${already ? 'Already understood' : state.selectedDie ? `Success chance ${chance}% with selected die` : 'Pick a die to see probe odds'} · reveals case evidence on success</span>`;
     b.onclick = () => useProbe(p);
     probeList.appendChild(b);
   });
@@ -176,8 +190,9 @@ function render() {
   interventions.forEach(i => {
     const b = document.createElement('button');
     b.className = 'card ' + i.klass + (state.selectedIntervention === i.id ? ' selected' : '');
-    b.disabled = state.knowledge < i.needs;
-    b.innerHTML = `<b>${i.label}</b><br>${i.text}<br><span class="tiny">Needs Knowledge ${i.needs}</span>`;
+    const underRead = state.knowledge < i.needs;
+    const chance = state.selectedDie ? odds(i.base, underRead ? -1 : 0) : i.base + state.rapport * 5 + state.knowledge * 6;
+    b.innerHTML = `<b>${i.label}</b><br>${i.text}<br><span class="tiny">${underRead ? `Under-evidenced: wants ${i.needs} clues` : `Supported by current read`} · ${state.selectedDie ? `${chance}% with selected die` : 'pick a die to see odds'}</span>`;
     b.onclick = () => { state.selectedIntervention = i.id; render(); };
     list.appendChild(b);
   });
@@ -188,19 +203,28 @@ function render() {
 }
 
 function useProbe(p) {
-  state.used.push(state.selectedDie);
-  state.evidence.push(p.id);
-  state.knowledge += p.k;
-  state.functionStage = p.fn;
-  if (p.id === 'direct') state.trust = Math.max(1, state.trust - 1);
-  const li = document.createElement('li');
-  li.textContent = p.text;
-  document.getElementById('knownList').appendChild(li);
-  document.getElementById('scene').textContent = 'Frank watches quietly. The folder is not the whole event; it changes what Elling can do after it.';
-  document.getElementById('reviewFunction').textContent = p.fn + ': the folder appears to help Elling borrow usable public language and settle transitions.';
-  document.getElementById('confidence').textContent = state.knowledge >= 3 ? 'medium' : 'low-medium';
-  document.getElementById('nextChoice').textContent = state.knowledge >= 3 ? 'Choose whether to preserve structure or convert it into expression.' : 'You can try a structure-preserving intervention, but expression is still under-evidenced.';
-  log(`Die ${state.selectedDie} probe → ${p.text}`);
+  const d = state.selectedDie;
+  const chance = odds(p.base);
+  const roll = rollPercent();
+  state.used.push(d);
+  if (roll <= chance) {
+    state.evidence.push(p.id);
+    state.knowledge += p.k;
+    state.functionStage = p.fn;
+    const li = document.createElement('li');
+    li.textContent = p.text;
+    document.getElementById('knownList').appendChild(li);
+    document.getElementById('scene').textContent = 'Frank watches quietly. The folder is not the whole event; it changes what Elling can do after it.';
+    document.getElementById('reviewFunction').textContent = `${p.fn}: the Gro material appears to help Elling borrow public language, settle transitions, and keep the welfare state close enough to touch.`;
+    document.getElementById('confidence').textContent = state.knowledge >= 3 ? 'medium' : 'low-medium';
+    document.getElementById('nextChoice').textContent = state.knowledge >= 3 ? 'Choose whether to preserve structure or open expression.' : 'You can try a structure-preserving tiltak, but expression is still under-evidenced.';
+    log(`Die ${d} probe (${roll} ≤ ${chance}) → ${p.text}`);
+  } else {
+    if (p.id === 'direct') state.rapport = Math.max(0, state.rapport - 1);
+    document.getElementById('confidence').textContent = 'low';
+    document.getElementById('nextChoice').textContent = 'Try a stronger die or a less intrusive probe.';
+    log(`Die ${d} probe missed (${roll} > ${chance}) → ${p.miss}`);
+  }
   state.selectedDie = null;
   render();
 }
@@ -209,49 +233,60 @@ function commit() {
   const d = state.selectedDie;
   const i = interventions.find(x => x.id === state.selectedIntervention);
   if (!d || !i || state.used.includes(d)) return;
+  const underRead = state.knowledge < i.needs;
+  const chance = odds(i.base, underRead ? -1 : 0);
+  const roll = rollPercent();
+  const success = roll <= chance;
   state.used.push(d);
+
   if (i.id === 'forbid') {
-    state.trust = Math.max(0, state.trust - 1);
-    state.functionStage = 'Function harmed';
-    document.getElementById('scene').textContent = '18:05 — the table is tidy. Elling asks Grete whether Gro called four times, then checks the radio schedule instead.';
-    document.getElementById('reviewFunction').textContent = 'The clippings were not only clutter. They were a stabilizer and language script. Removing them displaced the need.';
+    state.rapport = Math.max(0, state.rapport - 1);
+    state.functionStage = success ? 'Function displaced' : 'Function harmed';
+    document.getElementById('scene').textContent = success ? '18:05 — the table is tidy, but Elling checks the radio schedule instead.' : '18:05 — the table is tidy. Elling asks Grete whether Gro called four times.';
+    document.getElementById('reviewFunction').textContent = 'The clippings were not only clutter. They were a stabilizer, political parent-symbol, and language script. Removing them displaced the need.';
     document.getElementById('confidence').textContent = 'medium, learned the hard way';
-    document.getElementById('nextChoice').textContent = 'Restore a named archive place before pushing expression.';
+    document.getElementById('nextChoice').textContent = 'Restore a named place before pushing expression.';
     document.getElementById('widthMeter').style.width = '18%';
     document.getElementById('widthText').textContent = 'tidier but narrower';
-    log(`Die ${d} → Forbid archive: visible clutter falls, repeated reassurance rises.`);
-  } else if (i.id === 'box') {
-    state.trust = Math.min(5, state.trust + 1);
-    state.knowledge = Math.max(state.knowledge, 2);
-    state.functionStage = 'Security + Script';
-    document.getElementById('scene').textContent = '17:10 — Elling places the folder in the blue box, checks it once, then lets Grete wipe the table.';
-    document.getElementById('reviewFunction').textContent = 'Named structure preserves security while reducing household friction.';
+  } else if (i.id === 'named_place') {
+    if (success) { state.rapport = Math.min(5, state.rapport + 1); state.knowledge = Math.max(state.knowledge, 2); }
+    state.functionStage = success ? 'Security + public script' : 'Security need confirmed';
+    document.getElementById('scene').textContent = success ? '17:10 — Elling places the folder in the blue box, checks it once, then lets Grete wipe the table.' : '17:10 — Elling accepts the blue box, then quietly moves the folder back beside the radio.';
+    document.getElementById('reviewFunction').textContent = success ? 'Named structure preserves security while reducing household friction.' : 'The idea is close, but the box has to belong to his ritual, not yours.';
     document.getElementById('confidence').textContent = 'medium';
-    document.getElementById('nextChoice').textContent = 'Try a low-pressure expression scaffold next.';
-    document.getElementById('widthMeter').style.width = '46%';
-    document.getElementById('widthText').textContent = 'stable, slightly wider';
-    log(`Die ${d} → Archive box: same function, less friction, more room.`);
+    document.getElementById('nextChoice').textContent = success ? 'Try a low-pressure expression scaffold next.' : 'Probe timing: when does the folder feel safe enough to close?';
+    document.getElementById('widthMeter').style.width = success ? '46%' : '32%';
+    document.getElementById('widthText').textContent = success ? 'stable, slightly wider' : 'same need, clearer shape';
+  } else if (i.id === 'clipping_time') {
+    if (success) { state.rapport = Math.min(5, state.rapport + 1); state.knowledge = Math.max(state.knowledge, 2); }
+    state.functionStage = success ? 'Predictable ritual' : 'Respect problem';
+    document.getElementById('scene').textContent = success ? '17:40 — after the radio item, Elling clips one Gro picture, files it, and leaves the folder closed through dinner.' : '17:40 — the timer makes Elling stiff. He says Gro did not run Norway by kitchen alarms.';
+    document.getElementById('reviewFunction').textContent = success ? 'Predictable time preserves the ritual without letting it flood the room.' : 'The shape is right; the framing is wrong. It must feel like respect, not surveillance.';
+    document.getElementById('confidence').textContent = 'medium';
+    document.getElementById('nextChoice').textContent = success ? 'Now test whether the ritual can feed outward contact.' : 'Reframe around radio/news, not timer discipline.';
+    document.getElementById('widthMeter').style.width = success ? '50%' : '30%';
+    document.getElementById('widthText').textContent = success ? 'ritual contained' : 'controlled, not safer';
   } else if (i.id === 'talk') {
-    state.knowledge += 1;
-    state.functionStage = 'Script evidence';
-    document.getElementById('scene').textContent = '19:00 — Frank asks about one sentence. Elling corrects his wording, then reads the line aloud twice.';
-    document.getElementById('reviewFunction').textContent = 'The archive carries usable public language. Direct interest helps if it does not grab control.';
-    document.getElementById('confidence').textContent = 'medium';
-    document.getElementById('nextChoice').textContent = 'Expression path is now credible.';
-    document.getElementById('widthMeter').style.width = '52%';
-    document.getElementById('widthText').textContent = 'contact opened';
-    log(`Die ${d} → Discuss Gro speeches: function points toward script and contact.`);
+    if (success) { state.knowledge += 1; state.rapport = Math.min(5, state.rapport + 1); }
+    state.functionStage = success ? 'Public-language script' : 'Exam pressure';
+    document.getElementById('scene').textContent = success ? '19:00 — Frank asks about one sentence. Elling corrects his wording, then reads the line aloud twice.' : '19:00 — Frank asks too broadly. Elling gives a school-answer and closes the folder.';
+    document.getElementById('reviewFunction').textContent = success ? 'The archive carries usable public language. Direct interest helps if it does not grab control.' : 'Interest is not automatically safe. The question has to be small enough for Elling to own.';
+    document.getElementById('confidence').textContent = success ? 'medium' : 'low-medium';
+    document.getElementById('nextChoice').textContent = success ? 'Expression path is now credible.' : 'Return to observation or ask about one picture, not “what does Gro mean to you?”';
+    document.getElementById('widthMeter').style.width = success ? '52%' : '34%';
+    document.getElementById('widthText').textContent = success ? 'contact opened' : 'contact brushed, not opened';
   } else if (i.id === 'poetry') {
-    state.trust = Math.min(5, state.trust + 1);
-    state.functionStage = 'Expression opens';
-    document.getElementById('scene').textContent = '20:15 — one clipping becomes a first line. Elling leaves the folder closed and asks Frank whether “almost usable” is a Norwegian genre.';
-    document.getElementById('reviewFunction').textContent = 'This is rehabilitation: same self, wider life. The archive becomes a bridge rather than a room.';
-    document.getElementById('confidence').textContent = 'high';
-    document.getElementById('nextChoice').textContent = 'Schedule a weekly writing ritual; keep the folder available, not central.';
-    document.getElementById('widthMeter').style.width = '72%';
-    document.getElementById('widthText').textContent = 'wider, still Elling';
-    log(`Die ${d} → Poetry scaffold: script turns into expression.`);
+    if (success) state.rapport = Math.min(5, state.rapport + 1); else state.rapport = Math.max(0, state.rapport - 1);
+    state.functionStage = success ? 'Expression opens' : 'Expression pushed too soon';
+    document.getElementById('scene').textContent = success ? '20:15 — one clipping becomes a first line. Elling leaves the folder closed and asks Frank whether “almost usable” is a Norwegian genre.' : '20:15 — Elling pulls the clipping back. Gro is not raw material yet; she is still shelter.';
+    document.getElementById('reviewFunction').textContent = success ? 'This is rehabilitation: same self, wider life. The archive becomes a bridge rather than a room.' : 'You tried to convert shelter into output before it was safe. The failure is useful: the function is still protective.';
+    document.getElementById('confidence').textContent = success ? 'high' : 'medium, from failure';
+    document.getElementById('nextChoice').textContent = success ? 'Schedule a weekly writing ritual; keep the folder available, not central.' : 'Stabilize the Gro ritual before asking it to become poetry.';
+    document.getElementById('widthMeter').style.width = success ? '72%' : '26%';
+    document.getElementById('widthText').textContent = success ? 'wider, still Elling' : 'shelter defended';
   }
+
+  log(`Die ${d} → ${i.label}: ${success ? 'landed' : 'failed'} (${roll} ${success ? '≤' : '>'} ${chance}). ${success ? i.success : i.fail}`);
   state.selectedDie = null;
   state.selectedIntervention = null;
   render();

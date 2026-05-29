@@ -4,15 +4,22 @@ Disposable HTML prototype for the Case Desk / Apartment Evidence loop.
 
 ## Test question
 
-Can “weird behavior” become “understandable function” through play?
+Can “Elling collects Gro clippings” become an understandable function that changes the player’s next decision?
+
+## Current framing
+
+Elling collects pictures and clippings of Gro Harlem Brundtland from newspapers and magazines. The read should be admiration/safety/public-language/welfare-state symbolism — Gro, Gerhardsen, Arbeiderpartiet — not a blunt sexual fixation and not generic hoarding.
+
+The player is not trying to cure the Gro folder. They are choosing how to touch an activity that may be doing useful psychological work.
 
 ## What to try
 
 1. Select a die.
-2. Probe the Gro clippings activity.
-3. Watch Knowledge / working function update.
-4. Try `Forbid archive` before or after probing.
-5. Try structure-preserving and expression-opening paths.
-6. Check whether apartment evidence changes the Review panel and next desk decision.
+2. Probe the Gro clippings activity. Higher dice increase success chance; probes are odds, not locks.
+3. Watch Case understanding / Rapport / Working read update.
+4. Try removing the folder before understanding it.
+5. Try structure-preserving paths: named place, post-radio clipping routine.
+6. Try expression-opening paths only after the case read is strong enough.
+7. Check whether apartment evidence changes the Review panel and next desk decision.
 
 This is intentionally ugly. If it teaches the wrong thing, kill it.
