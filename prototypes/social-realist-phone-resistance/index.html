@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lifelines — Social Realist Phone Resistance Spike</title>
+<style>
+  :root {
+    --bg: #171716;
+    --panel: #23231f;
+    --panel2: #2c2b25;
+    --ink: #ebe3d2;
+    --muted: #a99f8b;
+    --line: #4a463b;
+    --accent: #d7b46a;
+    --bad: #d8715f;
+    --ok: #86b07d;
+    --neutral: #9ca7b1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at top, #24231f, var(--bg));
+    color: var(--ink);
+    font: 15px/1.45 ui-serif, Georgia, serif;
+  }
+  main {
+    display: grid;
+    grid-template-columns: minmax(640px, 1.4fr) minmax(360px, .8fr);
+    gap: 18px;
+    min-height: 100vh;
+    padding: 18px;
+  }
+  h1, h2, h3 { margin: 0 0 8px; font-weight: 650; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 16px; color: var(--accent); }
+  h3 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  button, select {
+    background: #343126;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: inherit;
+  }
+  button { cursor: pointer; }
+  button:hover, button.active { border-color: var(--accent); background: #433b28; }
+  .panel {
+    background: linear-gradient(180deg, rgba(42,41,35,.95), rgba(30,30,27,.95));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 20px 70px rgba(0,0,0,.28);
+  }
+  .stack { display: grid; gap: 14px; }
+  .room {
+    position: relative;
+    height: 580px;
+    border: 2px solid #5b5547;
+    border-radius: 10px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      #292720;
+    background-size: 36px 36px;
+    overflow: hidden;
+  }
+  .zone {
+    position: absolute;
+    border: 1px dashed rgba(235,227,210,.18);
+    border-radius: 14px;
+    color: rgba(235,227,210,.42);
+    padding: 8px;
+    font-size: 13px;
+  }
+  .phone-zone { left: 42px; top: 54px; width: 220px; height: 160px; }
+  .chair-zone { right: 60px; top: 68px; width: 220px; height: 150px; }
+  .door-zone { right: 70px; bottom: 56px; width: 190px; height: 135px; }
+  .object, .person {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: #38352c;
+    color: var(--ink);
+    transition: left .55s ease, top .55s ease, transform .25s ease, opacity .25s ease;
+    user-select: none;
+  }
+  .object { width: 82px; height: 58px; font-size: 13px; }
+  .person { width: 74px; height: 74px; border-radius: 50%; font-weight: 700; }
+  #elling { background: #3b4150; border-color: #6d7690; left: 430px; top: 120px; }
+  #frank { background: #4a3f31; border-color: #8c7143; left: 330px; top: 270px; }
+  #phone { left: 82px; top: 92px; background: #343838; }
+  #script { left: 88px; top: 162px; width: 96px; height: 34px; background: #4b4636; opacity: .35; }
+  #chair { right: 120px; top: 124px; background: #363128; }
+  #door { right: 120px; bottom: 72px; background: #3b3028; }
+  .bubble {
+    position: absolute;
+    max-width: 360px;
+    background: rgba(18,18,16,.94);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: var(--ink);
+    left: 220px;
+    top: 30px;
+    min-height: 54px;
+  }
+  .bubble:empty { display: none; }
+  .state-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    border: 1px solid var(--line);
+    background: #302e27;
+    border-radius: 999px;
+    padding: 5px 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .pill.good { color: var(--ok); border-color: rgba(134,176,125,.45); }
+  .pill.bad { color: var(--bad); border-color: rgba(216,113,95,.45); }
+  .pill.hot { color: var(--accent); border-color: rgba(215,180,106,.55); }
+  .dice { display: flex; flex-wrap: wrap; gap: 8px; }
+  .die {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 800;
+  }
+  .die.used { opacity: .35; pointer-events: none; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .log, .case {
+    min-height: 150px;
+    max-height: 250px;
+    overflow: auto;
+    background: #1d1d1a;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    white-space: pre-wrap;
+  }
+  .entry { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); padding-bottom: 8px; }
+  .small { color: var(--muted); font-size: 13px; }
+  .meters { display: grid; gap: 8px; }
+  .meter { display: grid; grid-template-columns: 86px 1fr 42px; gap: 8px; align-items: center; }
+  .bar { height: 9px; background: #1b1b18; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .fill { height: 100%; background: var(--accent); width: 50%; transition: width .35s ease; }
+  .footer-note { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <section class="stack">
+    <div class="panel">
+      <h1>Lifelines — social realist phone-resistance spike</h1>
+      <p class="small">One action, one room, one question: can dice-biased phone practice read as a 3D life-sim resistance performance rather than a text-card result?</p>
+      <div class="state-row" id="statePills"></div>
+    </div>
+
+    <div class="room panel" aria-label="Apartment room prototype">
+      <div class="zone phone-zone">phone zone</div>
+      <div class="zone chair-zone">reading / refuge chair</div>
+      <div class="zone door-zone">bedroom retreat</div>
+      <div id="phone" class="object">phone</div>
+      <div id="script" class="object">script</div>
+      <div id="chair" class="object">chair</div>
+      <div id="door" class="object">bedroom door</div>
+      <div id="elling" class="person">Elling</div>
+      <div id="frank" class="person">Frank</div>
+      <div id="bubble" class="bubble"></div>
+    </div>
+  </section>
+
+  <aside class="stack">
+    <div class="panel stack">
+      <div>
+        <h2>1. Choose Frank’s stance</h2>
+        <div class="controls">
+          <button data-proximity="near">Near phone</button>
+          <button data-proximity="seated" class="active">Seated away</button>
+          <button data-proximity="absent">Absent / setup only</button>
+          <button id="placeScript">Place script</button>
+        </div>
+      </div>
+      <div>
+        <h2>2. Assign a die to phone practice</h2>
+        <div class="dice" id="dice"></div>
+        <p class="small">The die biases the odds. It does not choose a deterministic authored branch.</p>
+      </div>
+    </div>
+
+    <div class="panel stack">
+      <h2>Phone contact — activity / skill lens</h2>
+      <div class="meters">
+        <div class="meter"><span>Trust</span><div class="bar"><div id="trustFill" class="fill"></div></div><span id="trustVal"></span></div>
+        <div class="meter"><span>Overskudd</span><div class="bar"><div id="overFill" class="fill"></div></div><span id="overVal"></span></div>
+        <div class="meter"><span>Phone</span><div class="bar"><div id="phoneFill" class="fill"></div></div><span id="phoneVal"></span></div>
+      </div>
+      <div class="small" id="lens"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Scene log</h2>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Case desk interpretation</h2>
+      <div class="case" id="caseFile"></div>
+    </div>
+  </aside>
+</main>
+<script>
+const barks = {
+  premise: [
+    '“I have never understood this national obsession with ringing people.”',
+    '“If Grete requires me, she knows where I live.”',
+    '“The telephone is, historically speaking, an interruption device.”'
+  ],
+  annoyed: [
+    '“Yes, yes. I am touching the apparatus. Civilization advances.”',
+    '“Is this for my benefit, or for the filing cabinet’s?”',
+    '“There. The telephone and I have acknowledged each other.”'
+  ],
+  spiral: [
+    '“A man is not obligated to summon voices into his sitting room.”',
+    '“One must be careful. First the telephone, then committees.”',
+    '“I am perfectly capable of making a call. I am choosing not to pollute the afternoon with one.”'
+  ],
+  anger: [
+    '“You people always arrive with a small task and a large conclusion.”',
+    '“I do not need lessons in telephony.”',
+    '“You have mistaken quiet for incompetence.”'
+  ],
+  success: [
+    '“This is theatre. We are performing competence for an invisible ministry.”',
+    '“Fine. I shall ring once, for the statistical record.”',
+    '“The invisible ministry may applaud quietly.”'
+  ]
+};
+
+const state = {
+  dice: [],
+  trust: 46,
+  overskudd: 58,
+  phoneSkill: 9,
+  knowledge: 0,
+  scriptPlaced: false,
+  scriptUsed: false,
+  frankProximity: 'seated',
+  doorClosed: false,
+  lastFriction: 'unknown',
+  attempts: 0
+};
+
+const els = {
+  dice: document.getElementById('dice'),
+  log: document.getElementById('log'),
+  caseFile: document.getElementById('caseFile'),
+  bubble: document.getElementById('bubble'),
+  elling: document.getElementById('elling'),
+  frank: document.getElementById('frank'),
+  script: document.getElementById('script'),
+  statePills: document.getElementById('statePills'),
+  lens: document.getElementById('lens'),
+  trustFill: document.getElementById('trustFill'),
+  overFill: document.getElementById('overFill'),
+  phoneFill: document.getElementById('phoneFill'),
+  trustVal: document.getElementById('trustVal'),
+  overVal: document.getElementById('overVal'),
+  phoneVal: document.getElementById('phoneVal')
+};
+
+function rollDice() {
+  state.dice = Array.from({length: 5}, () => 1 + Math.floor(Math.random() * 6));
+  render();
+  log('— New day. Dice rolled: [' + state.dice.join('] [') + ']');
+}
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function log(text) {
+  els.log.innerHTML = `<div class="entry">${text}</div>` + els.log.innerHTML;
+}
+function caseNote(text) {
+  els.caseFile.innerHTML = `<div class="entry">${text}</div>` + els.caseFile.innerHTML;
+}
+function say(text) { els.bubble.textContent = text; }
+function clearSayLater() { setTimeout(() => { els.bubble.textContent = ''; }, 2600); }
+
+function moveElling(where) {
+  const pos = {
+    chair: ['430px', '120px'],
+    phone: ['150px', '120px'],
+    pace: ['300px', '250px'],
+    door: ['470px', '420px'],
+    room: ['540px', '455px']
+  }[where];
+  els.elling.style.left = pos[0];
+  els.elling.style.top = pos[1];
+}
+function moveFrank(where) {
+  const pos = {
+    near: ['235px', '138px'],
+    seated: ['330px', '270px'],
+    absent: ['32px', '470px']
+  }[where];
+  els.frank.style.left = pos[0];
+  els.frank.style.top = pos[1];
+  els.frank.style.opacity = where === 'absent' ? '.35' : '1';
+}
+
+function outcomeClass(die) {
+  const r = Math.random();
+  if (die === 6) return 'positive';
+  if (die === 5) return r < .5 ? 'positive' : 'neutral';
+  if (die >= 3) return r < .25 ? 'positive' : (r < .75 ? 'neutral' : 'negative');
+  return r < .5 ? 'neutral' : 'negative';
+}
+
+function frictionLoad() {
+  let f = 0;
+  if (state.frankProximity === 'near') f += 24;
+  if (state.frankProximity === 'seated') f += 8;
+  if (!state.scriptPlaced) f += 12;
+  if (state.overskudd < 35) f += 18;
+  if (state.trust < 35) f += 14;
+  if (state.doorClosed) f += 10;
+  return f;
+}
+
+async function practiceWithDie(die, idx) {
+  state.dice.splice(idx, 1);
+  state.attempts++;
+  state.doorClosed = false;
+  const cls = outcomeClass(die);
+  const friction = frictionLoad() + (cls === 'positive' ? -22 : cls === 'neutral' ? 4 : 24) + (6 - die) * 4;
+  render();
+
+  log(`Die ${die} assigned to phone practice. Outcome bias rolled: ${cls}.`);
+  moveFrank(state.frankProximity);
+
+  await step(500, 'chair', rand(barks.premise), 'Elling defends the premise before touching the phone.');
+
+  if (friction < 18) {
+    await step(650, 'phone', rand(barks.annoyed), 'He approaches the phone, irritated but still in the attempt.');
+    await step(700, 'phone', rand(barks.success), 'He dials once, almost by accident, then hangs up before the call becomes a conversation.');
+    state.phoneSkill = clamp(state.phoneSkill + 7 + (state.scriptPlaced ? 3 : 0), 0, 100);
+    state.trust = clamp(state.trust + 3, 0, 100);
+    state.overskudd = clamp(state.overskudd - 8, 0, 100);
+    state.scriptUsed = state.scriptPlaced;
+    state.lastFriction = 'dignity preserved through ridicule';
+    caseNote('Phone practice landed because Elling could mock the exercise while doing the first step. Skill moved; dignity stayed mostly intact.');
+  } else if (friction < 48) {
+    await step(650, 'phone', rand(barks.annoyed), 'He touches the apparatus, then performs annoyance for Frank.');
+    await step(750, 'pace', rand(barks.spiral), 'The task becomes a small public debate inside the apartment.');
+    state.phoneSkill = clamp(state.phoneSkill + 2, 0, 100);
+    state.knowledge += 8;
+    state.overskudd = clamp(state.overskudd - 10, 0, 100);
+    state.lastFriction = state.frankProximity === 'near' ? 'Frank proximity turned practice into an exam' : 'pointlessness defense';
+    caseNote('Partial attempt. The phone itself may be less difficult than the meaning of being observed practicing it.');
+  } else if (friction < 75) {
+    await step(650, 'phone', rand(barks.spiral), 'He gets close enough for the phone to become a question of principle.');
+    await step(750, 'pace', rand(barks.anger), 'Anger displaces the task. Frank is now the problem.');
+    state.trust = clamp(state.trust - 4, 0, 100);
+    state.knowledge += 12;
+    state.overskudd = clamp(state.overskudd - 14, 0, 100);
+    state.lastFriction = 'competence-test anger';
+    caseNote('Attempt escalated. The useful evidence is not “phone fear” alone; Elling heard the task as a verdict on competence.');
+  } else {
+    await step(650, 'pace', rand(barks.anger), 'The intervention arrives too large for the room.');
+    await step(900, 'door', '“I shall continue this technological renaissance in private.”', 'He retreats to the bedroom. The phone remains untouched.');
+    moveElling('room');
+    state.doorClosed = true;
+    state.trust = clamp(state.trust - 8, 0, 100);
+    state.knowledge += 15;
+    state.overskudd = clamp(state.overskudd - 18, 0, 100);
+    state.lastFriction = state.frankProximity === 'near' ? 'Frank too close' : 'low overskudd / refusal spiral';
+    caseNote('Failure became room withdrawal. Next attempt should probably change framing or distance, not simply use a higher die.');
+  }
+  render();
+  clearSayLater();
+}
+
+function step(ms, where, bark, note) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      moveElling(where);
+      say(bark);
+      log(note + '\n' + bark);
+      resolve();
+    }, ms);
+  });
+}
+
+function render() {
+  els.dice.innerHTML = '';
+  state.dice.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'die';
+    btn.textContent = d;
+    btn.title = 'Assign die ' + d + ' to phone practice';
+    btn.onclick = () => practiceWithDie(d, i);
+    els.dice.appendChild(btn);
+  });
+  els.script.style.opacity = state.scriptPlaced ? '1' : '.25';
+  els.script.textContent = state.scriptUsed ? 'used script' : (state.scriptPlaced ? 'phone script' : 'no script');
+
+  els.trustFill.style.width = state.trust + '%';
+  els.overFill.style.width = state.overskudd + '%';
+  els.phoneFill.style.width = state.phoneSkill + '%';
+  els.trustVal.textContent = Math.round(state.trust);
+  els.overVal.textContent = Math.round(state.overskudd);
+  els.phoneVal.textContent = Math.round(state.phoneSkill);
+
+  const pills = [
+    ['Frank: ' + state.frankProximity, state.frankProximity === 'near' ? 'bad' : ''],
+    [state.scriptPlaced ? 'script visible' : 'script missing', state.scriptPlaced ? 'good' : 'bad'],
+    [state.doorClosed ? 'bedroom door closed' : 'room open', state.doorClosed ? 'bad' : 'good'],
+    ['last friction: ' + state.lastFriction, 'hot']
+  ];
+  els.statePills.innerHTML = pills.map(([t,c]) => `<span class="pill ${c}">${t}</span>`).join('');
+
+  els.lens.innerHTML = `
+    <p><b>Known friction:</b> Elling reframes the phone as unnecessary when watched.</p>
+    <p><b>Typical defense:</b> “I do not require telephonic administration of my existence.”</p>
+    <p><b>Current read:</b> ${state.lastFriction}.</p>
+    <p><b>Recent evidence:</b> ${state.attempts} attempt(s), ${state.scriptUsed ? 'script used once' : state.scriptPlaced ? 'script placed but not proven' : 'no script support'}.</p>
+  `;
+}
+
+document.querySelectorAll('[data-proximity]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('[data-proximity]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.frankProximity = btn.dataset.proximity;
+    moveFrank(state.frankProximity);
+    render();
+  };
+});
+document.getElementById('placeScript').onclick = () => {
+  state.scriptPlaced = true;
+  state.scriptUsed = false;
+  state.knowledge += 2;
+  log('Frank places a written phone script beside the apparatus. It is now an object in the room, not a line in a plan.');
+  render();
+};
+
+rollDice();
+moveFrank('seated');
+caseNote('Initial case understanding: Phone contact is listed as low mastery, but the visible question is whether the task becomes a dignity test when Frank is present.');
+</script>
+</body>
+</html>
