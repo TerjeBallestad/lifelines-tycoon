@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lifelines Tycoon — Goal Probe Tiltak Spike</title>
+<style>
+  :root {
+    --bg:#101310; --panel:#1a201b; --panel2:#222a23; --ink:#e7eadf; --muted:#aab3a5;
+    --line:#3a4438; --accent:#d8b25e; --green:#80b979; --red:#c2766f; --blue:#7aa8b8;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:radial-gradient(circle at top, #202720, var(--bg)); color:var(--ink); }
+  header { padding:20px 26px 14px; border-bottom:1px solid var(--line); background:rgba(16,19,16,.92); position:sticky; top:0; z-index:4; backdrop-filter:blur(10px); }
+  h1 { margin:0 0 6px; font-size:22px; }
+  header p { margin:0; color:var(--muted); max-width:1180px; line-height:1.35; }
+  main { display:grid; grid-template-columns:315px 1fr 390px; gap:14px; padding:14px; }
+  .panel { background:rgba(26,32,27,.95); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:0 10px 32px rgba(0,0,0,.23); }
+  h2 { margin:0 0 10px; font-size:14px; text-transform:uppercase; letter-spacing:.09em; }
+  h3 { margin:0 0 6px; font-size:17px; }
+  .small { color:var(--muted); font-size:13px; line-height:1.35; }
+  .meters { display:grid; gap:8px; margin-top:10px; }
+  .meter { display:grid; grid-template-columns:112px 1fr 38px; gap:8px; align-items:center; font-size:13px; }
+  .bar { height:9px; background:#101410; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  .fill { height:100%; width:calc(var(--v) * 1%); background:linear-gradient(90deg, var(--red), var(--accent), var(--green)); transition:width .25s ease; }
+  .dice { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 12px; }
+  .die { width:42px; height:42px; display:grid; place-items:center; border-radius:10px; border:1px solid #5f684f; background:#151a16; cursor:pointer; font-weight:800; }
+  .die:hover { border-color:var(--accent); }
+  .die.selected { outline:2px solid var(--accent); background:#2a2817; }
+  .die.used { opacity:.28; cursor:not-allowed; text-decoration:line-through; }
+  .grid { display:grid; gap:10px; }
+  .card, button.card { border:1px solid var(--line); background:#151a16; border-radius:12px; padding:11px; color:var(--ink); text-align:left; width:100%; }
+  button.card { cursor:pointer; }
+  button.card:hover:not(:disabled) { border-color:var(--accent); transform:translateY(-1px); }
+  button.card:disabled { opacity:.42; cursor:not-allowed; }
+  .card b { display:block; margin-bottom:4px; color:#f0e6c8; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .goal { border-left:3px solid var(--accent); background:#171c18; }
+  .status { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:3px 8px; color:var(--muted); font-size:12px; margin:3px 4px 0 0; }
+  .status.good { color:var(--green); border-color:var(--green); }
+  .status.bad { color:var(--red); border-color:var(--red); }
+  .path { display:grid; gap:8px; margin-top:10px; }
+  .step { display:grid; grid-template-columns:24px 1fr; gap:8px; align-items:start; padding:9px; background:#151a16; border:1px solid var(--line); border-radius:10px; color:var(--muted); }
+  .step.done { color:var(--ink); border-color:#557451; }
+  .box { width:20px; height:20px; border:1px solid var(--line); border-radius:5px; display:grid; place-items:center; color:var(--green); }
+  .log { min-height:180px; max-height:320px; overflow:auto; background:#121713; border:1px solid var(--line); border-radius:12px; padding:11px; color:#dce2d4; font-size:13px; line-height:1.38; }
+  .log p { margin:0 0 9px; }
+  .blockers { display:grid; gap:7px; margin-top:8px; }
+  .blocker { padding:8px; border-radius:10px; border:1px solid var(--line); background:#141914; font-size:13px; color:var(--muted); }
+  .blocker.resolved { color:var(--green); border-color:#557451; }
+  .note { padding:10px; border-radius:10px; background:#141914; border:1px solid var(--line); color:var(--muted); font-size:13px; line-height:1.35; }
+  @media (max-width:1100px) { main { grid-template-columns:1fr; } header { position:static; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Case Desk: uncover a goal, then build the bridge</h1>
+  <p>Roll state attention dice. Spend them on probes, tiltak, or admin. A better die gives a clearer answer, not just a bigger success number. The player is trying to turn an unclear client wish into a concrete path from the current equilibrium.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>Client equilibrium</h2>
+    <div class="small"><b>Elling Pettersen</b><br>Current pattern: Grete handles contact. Elling keeps order privately. He wants “something normal,” but that phrase is not yet actionable.</div>
+    <div class="meters" id="meters"></div>
+    <h2 style="margin-top:16px">Today’s dice</h2>
+    <div class="small">Select one die, then choose an action. Each die can be used once.</div>
+    <div class="dice" id="dice"></div>
+    <div class="note" id="selectedHint">No die selected.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Goal hypothesis</h2>
+    <div class="card goal" id="goalCard"></div>
+    <div class="row" style="margin-top:10px">
+      <div class="card"><h3>Current blockers</h3><div class="blockers" id="blockers"></div></div>
+      <div class="card"><h3>Path to participation</h3><div class="path" id="path"></div></div>
+    </div>
+    <h2 style="margin-top:14px">Case log</h2>
+    <div class="log" id="log"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Actions</h2>
+    <div class="grid" id="actions"></div>
+  </section>
+</main>
+<script>
+const state = {
+  stats:{autonomy:22, skill:18, usefulness:12, stability:31, codependence:74},
+  dice:[1,3,4,5,6], used:[], selected:null,
+  goalLevel:0,
+  goalText:'Unknown',
+  confidence:'none',
+  meaning:'No client-owned goal has been surfaced yet.',
+  blockers:{ selfDirection:false, transition:false, publicUse:false, institution:false },
+  path:{ discuss:false, greeting:false, usefulTask:false, visit:false, handoff:false, trial:false },
+  log:['Case opened. Elling says he wants “something normal.” That is not specific enough to prescribe a path.']
+};
+const statLabels = {autonomy:'Autonomy', skill:'Basic skill', usefulness:'Usefulness', stability:'Stability', codependence:'Codependence'};
+const blockerLabels = {
+  selfDirection:'Can express a preference without Grete or Frank answering for him',
+  transition:'Can start a scripted contact task',
+  publicUse:'Can perform a small task that benefits someone outside the private routine',
+  institution:'NAV has enough documented readiness for a protected trial'
+};
+const pathLabels = {
+  discuss:'Discuss work without Grete taking over',
+  greeting:'Practice one scripted greeting/contact opening',
+  usefulTask:'Complete an ordered task for someone else',
+  visit:'Visit café outside rush hour without performing',
+  handoff:'Perform one protected handoff',
+  trial:'Apply for sheltered café/library trial'
+};
+const actions = [
+  {id:'ask', type:'Probe', title:'Ask what he wants', desc:'Frank asks Elling directly. Low dice may produce compliance instead of preference.', run: die => {
+    if (die <= 2) return apply({log:'Elling says, “Whatever Grete thinks is sensible.” This does not identify a goal, but it shows self-direction is blocked.', stats:{autonomy:-1, codependence:3}});
+    if (die <= 4) return apply({goalLevel:1, goalText:'Something with things in fixed places', confidence:'weak', meaning:'The answer points toward ordered environments, but not a work path yet.', blockers:{selfDirection:true}, path:{discuss:true}, stats:{autonomy:3}, log:'Elling says he might like “books, cups, shelves — something where things have places.” This is a weak goal signal.'});
+    return apply({goalLevel:2, goalText:'Structured public service', confidence:'medium', meaning:'He may want public usefulness, but only where scripts and objects make contact predictable.', blockers:{selfDirection:true}, path:{discuss:true}, stats:{autonomy:5, stability:2}, log:'Elling describes arranging cups before guests and liking that he could be useful without inventing conversation. Goal hypothesis: structured public service.'});
+  }},
+  {id:'aptitude', type:'Probe', title:'Aptitude test', desc:'A formal test can surface interests, but it can also measure what he thinks the state wants to hear.', run: die => {
+    if (die <= 2) return apply({log:'The test suggests office work because Elling chooses the safest answers. Result marked low confidence; compliance is distorting the signal.', stats:{stability:-1}});
+    if (die <= 4) return apply({goalLevel:2, goalText:'Ordered low-contact work', confidence:'medium', meaning:'The test favors sorting, preparation, predictable routines, and low-conflict service environments.', blockers:{selfDirection:true}, path:{discuss:true}, stats:{autonomy:2}, log:'Aptitude result: ordered routines and low-contact service environments. It still does not prove he can tolerate public contact.'});
+    return apply({goalLevel:3, goalText:'Café back-room / predictable service role', confidence:'strong', meaning:'The goal is not “café job” broadly. It is useful participation through preparation, order, and scripted contact.', blockers:{selfDirection:true}, path:{discuss:true}, stats:{autonomy:4, usefulness:2}, log:'Aptitude test plus interview notes point to café back-room or library/archive-adjacent work: ordered preparation with predictable public scripts.'});
+  }},
+  {id:'grete', type:'Probe', title:'Ask Grete what he returns to', desc:'Grete can identify repeated behavior, but her answers may preserve the current dependence.', run: die => {
+    if (die <= 2) return apply({log:'Grete lists what she does for him. Useful context, but it reinforces that the case is organized around her buffering.', stats:{codependence:2}});
+    if (die <= 4) return apply({goalLevel:1, goalText:'Order and preparation tasks', confidence:'weak', meaning:'Repeated behavior suggests pull toward arranging and preparing, not yet toward employment.', blockers:{selfDirection:true}, stats:{usefulness:2}, log:'Grete says Elling repeatedly arranges cups and shelves before anyone visits. This suggests pull toward preparation tasks.'});
+    return apply({goalLevel:2, goalText:'Prepared social usefulness', confidence:'medium', meaning:'Grete reports that Elling relaxes when he has a defined role before social contact starts.', blockers:{selfDirection:true}, path:{discuss:true}, stats:{usefulness:4, stability:2}, log:'Grete reports Elling is calmer when he can prepare the room before guests arrive. The useful part is the defined role, not the visit itself.'});
+  }},
+  {id:'greeting', type:'Tiltak', title:'Scripted greeting rehearsal', desc:'Practice the first sentence and exit plan for a predictable contact.', run: die => {
+    if (die <= 2) return apply({log:'The rehearsal stops before speech. New information: the first blocker is starting the task, not remembering the words.', stats:{skill:1, stability:-1}});
+    if (die <= 4) return apply({blockers:{transition:true}, path:{greeting:true}, stats:{skill:7, autonomy:3, codependence:-4}, log:'Elling practices the greeting with Frank. He needs the script visible, but he starts without Grete speaking for him.'});
+    return apply({blockers:{transition:true}, path:{greeting:true}, stats:{skill:11, autonomy:5, stability:3, codependence:-6}, log:'Elling completes the greeting and the exit sentence twice. This creates a repeatable contact opening.'});
+  }},
+  {id:'sorting', type:'Tiltak', title:'Sorting task with public purpose', desc:'Use the ordering routine to prepare something another person will use.', run: die => {
+    if (die <= 2) return apply({log:'Elling sorts privately but refuses to let anyone use the result. The activity is still protective, not socially useful.', stats:{stability:2}});
+    if (die <= 4) return apply({blockers:{publicUse:true}, path:{usefulTask:true}, stats:{usefulness:8, autonomy:3, stability:3}, log:'Elling prepares a labeled shelf for Frank to use during the visit. Private order becomes a small useful task.'});
+    return apply({blockers:{publicUse:true}, path:{usefulTask:true}, stats:{usefulness:13, autonomy:5, stability:4, codependence:-4}, log:'Elling prepares and hands over a simple ordering system. The task benefits someone else without requiring open-ended conversation.'});
+  }},
+  {id:'visit', type:'Tiltak', title:'Café visit outside rush hour', desc:'Visit the environment without asking Elling to perform work yet.', run: die => {
+    if (!state.blockers.transition) return apply({log:'The visit is too early. Elling has not practiced a contact opening, so the café becomes an avoidance event.', stats:{stability:-5, autonomy:-2, codependence:3}});
+    if (die <= 3) return apply({path:{visit:true}, stats:{stability:1, skill:2}, log:'Elling enters, sits near the exit, and leaves after five minutes. This is limited but repeatable.'});
+    return apply({path:{visit:true}, stats:{stability:5, skill:4, autonomy:3}, log:'Elling enters outside rush hour, orders with the rehearsed greeting, and leaves before overload. The goal becomes more realistic.'});
+  }},
+  {id:'handoff', type:'Tiltak', title:'Protected handoff', desc:'Elling gives one prepared item to another person while Frank handles the boundary.', run: die => {
+    if (!state.blockers.transition || !state.blockers.publicUse) return apply({log:'The handoff needs both a contact opening and a useful prepared task. One of those bridges is still missing.', stats:{stability:-2}});
+    if (die <= 3) return apply({path:{handoff:true}, stats:{usefulness:4, skill:3, stability:-1}, log:'The handoff happens, but Frank does most of the boundary work. This is a partial success and shows what to practice next.'});
+    return apply({path:{handoff:true}, stats:{usefulness:8, skill:5, autonomy:4, codependence:-5}, log:'Elling completes one prepared handoff with Frank present but not speaking for him. This is the first work-like action.'});
+  }},
+  {id:'admin', type:'Admin', title:'Document readiness for protected trial', desc:'Use NAV capacity to turn demonstrated steps into institutional permission.', run: die => {
+    const ready = state.path.greeting && state.path.usefulTask && state.path.visit && state.path.handoff;
+    if (!ready) return apply({log:'Documentation is filed, but the readiness evidence is incomplete. NAV cannot justify a trial yet.', stats:{stability:1}});
+    if (die <= 3) return apply({blockers:{institution:true}, stats:{usefulness:2}, log:'NAV accepts the case notes but requests a narrower trial frame: preparation tasks only, no customer contact.'});
+    return apply({blockers:{institution:true}, path:{trial:true}, stats:{usefulness:6, autonomy:3, stability:3, codependence:-3}, log:'NAV approves a protected trial for preparation tasks in a café-like setting. The path is narrow, but it is real.'});
+  }},
+  {id:'job', type:'Admin', title:'Premature job meeting', desc:'Book a normal job-search meeting before the bridges exist.', run: die => apply({log:'The meeting creates a formal failure. It confirms that the goal cannot be reached by asking for normal performance first.', stats:{autonomy:-4, skill:-3, stability:-7, codependence:5}})}
+];
+function clamp(n){ return Math.max(0, Math.min(100, Math.round(n))); }
+function apply(change){
+  if (change.goalLevel && change.goalLevel > state.goalLevel) state.goalLevel = change.goalLevel;
+  if (change.goalText && (!state.goalText || change.goalLevel >= state.goalLevel)) state.goalText = change.goalText;
+  if (change.confidence) state.confidence = change.confidence;
+  if (change.meaning) state.meaning = change.meaning;
+  if (change.blockers) Object.assign(state.blockers, change.blockers);
+  if (change.path) Object.assign(state.path, change.path);
+  if (change.stats) for (const [k,v] of Object.entries(change.stats)) state.stats[k]=clamp(state.stats[k]+v);
+  if (change.log) state.log.unshift(change.log);
+}
+function useAction(id){
+  if (state.selected === null) { selectedHint.textContent = 'Select a die before choosing an action.'; return; }
+  const die = state.dice[state.selected];
+  const action = actions.find(a=>a.id===id);
+  state.used.push(state.selected);
+  state.selected = null;
+  action.run(die);
+  render();
+}
+function selectDie(i){ if (state.used.includes(i)) return; state.selected = i; render(); }
+function renderMeters(){ meters.innerHTML = Object.entries(state.stats).map(([k,v]) => `<div class="meter"><span>${statLabels[k]}</span><div class="bar"><div class="fill" style="--v:${v}"></div></div><span>${v}</span></div>`).join(''); }
+function renderDice(){ dice.innerHTML = state.dice.map((d,i)=>`<button class="die ${state.selected===i?'selected':''} ${state.used.includes(i)?'used':''}" onclick="selectDie(${i})">${d}</button>`).join(''); selectedHint.textContent = state.selected === null ? 'No die selected.' : `Selected die ${state.dice[state.selected]}.`; }
+function renderGoal(){
+  goalCard.innerHTML = `<h3>${state.goalText}</h3><span class="status ${state.confidence==='strong'?'good':''}">confidence: ${state.confidence}</span><span class="status">goal signal level: ${state.goalLevel}/3</span><p class="small" style="margin-bottom:0">${state.meaning}</p>`;
+  blockers.innerHTML = Object.entries(blockerLabels).map(([k,label])=>`<div class="blocker ${state.blockers[k]?'resolved':''}">${state.blockers[k]?'✓':'□'} ${label}</div>`).join('');
+  path.innerHTML = Object.entries(pathLabels).map(([k,label])=>`<div class="step ${state.path[k]?'done':''}"><div class="box">${state.path[k]?'✓':''}</div><div>${label}</div></div>`).join('');
+}
+function renderActions(){ actionsEl.innerHTML = actions.map(a=>`<button class="card" onclick="useAction('${a.id}')"><b>${a.type}: ${a.title}</b><span class="small">${a.desc}</span></button>`).join(''); }
+function renderLog(){ log.innerHTML = state.log.map(x=>`<p>${x}</p>`).join(''); }
+const actionsEl = document.getElementById('actions');
+function render(){ renderMeters(); renderDice(); renderGoal(); renderActions(); renderLog(); }
+render();
+</script>
+</body>
+</html>
