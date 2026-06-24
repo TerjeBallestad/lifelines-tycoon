@@ -4,6 +4,13 @@ extends Node
 
 var active: bool = false
 var reveal_hidden: bool = false
+## Task 15: when true, build_snapshot REDACTS the player-visible raw numbers
+## (client.needs/cognitive/overskudd) and filters case_file entries to
+## provenance==&"derived" only. This is what the STANDALONE blind-read gate
+## (Task 17) feeds the blind reader, so it cannot cheat by reading raw needs.
+## Independent of reveal_hidden: the gate redacts the player-visible numbers here
+## while separately using reveal_hidden (colors) for ground truth at boot.
+var blind_read: bool = false
 var comms_dir: String = ""
 var shutdown_requested: bool = false
 
@@ -42,25 +49,41 @@ func _client_snapshot() -> Dictionary:
 	var out := {
 		"id": String(c.id),
 		"display_name": c.display_name,
-		"needs": _stringify_dict_keys(c.needs),
-		"cognitive": _stringify_dict_keys(c.cognitive),
-		"overskudd": c.overskudd,
-		"overskudd_ceiling": c.overskudd_ceiling(),
 		"skills": _stringify_dict_keys(c.skills),
 	}
+	if not blind_read:
+		# Task 15: in blind-read mode the player-visible raw numbers are redacted so
+		# the blind reader must derive the symptom from PatternDeriver facts, not by
+		# reading client.needs directly. overskudd_ceiling is derived from those same
+		# raw numbers, so it is omitted too.
+		out["needs"] = _stringify_dict_keys(c.needs)
+		out["cognitive"] = _stringify_dict_keys(c.cognitive)
+		out["overskudd"] = c.overskudd
+		out["overskudd_ceiling"] = c.overskudd_ceiling()
 	if reveal_hidden:
-		out["mtg_primary"] = String(c.mtg_primary)
-		out["mtg_secondary"] = String(c.mtg_secondary)
+		# Task 14: the CA's actual hidden personality driver is the 5-float color
+		# vector, not the mtg strings. Surface colors as the legitimate ground
+		# truth so the blind-read gate can't cheat by reading mtg labels.
+		# (mtg_primary/mtg_secondary fields remain on ClientState — just unsurfaced.)
+		out["colors"] = c.colors
 	return out
 
 func _case_file_snapshot() -> Dictionary:
 	var cf: CaseFile = World.case_file
 	var entries: Array = []
 	for e: CaseEntry in cf.entries:
+		# Task 15: in blind-read mode surface ONLY derived (CA-emergent) facts so
+		# the blind reader works from PatternDeriver output, never authored
+		# scheduled-consequence entries.
+		if blind_read and e.provenance != &"derived":
+			continue
 		entries.append({
 			"id": String(e.id),
 			"title": e.title,
 			"tags": _stringify_array(e.tags),
+			# Task 15/16: serialise provenance so the filter — and downstream
+			# consumers — can distinguish authored from derived facts.
+			"provenance": String(e.provenance),
 		})
 	return {
 		"entries": entries,
@@ -228,6 +251,7 @@ func start_event_capture() -> void:
 	EventBus.away_action_completed.connect(_on_away_action_completed)
 	EventBus.return_report_ready.connect(_on_return_report_ready)
 	EventBus.action_failed.connect(_on_action_failed)
+	EventBus.patterns_evaluated.connect(_on_patterns_evaluated)
 
 func stop_event_capture() -> void:
 	if not _event_capture_active:
@@ -244,6 +268,7 @@ func stop_event_capture() -> void:
 	EventBus.away_action_completed.disconnect(_on_away_action_completed)
 	EventBus.return_report_ready.disconnect(_on_return_report_ready)
 	EventBus.action_failed.disconnect(_on_action_failed)
+	EventBus.patterns_evaluated.disconnect(_on_patterns_evaluated)
 
 func drain_events() -> Array:
 	var out := _event_buffer
@@ -295,6 +320,12 @@ func _on_return_report_ready(report: Dictionary) -> void:
 
 func _on_action_failed(reason: StringName) -> void:
 	_push_event({"ev": "action_failed", "reason": String(reason)})
+
+# Day-end Lens pass (Task 12): stream the uncovered-behaviour summary so the standalone
+# blind-read gate can see what the Lens is blind to. Keys are activity ids (StringName)
+# stringified for JSON; values are occurrence counts of unmatched history records.
+func _on_patterns_evaluated(uncovered: Dictionary) -> void:
+	_push_event({"ev": "patterns_evaluated", "uncovered": _stringify_dict_keys(uncovered)})
 
 # ---------------------------------------------------------------- comms loop
 

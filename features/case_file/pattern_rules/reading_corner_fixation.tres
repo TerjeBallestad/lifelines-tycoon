@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PatternRule" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/pattern_rule.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="trace"]
+script = ExtResource("2")
+id = &"trace_reading_chair"
+source = 0
+provenance = &"authored"
+title = "Days organised around the reading chair"
+body = "The reading chair carries the rest of the day's hours. Book after book, day after day — the same seat by the same window, with little else logged in between."
+tags = []
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"rule_reading_corner_fixation"
+predicate_type = &"activity_fixation"
+min_count = 12
+window_days = 0
+need_key = &"act_read_book"
+trace_fact = SubResource("trace")
+evidence_query = &""

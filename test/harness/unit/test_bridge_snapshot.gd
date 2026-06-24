@@ -72,3 +72,49 @@ func _find_catalog_item(items: Array, id: String) -> Dictionary:
 		if String(item.get("id", "")) == id:
 			return item
 	return {}
+
+func _find_entry(entries: Array, id: String) -> Dictionary:
+	for e: Dictionary in entries:
+		if String(e.get("id", "")) == id:
+			return e
+	return {}
+
+## Task 16: provenance must be OBSERVABLE in the NORMAL (non-blind) snapshot with the
+## CORRECT value per entry, so the desk can tell derived (CA-emergent) facts from
+## authored (scheduled-consequence) facts. test_bridge_redacted covers blind mode +
+## presence; this asserts value-correctness in normal mode. No production change was
+## needed: Task 15 already serialises "provenance": String(e.provenance) on every entry.
+##
+## summarize_traces note: the EVENT stream's case_file_updated carries only the entry
+## StringName (Option B), so harness/lib/summarize_traces.py (obj.get("entry"), ~L74)
+## needs NO change — provenance lives in the snapshot, not the trace. A provenance
+## pass-through into summarize_traces is OUT OF SCOPE this slice.
+##
+## Verified red-green: 2026-06-24
+func test_normal_snapshot_provenance_value_correct_per_entry() -> void:
+	var authored := CaseEntry.new()
+	authored.id = &"con_authored_eviction"
+	authored.provenance = &"authored"
+	authored.title = "Authored consequence: eviction notice"
+	authored.tags = [&"housing"]
+	World.case_file.add_entry(authored)
+
+	var derived := CaseEntry.new()
+	derived.id = &"trace_isolation"
+	derived.provenance = &"derived"
+	derived.title = "Derived trace: prolonged isolation"
+	derived.tags = [&"social"]
+	World.case_file.add_entry(derived)
+
+	bridge.blind_read = false
+	var snap: Dictionary = bridge.build_snapshot()
+	var entries: Array = snap["case_file"]["entries"]
+
+	var a := _find_entry(entries, "con_authored_eviction")
+	var d := _find_entry(entries, "trace_isolation")
+	assert_false(a.is_empty(), "authored entry must be surfaced in normal mode")
+	assert_false(d.is_empty(), "derived entry must be surfaced in normal mode")
+	assert_eq(String(a.get("provenance", "")), "authored",
+		"authored entry must report provenance == authored")
+	assert_eq(String(d.get("provenance", "")), "derived",
+		"derived entry must report provenance == derived")

@@ -1,4 +1,5 @@
 ## Verified red-green: 2026-05-20
+## Verified red-green: 2026-06-24
 extends GutTest
 
 var bridge: Node
@@ -8,20 +9,21 @@ func before_each() -> void:
 	World.reset_for_test()
 	bridge.reveal_hidden = false
 
-func test_mtg_absent_when_reveal_hidden_off() -> void:
+func test_colors_absent_when_reveal_hidden_off() -> void:
 	bridge.reveal_hidden = false
 	var snap: Dictionary = bridge.build_snapshot()
 	var c: Dictionary = snap["client"]
-	assert_false(c.has("mtg_primary"))
-	assert_false(c.has("mtg_secondary"))
+	assert_false(c.has("colors"))
 
-func test_mtg_present_when_reveal_hidden_on() -> void:
+func test_colors_present_when_reveal_hidden_on() -> void:
+	# Task 14: reveal_hidden exposes the 5-float color vector (the CA's actual
+	# hidden personality driver) as the legitimate ground truth — not mtg labels.
 	bridge.reveal_hidden = true
 	var snap: Dictionary = bridge.build_snapshot()
 	var c: Dictionary = snap["client"]
-	assert_true(c.has("mtg_primary"))
-	assert_true(c.has("mtg_secondary"))
-	assert_eq(typeof(c["mtg_primary"]), TYPE_STRING)
+	assert_true(c.has("colors"))
+	assert_eq(typeof(c["colors"]), TYPE_ARRAY)
+	assert_eq((c["colors"] as Array).size(), 5)
 
 func test_reveal_hidden_resets_to_off_after_test() -> void:
 	# Defensive: clean up state for other tests that may run in the same session.
