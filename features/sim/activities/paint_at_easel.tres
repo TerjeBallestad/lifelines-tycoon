@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Activity" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/sim/activity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act_paint_at_easel"
+display_name = "Paint at Easel"
+colors = [0.0, 0.7, 0.0, 0.5, 0.2]
+effects = {
+&"hunger": 0.0,
+&"bladder": -0.01,
+&"energy": -0.03,
+&"social": 0.0,
+&"security": 0.0
+}
+difficulty = 7.0
+model = &"FLOW"
+start_mastery = 0.0

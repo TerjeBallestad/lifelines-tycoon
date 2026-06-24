@@ -28,3 +28,13 @@ skills = {
 &"cooking": 0,
 &"going_outside": 0
 }
+mastery = {
+&"act_use_telescope": 0.6,
+&"act_read_book": 0.4,
+&"act_look_through_window": 0.7,
+&"act_do_crossword": 0.3,
+&"act_lock_doors": 0.8,
+&"act_small_talk": 0.1,
+&"act_water_plants": 0.3
+}
+colors = [0.0, 0.8, 0.0, 0.0, 0.4]

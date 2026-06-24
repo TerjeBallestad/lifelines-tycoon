@@ -3,12 +3,39 @@ extends Node
 const ELLING_INIT_PATH := "res://features/client/elling_init.tres"
 const CLIENT_DECAY_PATH := "res://features/client/client_decay.tres"
 
+# CA reproducibility seed slot. main.gd._apply_cli_flags() parses the
+# `--seed <int>` CLI flag into this field BEFORE Sim/World boot, so CAEngine
+# (a later task) can seed its OWN private RandomNumberGenerator from it at its
+# first tick. We deliberately do NOT call the global seed() — this value is for
+# CAEngine to consume into a private RNG, keeping CA history reproducible
+# without coupling the rest of the engine to a global RNG state. 0 = unset.
+var ca_seed: int = 0
+
 var client: ClientState
 var case_file: CaseFile
 var economy: EconomyState
 var decay: ClientDecay
 var schedule_queue: ScheduleQueue
 var _pending_return_report: Dictionary = {}
+
+# Append-only activity history owned by World — the stable seam between the
+# living sim and the Lens (per the ownership decision: World owns history;
+# CAEngine/Sim WRITE via append_activity_record(); PatternDeriver READS via the
+# read-only get_activity_history() query). This is the ONLY history coupling
+# point PatternDeriver depends on, keeping the Lens off CAEngine internals.
+# Each record is a Dictionary:
+#   {day:int, step:int, activity_id:StringName,
+#    needs_snapshot:Dictionary, mastery_snapshot:Dictionary}
+var _activity_history: Array = []
+
+# OWNERSHIP DECISION: World owns the PatternDeriver (the Lens). World already owns
+# case_file (where derived traces land) and the activity history (the seam the Lens
+# reads), so it is the natural owner — the deriver is constructed with a back-ref to
+# World and lives for the World's lifetime. Sim does NOT own it: Sim drives time and
+# merely triggers an evaluation on the day boundary (see Sim._on_day_started, which
+# calls World.evaluate_patterns_for_day_end after World.start_new_day). Rebuilt on
+# reset_for_test so a fresh case_file/history pairs with a fresh (un-fired) deriver.
+var _pattern_deriver: PatternDeriver
 
 func _ready() -> void:
     reset_for_test()
@@ -27,8 +54,43 @@ func reset_for_test() -> void:
     var loaded_decay := load(CLIENT_DECAY_PATH) as ClientDecay
     decay = loaded_decay if loaded_decay != null else ClientDecay.new()
     _pending_return_report = {}
+    _activity_history = []
     schedule_queue = ScheduleQueue.new()
     _seed_initial_schedule()
+    _pattern_deriver = PatternDeriver.new(self)
+
+# Read-only accessor for the owned Lens. Exposed so tests (and only tests / the day
+# hook) can observe the deriver; runtime code triggers it via evaluate_patterns_for_day_end.
+func pattern_deriver() -> PatternDeriver:
+    return _pattern_deriver
+
+# Test-only seam: swap in a PatternDeriver double (e.g. a counting spy) so the cadence
+# test can assert evaluate() runs exactly once per day-end. Production code never calls
+# this; it only sets the same field reset_for_test populates.
+func set_pattern_deriver_for_test(deriver: PatternDeriver) -> void:
+    _pattern_deriver = deriver
+
+# DAY-END LENS PASS. Called once per day rollover from Sim._on_day_started (after
+# start_new_day) — NOT per tick. Runs the Lens over the whole activity history, then
+# emits the uncovered-behaviour summary on EventBus so agent_bridge can stream it to
+# events.jsonl for the standalone blind-read gate. This is a designer/gate-facing
+# channel only: it touches no live UI node and cannot block the UI thread (a pure
+# signal emit drained asynchronously by agent_bridge.pump()).
+func evaluate_patterns_for_day_end() -> void:
+    _pattern_deriver.evaluate(get_activity_history())
+    EventBus.patterns_evaluated.emit(_pattern_deriver.get_uncovered_summary())
+
+# Write seam: CAEngine/Sim push one activity record per CA decision step. We
+# deep-duplicate on the way in so the caller cannot later mutate the stored
+# record through a retained reference to its nested needs/mastery snapshots.
+func append_activity_record(record: Dictionary) -> void:
+    _activity_history.append(record.duplicate(true))
+
+# Read-only query: PatternDeriver consumes this. Returns a deep duplicate of the
+# whole history so callers cannot mutate internal records — neither the outer
+# array nor the nested needs_snapshot/mastery_snapshot dictionaries are shared.
+func get_activity_history() -> Array:
+    return _activity_history.duplicate(true)
 
 func scheduled_consequence_count(domain: StringName = &"") -> int:
     return schedule_queue.pending_count(domain)
@@ -139,17 +201,30 @@ func _run_intervention_impl(i: Intervention) -> bool:
     EventBus.overskudd_changed.emit(client.id, client.overskudd)
     return true
 
-func start_new_day(day: int) -> void:
+func start_new_day(day: int, chosen_activity_ids: Array = []) -> void:
     economy.refill_to_max()
     EventBus.caseworker_capacity_changed.emit(economy.capacity_current, economy.capacity_max)
+    _apply_overnight_reset(chosen_activity_ids)
 
-func try_surface_observation() -> CaseEntry:
-    var candidates: Array[CaseEntry] = Catalog.observation_candidates(client, case_file)
-    if candidates.is_empty(): return null
-    var pick: CaseEntry = candidates[randi() % candidates.size()]
-    case_file.add_entry(pick)
-    EventBus.case_file_updated.emit(pick.id)
-    return pick
+# CA overnight reset (sandbox sleep step). Sleep restores energy and partially
+# relieves hunger/bladder; social/security PERSIST (no overnight reset). Mastery for
+# every activity NOT chosen that day decays by the CA decay factor (skill fade). The
+# factor mirrors CAEngine.DECAY_FACTOR (0.905); kept as a literal so this autoload
+# takes no compile-time static dependency on the CAEngine class (whose own reload
+# under the project's untyped_declaration=2 lint must not be dragged into autoload load).
+const CA_MASTERY_DECAY_FACTOR := 0.905
+
+func _apply_overnight_reset(chosen_activity_ids: Array) -> void:
+    var needs := client.needs
+    needs[&"energy"] = min(1.0, float(needs.get(&"energy", 0.0)) + 0.85)
+    needs[&"hunger"] = max(0.0, float(needs.get(&"hunger", 0.0)) - 0.30)
+    needs[&"bladder"] = max(0.0, float(needs.get(&"bladder", 0.0)) - 0.35)
+    var chosen := {}
+    for id: Variant in chosen_activity_ids:
+        chosen[id] = true
+    for activity_id: Variant in client.mastery.keys():
+        if not chosen.has(activity_id):
+            client.mastery[activity_id] = float(client.mastery[activity_id]) * CA_MASTERY_DECAY_FACTOR
 
 func _seed_initial_schedule() -> void:
     for consequence: ScheduledConsequence in Catalog.consequences.values():

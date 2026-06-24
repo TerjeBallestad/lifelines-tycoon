@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Activity" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/sim/activity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act_tidy_up"
+display_name = "Tidy Up"
+colors = [0.5, 0.0, 0.0, 0.0, 0.4]
+effects = {
+&"hunger": 0.0,
+&"bladder": 0.0,
+&"energy": -0.03,
+&"social": 0.0,
+&"security": 0.03
+}
+difficulty = 3.0
+model = &"TASK"
+start_mastery = 0.0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Activity" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/sim/activity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act_eat_meal"
+display_name = "Eat Meal"
+colors = [0.3, 0.0, 0.0, 0.0, 0.5]
+effects = {
+&"hunger": 0.6,
+&"bladder": -0.05,
+&"energy": 0.05,
+&"social": 0.02,
+&"security": 0.0
+}
+difficulty = 1.0
+model = &"NEED"
+start_mastery = 0.9

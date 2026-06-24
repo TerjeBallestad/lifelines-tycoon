@@ -1,0 +1,3497 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lifelines — Blueprint v1 · Saken Olsen</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Caveat:wght@400;500;600;700&family=Architects+Daughter&family=Gloock&display=swap');
+
+      :root {
+        --paper: #f5f1e8;
+        --paper-shade: #ece7d8;
+        --paper-fold: #dcd5c2;
+        --ink: #2a2520;
+        --ink-dim: #6b6259;
+        --ink-faint: #a49a8c;
+        --desk: #463c31;
+        --desk-dark: #382f26;
+        --hint-gold: #c89a2e;
+        --hint-warn: #c86244;
+        --hint-green: #7aa66f;
+        --hint-blue: #5b7fc4;
+        --hint-purple: #a57bc2;
+        --hint-lock: #9b9387;
+        --mark: #fff8b0;
+        --hand-1: 'Kalam', cursive;
+        --hand-2: 'Caveat', cursive;
+        --hand-3: 'Architects Daughter', cursive;
+        --hand-title: 'Gloock', serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--desk-dark);
+        color: var(--ink);
+        font-family: var(--hand-1);
+        font-size: 15px;
+        min-height: 100vh;
+      }
+
+      /* ---------- generic paper bits ---------- */
+      .frame {
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 4px 7px 5px 8px;
+        padding: 16px;
+        box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
+      }
+      .frame-title {
+        font-family: var(--hand-title);
+        font-size: 13px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        border-bottom: 1.5px solid var(--ink);
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .frame-title .meta {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        color: var(--ink-dim);
+        letter-spacing: 1px;
+      }
+      .tag {
+        font-family: var(--hand-3);
+        font-size: 9px;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .pill {
+        display: inline-block;
+        font-family: var(--hand-3);
+        font-size: 9px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border: 1.5px solid var(--ink-faint);
+        border-radius: 8px 10px 9px 11px;
+        padding: 2px 8px 3px;
+        color: var(--ink-dim);
+        background: var(--paper);
+      }
+      .pill.gold {
+        border-color: var(--hint-gold);
+        color: var(--hint-gold);
+      }
+      .pill.warn {
+        border-color: var(--hint-warn);
+        color: var(--hint-warn);
+      }
+      .pill.green {
+        border-color: var(--hint-green);
+        color: var(--hint-green);
+      }
+      .pill.blue {
+        border-color: var(--hint-blue);
+        color: var(--hint-blue);
+      }
+      .stamp {
+        display: inline-block;
+        font-family: var(--hand-3);
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--hint-warn);
+        border: 2.5px solid var(--hint-warn);
+        border-radius: 3px;
+        padding: 4px 12px;
+        transform: rotate(-4deg);
+        opacity: 0.85;
+      }
+      .stamp.gold {
+        color: var(--hint-gold);
+        border-color: var(--hint-gold);
+      }
+      button {
+        font-family: var(--hand-3);
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: var(--paper);
+        color: var(--ink);
+        border: 2px solid var(--ink);
+        border-radius: 4px 6px 5px 7px;
+        padding: 7px 14px;
+        cursor: pointer;
+        box-shadow: 1.5px 2px 0 rgba(0, 0, 0, 0.2);
+        transition:
+          transform 0.08s,
+          box-shadow 0.08s;
+      }
+      button:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 2.5px 3px 0 rgba(0, 0, 0, 0.25);
+      }
+      button:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      button:disabled {
+        color: var(--hint-lock);
+        border-color: var(--hint-lock);
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+      button.primary {
+        background: rgba(200, 154, 46, 0.15);
+        border-color: var(--hint-gold);
+        color: #8a6a1d;
+      }
+      button.quiet {
+        border-color: var(--ink-faint);
+        color: var(--ink-dim);
+        box-shadow: none;
+      }
+
+      /* ---------- topbar ---------- */
+      #topbar {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+        padding: 14px 22px 0;
+        max-width: 1480px;
+        margin: 0 auto;
+      }
+      .case-head {
+        flex: 1;
+        background: var(--paper-shade);
+        border: 2.5px solid var(--ink);
+        border-left: 5px solid var(--hint-gold);
+        border-radius: 3px 6px 4px 6px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3);
+      }
+      .case-head h1 {
+        font-family: var(--hand-title);
+        font-size: 16px;
+        letter-spacing: 1.5px;
+      }
+      .case-head .sub {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        color: var(--ink-dim);
+        letter-spacing: 1px;
+      }
+      .resource {
+        background: var(--paper-shade);
+        border: 2.5px solid var(--ink);
+        border-radius: 4px 6px 5px 6px;
+        padding: 6px 14px;
+        text-align: center;
+        box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3);
+      }
+      .resource .num {
+        font-family: var(--hand-2);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .resource .lab {
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+
+      /* ---------- tabs ---------- */
+      #tabs {
+        display: flex;
+        gap: 4px;
+        max-width: 1480px;
+        margin: 14px auto 0;
+        padding: 0 34px;
+      }
+      .tab-btn {
+        position: relative;
+        font-family: var(--hand-3);
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: var(--paper-fold);
+        color: var(--ink-dim);
+        border: 2px solid var(--ink);
+        border-bottom: none;
+        border-radius: 5px 7px 0 0;
+        padding: 8px 16px 10px;
+        cursor: pointer;
+        transform: rotate(-0.4deg);
+        box-shadow: none;
+      }
+      .tab-btn:nth-child(2n) {
+        transform: rotate(0.35deg);
+      }
+      .tab-btn:nth-child(3n) {
+        transform: rotate(-0.2deg);
+      }
+      .tab-btn:hover {
+        transform: translateY(-2px);
+      }
+      .tab-btn.active {
+        background: var(--paper);
+        color: var(--ink);
+        z-index: 2;
+      }
+      .tab-btn.locked {
+        color: var(--hint-lock);
+        border-color: #55493c;
+        background: var(--desk);
+        cursor: not-allowed;
+      }
+      .tab-btn .badge {
+        position: absolute;
+        top: -8px;
+        right: -7px;
+        min-width: 18px;
+        height: 18px;
+        background: var(--hint-gold);
+        color: #2a2008;
+        border: 2px solid var(--ink);
+        border-radius: 50%;
+        font-size: 10px;
+        line-height: 15px;
+        text-align: center;
+        font-family: var(--hand-1);
+        font-weight: 700;
+      }
+
+      /* ---------- surfaces ---------- */
+      #surfaces {
+        max-width: 1480px;
+        margin: 0 auto 60px;
+        padding: 0 22px;
+      }
+      .surface {
+        display: none;
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 2px 5px 3px 6px;
+        min-height: 640px;
+        padding: 20px 24px 28px;
+        box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.35);
+      }
+      .surface.active {
+        display: block;
+      }
+
+      /* desk surface keeps the wood */
+      #surface-pulten {
+        background: radial-gradient(
+          ellipse at 40% 20%,
+          #52473a 0%,
+          var(--desk) 55%,
+          var(--desk-dark) 100%
+        );
+        border-color: #241e17;
+      }
+      #desk-docs {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 26px;
+        padding: 18px 8px;
+        align-items: flex-start;
+      }
+      .desk-doc {
+        position: relative;
+        width: 215px;
+        min-height: 130px;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 2px 4px 3px 4px;
+        padding: 12px 13px;
+        cursor: pointer;
+        box-shadow: 3px 4px 6px rgba(0, 0, 0, 0.45);
+        transition: transform 0.12s;
+      }
+      .desk-doc:hover {
+        transform: scale(1.04) rotate(0deg) !important;
+        z-index: 5;
+      }
+      .desk-doc .kind {
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        margin-bottom: 5px;
+      }
+      .desk-doc .title {
+        font-family: var(--hand-title);
+        font-size: 13px;
+        line-height: 1.25;
+        margin-bottom: 6px;
+      }
+      .desk-doc .peek {
+        font-family: var(--hand-2);
+        font-size: 13.5px;
+        color: var(--ink-dim);
+        line-height: 1.3;
+      }
+      .desk-doc .new-stamp {
+        position: absolute;
+        top: -10px;
+        right: -8px;
+        transform: rotate(7deg);
+        font-size: 9px;
+        padding: 2px 8px;
+        background: var(--paper);
+      }
+      .desk-doc.read-done {
+        opacity: 0.92;
+      }
+      .desk-doc .ev-count {
+        position: absolute;
+        bottom: 7px;
+        right: 9px;
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        color: var(--ink-faint);
+        letter-spacing: 1px;
+      }
+      #desk-note {
+        margin-top: 10px;
+        font-family: var(--hand-2);
+        font-size: 16px;
+        color: #cfc4b2;
+      }
+
+      /* ---------- document reader modal ---------- */
+      #reader-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(26, 21, 16, 0.55);
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        z-index: 90;
+        overflow-y: auto;
+        padding: 40px 16px 60px;
+      }
+      #reader-overlay.open {
+        display: flex;
+      }
+      #reader-doc {
+        width: min(680px, 94vw);
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 2px 5px 3px 5px;
+        padding: 26px 30px 30px;
+        box-shadow: 6px 8px 0 rgba(0, 0, 0, 0.4);
+        position: relative;
+      }
+      #reader-doc .doc-body {
+        font-size: 15.5px;
+        line-height: 1.75;
+      }
+      #reader-doc .doc-body p {
+        margin: 0 0 12px;
+      }
+      #reader-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+      }
+
+      /* registers */
+      .reg-klinisk .doc-body {
+        font-family: var(--hand-1);
+      }
+      .reg-bank {
+        background: var(--paper-shade);
+      }
+      .reg-bank .doc-body {
+        font-family: var(--hand-3);
+        font-size: 13px;
+        line-height: 1.9;
+      }
+      .reg-bank table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--hand-3);
+        font-size: 12px;
+        margin: 8px 0 14px;
+      }
+      .reg-bank td,
+      .reg-bank th {
+        border-bottom: 1px solid var(--ink-faint);
+        padding: 4px 6px;
+        text-align: left;
+      }
+      .reg-bank td.amt,
+      .reg-bank th.amt {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .reg-formell .doc-body {
+        font-family: var(--hand-1);
+        letter-spacing: 0.2px;
+      }
+      .reg-notat {
+        background: repeating-linear-gradient(transparent 0 25px, #c4cdd6 25px 26px), var(--paper);
+      }
+      .reg-notat .doc-body {
+        font-family: var(--hand-2);
+        font-size: 18.5px;
+        line-height: 26px;
+      }
+      .reg-notat::before {
+        content: '';
+        position: absolute;
+        left: 44px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--hint-warn);
+        opacity: 0.4;
+      }
+      .reg-vedtak .doc-body {
+        font-family: var(--hand-1);
+      }
+
+      /* coins */
+      .coin {
+        display: inline-block;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #e8c563, var(--hint-gold) 70%);
+        border: 1.5px solid var(--ink);
+        vertical-align: -2px;
+        margin-right: 2px;
+      }
+      .coin.spent {
+        background: var(--paper-fold);
+        opacity: 0.6;
+      }
+
+      /* domain icons */
+      .dico {
+        display: inline-block;
+        font-size: 12px;
+        width: 19px;
+        height: 19px;
+        line-height: 17px;
+        text-align: center;
+        border: 1.5px solid currentColor;
+        border-radius: 50% 45% 50% 45%;
+        margin-right: 5px;
+        vertical-align: -3px;
+      }
+
+      /* redacted hypothesis slots */
+      .hypo-opt .redact {
+        color: transparent;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--ink-faint) 0 18px,
+          transparent 18px 24px
+        );
+        opacity: 0.45;
+        border-radius: 2px;
+        user-select: none;
+      }
+
+      /* fact detail modal */
+      #fact-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(26, 21, 16, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 95;
+        padding: 20px;
+      }
+      #fact-overlay.open {
+        display: flex;
+      }
+      #fact-card {
+        width: min(440px, 92vw);
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 4px 7px 5px 7px;
+        padding: 18px 20px;
+        box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.4);
+      }
+      #fact-card .fc-rel {
+        margin-top: 12px;
+      }
+      #fact-card .fc-rel h4 {
+        font-family: var(--hand-3);
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        margin-bottom: 5px;
+      }
+      #fact-card .fc-link {
+        display: block;
+        font-family: var(--hand-1);
+        font-size: 13px;
+        padding: 4px 0;
+        border-bottom: 1px dashed var(--ink-faint);
+        cursor: pointer;
+      }
+      #fact-card .fc-link:hover {
+        color: var(--hint-gold);
+      }
+      .fact-chip {
+        cursor: pointer;
+      }
+      .fact-chip:hover {
+        border-color: var(--hint-gold);
+      }
+      .q-fact-min {
+        cursor: pointer;
+      }
+      .q-fact-min:hover {
+        border-color: var(--hint-gold);
+      }
+      .q-opens {
+        margin-top: 7px;
+        font-family: var(--hand-3);
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        color: #7a6420;
+      }
+
+      /* evidence anchors */
+      .ev {
+        cursor:
+          url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><circle cx="11" cy="11" r="7.5" fill="rgba(245,241,232,0.6)" stroke="%232a2520" stroke-width="2.6"/><line x1="17" y1="17" x2="27" y2="27" stroke="%232a2520" stroke-width="3.4" stroke-linecap="round"/></svg>')
+            11 11,
+          pointer;
+        border-radius: 2px;
+        transition: background 0.15s;
+      }
+      .ev:hover {
+        background: rgba(200, 154, 46, 0.16);
+      }
+      .ev.nudged {
+        border-bottom: 1.5px dotted rgba(42, 37, 32, 0.4);
+      }
+      .ev.collected {
+        background: var(--mark);
+        border-bottom: none;
+        cursor: default;
+      }
+      .ev.collected:hover {
+        background: var(--mark);
+      }
+
+      /* ---------- toasts ---------- */
+      #toasts {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 200;
+        max-width: 320px;
+      }
+      .toast {
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-left: 5px solid var(--hint-gold);
+        border-radius: 3px 5px 4px 5px;
+        padding: 9px 13px;
+        box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+        animation: toast-in 0.25s ease-out;
+      }
+      .toast .t-tag {
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .toast .t-text {
+        font-family: var(--hand-2);
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .toast.hypo {
+        border-left-color: var(--hint-warn);
+      }
+      .toast.day {
+        border-left-color: var(--hint-blue);
+      }
+      @keyframes toast-in {
+        from {
+          transform: translateX(40px);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+
+      /* ---------- sakens fakta ---------- */
+      #fakta-board {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .domain-col {
+        flex: 1;
+        min-width: 215px;
+      }
+      .domain-col h3 {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        border-bottom: 1.5px solid var(--ink-faint);
+        padding-bottom: 4px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .fact-chip {
+        background: var(--paper);
+        border: 1.8px solid var(--ink);
+        border-radius: 3px 6px 4px 6px;
+        padding: 8px 10px;
+        margin-bottom: 9px;
+        box-shadow: 1.5px 2px 0 rgba(0, 0, 0, 0.15);
+        transform: rotate(-0.3deg);
+      }
+      .fact-chip:nth-child(2n) {
+        transform: rotate(0.4deg);
+      }
+      .fact-chip .f-text {
+        font-family: var(--hand-2);
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .fact-chip .f-src {
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        letter-spacing: 1px;
+        color: var(--ink-dim);
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+      .fact-chip .f-quote {
+        font-family: var(--hand-1);
+        font-size: 12px;
+        color: var(--ink-dim);
+        font-style: italic;
+        margin-top: 3px;
+        line-height: 1.35;
+      }
+      .fact-chip.fresh {
+        border-color: var(--hint-gold);
+        box-shadow: 2px 3px 0 rgba(200, 154, 46, 0.3);
+      }
+
+      /* ---------- åpne spørsmål ---------- */
+      #question-board {
+        position: relative;
+      }
+      #q-lines {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      #q-cards {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .q-card {
+        border-left: 5px solid var(--ink);
+      }
+      .q-card .q-title {
+        font-family: var(--hand-title);
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+      .q-state {
+        float: right;
+      }
+      .q-facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 8px 0;
+      }
+      .q-fact-min {
+        font-family: var(--hand-2);
+        font-size: 14px;
+        font-weight: 600;
+        border: 1.5px solid var(--ink-faint);
+        border-radius: 3px 5px 4px 5px;
+        padding: 2px 8px;
+        background: var(--mark);
+      }
+      .q-fact-missing {
+        background: var(--paper-shade);
+        color: var(--ink-faint);
+        border-style: dashed;
+      }
+      .hypo-list {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .hypo-opt {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        border: 1.8px solid var(--ink-faint);
+        border-radius: 4px 6px 5px 6px;
+        padding: 7px 11px;
+        cursor: pointer;
+        font-family: var(--hand-1);
+        font-size: 14px;
+        background: var(--paper);
+      }
+      .hypo-opt:hover {
+        border-color: var(--ink);
+      }
+      .hypo-opt.chosen {
+        border-color: var(--hint-gold);
+        background: rgba(200, 154, 46, 0.1);
+      }
+      .hypo-opt.blocked {
+        color: var(--hint-lock);
+        cursor: not-allowed;
+        border-style: dashed;
+      }
+      .hypo-opt .h-mark {
+        font-family: var(--hand-2);
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .arbeidshypo {
+        margin-top: 10px;
+        background: var(--paper-shade);
+        border: 1.8px solid var(--ink);
+        border-radius: 3px 5px 4px 5px;
+        padding: 9px 12px;
+      }
+      .arbeidshypo .ah-head {
+        font-family: var(--hand-3);
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--hint-warn);
+        margin-bottom: 3px;
+      }
+      .arbeidshypo .ah-body {
+        font-size: 13.5px;
+        line-height: 1.5;
+      }
+
+      /* ---------- vedtak ---------- */
+      #vedtak-wrap {
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      #vedtak-form {
+        flex: 1.5;
+        min-width: 380px;
+      }
+      #vedtak-clocks {
+        flex: 1;
+        min-width: 280px;
+      }
+      .slot-head {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        margin: 16px 0 8px;
+        border-bottom: 1.5px solid var(--ink-faint);
+        padding-bottom: 3px;
+      }
+      .slot-head:first-child {
+        margin-top: 0;
+      }
+      .tiltak-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        border: 1.8px solid var(--ink-faint);
+        border-radius: 4px 6px 5px 6px;
+        background: var(--paper);
+        padding: 8px 11px;
+        margin-bottom: 7px;
+        cursor: pointer;
+      }
+      .tiltak-card:hover {
+        border-color: var(--ink);
+      }
+      .tiltak-card.chosen {
+        border-color: var(--hint-gold);
+        background: rgba(200, 154, 46, 0.09);
+      }
+      .tiltak-card.blocked {
+        color: var(--hint-lock);
+        cursor: not-allowed;
+        border-style: dashed;
+      }
+      .tiltak-card.active-now {
+        border-color: var(--hint-green);
+        background: rgba(122, 166, 111, 0.08);
+        cursor: default;
+      }
+      .tiltak-card .t-box {
+        font-family: var(--hand-2);
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .tiltak-card .t-title {
+        font-family: var(--hand-1);
+        font-weight: 700;
+        font-size: 13.5px;
+      }
+      .tiltak-card .t-desc {
+        font-size: 12px;
+        color: var(--ink-dim);
+        line-height: 1.35;
+      }
+      .tiltak-card .t-cost {
+        margin-left: auto;
+        font-family: var(--hand-3);
+        font-size: 9.5px;
+        color: var(--ink-dim);
+        white-space: nowrap;
+      }
+      .tiltak-card .t-req {
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        letter-spacing: 0.5px;
+        color: var(--hint-warn);
+      }
+
+      .clock-row {
+        margin-bottom: 13px;
+      }
+      .clock-row .c-name {
+        font-family: var(--hand-1);
+        font-weight: 700;
+        font-size: 12.5px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .clock-row .c-q {
+        font-family: var(--hand-2);
+        font-size: 13.5px;
+        color: var(--ink-dim);
+      }
+      .segs {
+        display: inline-flex;
+        gap: 3px;
+        margin-top: 3px;
+      }
+      .seg {
+        width: 15px;
+        height: 15px;
+        border: 1.8px solid var(--ink);
+        border-radius: 2px 3px 2px 3px;
+        background: var(--paper);
+      }
+      .seg.fill {
+        background: var(--ink);
+      }
+      .seg.fill.good {
+        background: var(--hint-green);
+        border-color: var(--hint-green);
+      }
+      .seg.fill.bad {
+        background: var(--hint-warn);
+        border-color: var(--hint-warn);
+      }
+      .seg.unknown {
+        border-style: dashed;
+        border-color: var(--ink-faint);
+      }
+
+      /* ---------- frank ---------- */
+      #frank-wrap {
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      #frank-dispatch {
+        flex: 1;
+        min-width: 320px;
+      }
+      #frank-chat {
+        flex: 1.2;
+        min-width: 360px;
+      }
+      .dispatch-card {
+        border: 1.8px solid var(--ink);
+        border-radius: 4px 6px 5px 6px;
+        padding: 10px 13px;
+        margin-bottom: 10px;
+        background: var(--paper);
+        box-shadow: 1.5px 2px 0 rgba(0, 0, 0, 0.15);
+      }
+      .dispatch-card .d-title {
+        font-family: var(--hand-1);
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .dispatch-card .d-desc {
+        font-size: 12.5px;
+        color: var(--ink-dim);
+        line-height: 1.4;
+        margin: 3px 0 8px;
+      }
+      .dispatch-card.spent {
+        opacity: 0.55;
+      }
+      .chat-log {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 430px;
+        overflow-y: auto;
+        padding-right: 6px;
+        margin-bottom: 12px;
+      }
+      .chat-msg {
+        max-width: 88%;
+      }
+      .chat-msg .who {
+        font-family: var(--hand-3);
+        font-size: 8.5px;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        margin-bottom: 2px;
+      }
+      .chat-msg .bubble {
+        border: 1.8px solid var(--ink);
+        border-radius: 6px 9px 7px 9px;
+        padding: 8px 12px;
+        font-family: var(--hand-2);
+        font-size: 16.5px;
+        line-height: 1.3;
+        background: var(--paper);
+      }
+      .chat-msg.you {
+        align-self: flex-end;
+      }
+      .chat-msg.you .bubble {
+        background: var(--paper-shade);
+      }
+      .chat-ask {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .chat-ask button {
+        text-align: left;
+        text-transform: none;
+        font-family: var(--hand-1);
+        font-size: 13px;
+        letter-spacing: 0;
+      }
+
+      /* ---------- leiligheten ---------- */
+      #apt-wrap {
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      #apt-state {
+        flex: 1;
+        min-width: 300px;
+      }
+      #apt-logg {
+        flex: 1.4;
+        min-width: 380px;
+      }
+      .need-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .need-row .n-lab {
+        font-family: var(--hand-3);
+        font-size: 9.5px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        width: 86px;
+      }
+      .need-bar {
+        flex: 1;
+        height: 13px;
+        border: 1.8px solid var(--ink);
+        border-radius: 3px 5px 4px 5px;
+        background: var(--paper);
+        overflow: hidden;
+      }
+      .need-bar .n-fill {
+        height: 100%;
+        background: var(--hint-green);
+        border-right: 1.8px solid var(--ink);
+        transition: width 0.4s;
+      }
+      .need-bar .n-fill.low {
+        background: var(--hint-gold);
+      }
+      .need-bar .n-fill.crit {
+        background: var(--hint-warn);
+      }
+      .need-row .n-val {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        width: 30px;
+        text-align: right;
+        color: var(--ink-dim);
+      }
+      .apt-obj {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px dashed var(--ink-faint);
+        padding: 6px 2px;
+        font-size: 13.5px;
+      }
+      .apt-obj .o-val {
+        font-family: var(--hand-2);
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .apt-obj .o-val.warn {
+        color: var(--hint-warn);
+      }
+      .logg-entries {
+        font-family: var(--hand-2);
+        font-size: 17px;
+        line-height: 26px;
+        color: var(--ink);
+        margin-left: 28px;
+      }
+      .logg-entries .day-head {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--hint-warn);
+        margin: 10px 0 2px;
+      }
+      .logg-entries .tiltak-line {
+        color: #7a6420;
+      }
+      #apt-locked {
+        text-align: center;
+        padding: 90px 30px;
+        color: var(--ink-dim);
+        font-family: var(--hand-2);
+        font-size: 20px;
+      }
+
+      /* ---------- prologue / reflection overlays ---------- */
+      .story-overlay {
+        position: fixed;
+        inset: 0;
+        background: var(--desk-dark);
+        z-index: 300;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .story-card {
+        width: min(620px, 92vw);
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 3px 6px 4px 6px;
+        padding: 34px 38px;
+        box-shadow: 8px 10px 0 rgba(0, 0, 0, 0.45);
+        min-height: 330px;
+        display: flex;
+        flex-direction: column;
+      }
+      .story-caption {
+        font-family: var(--hand-3);
+        font-size: 11px;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        text-align: center;
+        margin-bottom: 22px;
+      }
+      .story-lines {
+        flex: 1;
+        overflow-y: auto;
+        max-height: 62vh;
+        padding-right: 6px;
+      }
+      .story-line {
+        margin-bottom: 14px;
+        animation: line-in 0.35s ease-out;
+      }
+      .story-line .speaker {
+        font-family: var(--hand-3);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .story-line .said {
+        font-family: var(--hand-2);
+        font-size: 21px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      .story-line.direction {
+        font-family: var(--hand-1);
+        font-style: italic;
+        font-size: 13.5px;
+        color: var(--ink-dim);
+        line-height: 1.5;
+      }
+      @keyframes line-in {
+        from {
+          opacity: 0;
+          transform: translateY(7px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .story-next {
+        text-align: right;
+        margin-top: 18px;
+      }
+
+      /* ---------- blueprint overlay ---------- */
+      #blue-btn {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        z-index: 250;
+        background: #1d3a5f;
+        color: #cfe2f7;
+        border-color: #cfe2f7;
+      }
+      #blue-panel {
+        position: fixed;
+        left: 16px;
+        bottom: 64px;
+        z-index: 250;
+        width: min(460px, 90vw);
+        max-height: 70vh;
+        overflow-y: auto;
+        background: #1d3a5f;
+        color: #cfe2f7;
+        border: 2px dashed #cfe2f7;
+        border-radius: 4px;
+        padding: 16px 18px;
+        font-family: var(--hand-3);
+        font-size: 11.5px;
+        line-height: 1.6;
+        display: none;
+      }
+      #blue-panel.open {
+        display: block;
+      }
+      #blue-panel h3 {
+        font-size: 12px;
+        letter-spacing: 2px;
+        margin: 10px 0 4px;
+        color: #8fc1f0;
+      }
+      #blue-panel h3:first-child {
+        margin-top: 0;
+      }
+      #blue-panel code {
+        background: rgba(255, 255, 255, 0.12);
+        padding: 0 4px;
+        border-radius: 2px;
+      }
+
+      @media (max-width: 900px) {
+        #topbar {
+          flex-wrap: wrap;
+        }
+        #tabs {
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="prologue" class="story-overlay"></div>
+
+    <div id="app" style="display: none">
+      <div id="topbar">
+        <div class="case-head">
+          <div>
+            <h1>SAK 99/0412 · OLSEN, ELLING</h1>
+            <div class="sub">
+              OSLO KOMMUNE · SOSIALKONTORET &nbsp;·&nbsp; MELDT: DR. J. HAUG, LEGESENTERET
+              &nbsp;·&nbsp; FEBRUAR 1999
+            </div>
+          </div>
+          <div style="margin-left: auto; text-align: right">
+            <div class="sub">TILTAKSRAMME: 6 MYNTER/MND</div>
+            <div class="sub" id="head-disponert">DISPONERT: —</div>
+          </div>
+        </div>
+        <div class="resource">
+          <div class="num" id="res-day">1</div>
+          <div class="lab">dag</div>
+        </div>
+        <div class="resource">
+          <div class="num" id="res-actions">2</div>
+          <div class="lab">handlinger</div>
+        </div>
+        <div
+          class="resource"
+          style="border-style: dashed; cursor: pointer"
+          id="btn-next-day"
+          title="Avslutt dagen"
+        >
+          <div class="num">→</div>
+          <div class="lab">neste dag</div>
+        </div>
+      </div>
+
+      <div id="tabs">
+        <button class="tab-btn active" data-surface="pulten">Pulten</button>
+        <button class="tab-btn" data-surface="fakta">
+          Sakens fakta<span
+            class="badge"
+            id="badge-fakta"
+            style="display: none"
+            title="Nye fakta å lese"
+            >0</span
+          >
+        </button>
+        <button class="tab-btn" data-surface="sporsmal">
+          Åpne spørsmål<span
+            class="badge"
+            id="badge-sporsmal"
+            style="display: none"
+            title="Spørsmål klare for en hypotese"
+            >0</span
+          >
+        </button>
+        <button class="tab-btn" data-surface="vedtak">Vedtak og tiltak</button>
+        <button class="tab-btn" data-surface="frank">
+          Frank<span
+            class="badge"
+            id="badge-frank"
+            style="display: none"
+            title="Nytt Frank kan svare på"
+            >0</span
+          >
+        </button>
+        <button class="tab-btn" data-surface="leiligheten">Leiligheten</button>
+      </div>
+
+      <div id="surfaces">
+        <section class="surface active" id="surface-pulten">
+          <div id="desk-docs"></div>
+          <div id="desk-note"></div>
+        </section>
+        <section class="surface" id="surface-fakta">
+          <div class="frame-title">
+            <span>SAKENS FAKTA</span
+            ><span class="meta">AUTO-ARKIVERT PÅ DOMENE · KILDE PÅFØRT</span>
+          </div>
+          <div id="fakta-board"></div>
+        </section>
+        <section class="surface" id="surface-sporsmal">
+          <div class="frame-title">
+            <span>ÅPNE SPØRSMÅL</span
+            ><span class="meta">ARBEIDSHYPOTESER ER FORELØPIGE · IKKE FASIT</span>
+          </div>
+          <div id="question-board">
+            <svg id="q-lines"></svg>
+            <div id="q-cards"></div>
+          </div>
+        </section>
+        <section class="surface" id="surface-vedtak">
+          <div id="vedtak-wrap">
+            <div id="vedtak-form"></div>
+            <div id="vedtak-clocks"></div>
+          </div>
+        </section>
+        <section class="surface" id="surface-frank">
+          <div id="frank-wrap">
+            <div id="frank-dispatch"></div>
+            <div id="frank-chat"></div>
+          </div>
+        </section>
+        <section class="surface" id="surface-leiligheten">
+          <div id="apt-content"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="reader-overlay"><div id="reader-doc"></div></div>
+    <div id="fact-overlay"><div id="fact-card"></div></div>
+    <div id="toasts"></div>
+    <div id="reflection" class="story-overlay" style="display: none"></div>
+
+    <button id="blue-btn">▦ Blåkopi</button>
+    <div id="blue-panel">
+      <h3>HVA DETTE ER</h3>
+      Foundational blueprint for Lifelines-caseworkerlaget. Fire lag, samme snitt som Godot-bygget:
+      <h3>1 · CONTENT (→ Godot Resources)</h3>
+      <code>DOCUMENTS</code> med authored hotspots, <code>FACTS</code>, <code>QUESTIONS</code> m/
+      hypoteser, <code>TILTAK</code> (3 slots + press), <code>DISPATCHES</code>,
+      <code>CLOCKS</code>, <code>SCRIPT</code> (dagsbeats). Ren data. Ingen logikk.
+      <h3>2 · SIM (→ lifelines-core-loop)</h3>
+      Mocket her: behov fra ekte karakterdata (Elling: Blue 0.8/Green 0.4, attention 20. Grete:
+      White 0.7, attention 117). Daglig tick + authored event-pools + tiltaksmodifikatorer. I Godot
+      erstattes hele laget av den ekte simuleringen — kontrakten er
+      <code>simTick(day, tiltak) → events + state</code>.
+      <h3>3 · ENGINE (→ resolver autoloads)</h3>
+      Pure funksjoner: <code>liftFact</code>, <code>refreshQuestions</code>,
+      <code>chooseHypothesis</code>, <code>runDispatch</code>, <code>enactVedtak</code>,
+      <code>advanceDay</code>, <code>moveClock</code>. Ingen DOM-tilgang.
+      <h3>4 · UI (→ scener + signaler)</h3>
+      Én state, render per flate. Kontrakter fra SDD-003/004/005: spyglass-hover, klikk-løft, gul
+      markering KUN etter løft, ~10 s forsinket blyantstrek, fakta auto-arkiveres, hypotese velges
+      INNI spørsmål, ingen rett/galt ved valg — simuleringen svarer i loggen, klokkene og
+      dokumentene.
+      <h3>LOOPEN</h3>
+      Pulten → fakta → spørsmål → arbeidshypotese → dispatch/vedtak → sim svarer → ny post på pulten
+      → loopen strammes. Dag 5 er fast. Klokka «Grete tilgjengelig» hinter, men teller ikke ned
+      synlig.
+    </div>
+
+    <script>
+      'use strict';
+      /* =====================================================================
+   LIFELINES — BLUEPRINT v1 · Saken Olsen
+   Lag: CONTENT → SIM (mock) → ENGINE → UI
+   ===================================================================== */
+
+      /* =====================================================================
+   1 · CONTENT — ren data. Mapper til Godot Resources.
+   ===================================================================== */
+
+      const PROLOGUE = [
+        { cap: 'LEGESENTERET · TIRSDAG I FEBRUAR 1999' },
+        { who: 'DR. HAUG', say: 'Prøvesvarene er kommet. Det er som vi trodde.' },
+        { who: 'GRETE', say: 'Ja.' },
+        { dir: 'Det er stille en stund. Noen ler av noe i naborommet.' },
+        { who: 'DR. HAUG', say: 'Har du noen rundt deg? Fremover, mener jeg.' },
+        { who: 'GRETE', say: 'Jeg har Elling.' },
+        { who: 'DR. HAUG', say: 'Grete. Det var Elling jeg ville snakke om.' },
+        { who: 'GRETE', say: 'Han klarer seg. Han har alltid klart seg.' },
+        { who: 'DR. HAUG', say: 'Med deg.' },
+        {
+          dir: 'Grete ser ut vinduet. Det har begynt å snø — tunge, våte flak som ikke blir liggende.',
+        },
+        {
+          who: 'GRETE',
+          say: 'Jeg har ikke fortalt ham noe ennå. Han skal få vite det når jeg vet hvordan det skal sies.',
+        },
+        {
+          who: 'DR. HAUG',
+          say: 'Hvis du vil, melder jeg fra til bydelen. Ikke noe mer enn det. Bare så noen vet.',
+        },
+        { dir: 'Grete tar på seg hanskene. Én finger om gangen.' },
+        { who: 'GRETE', say: 'Dere får gjøre det dere må.' },
+        {
+          dir: 'Etter at hun har gått, blir Haug sittende litt. Så skriver han. To avsnitt. Han leser dem en gang til og stryker ordet «alvorlig». Sender.',
+        },
+        { stamp: 'MOTTATT · SOSIALKONTORET', end: 'Meldingen ligger på pulten din.' },
+      ];
+
+      const DOMAINS = [
+        'Økonomi/bolig',
+        'Hverdag/rutine',
+        'Helse/risiko',
+        'Nettverk/sosialt',
+        'Ressurser',
+      ];
+
+      /* Fakta. text = saksspråk. quote = original ordlyd. */
+      const FACTS = {
+        f_grete_syk: {
+          domain: 'Helse/risiko',
+          cat: 'Dokument',
+          text: 'Grete er alvorlig syk. Forventet forløp er kort.',
+          quote: 'sykdom med kort forventet forløp',
+          supports: ['q_hverdag'],
+          discuss: ['Frank'],
+        },
+        f_aldri_alene: {
+          domain: 'Hverdag/rutine',
+          cat: 'Dokument',
+          text: 'Elling (35) har aldri bodd alene.',
+          quote: 'har etter det opplyste aldri bodd alene',
+          supports: ['q_hverdag', 'q_selv'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_grete_baerer: {
+          domain: 'Hverdag/rutine',
+          cat: 'Dokument',
+          text: 'Grete bistår med gjøremål, økonomi og kontakt med tjenester.',
+          quote:
+            'mor opplyser at hun bistår med praktiske gjøremål, økonomisk oversikt og kontakt med tjenester',
+          supports: ['q_hverdag', 'q_okonomi'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_saarbar: {
+          domain: 'Helse/risiko',
+          cat: 'Risiko',
+          text: 'Elling vurderes som sårbar ved bortfall av pårørende.',
+          quote: 'pasienten fremstår sårbar ved bortfall av pårørende',
+          supports: ['q_hverdag'],
+          discuss: ['Frank'],
+        },
+        f_ingen_tjenester: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Dokument',
+          text: 'Elling har ingen kontakt med øvrige tjenester.',
+          quote: 'ikke i kontakt med øvrige tjenester',
+          supports: ['q_kontakt'],
+          discuss: ['Frank'],
+        },
+
+        f_trygd: {
+          domain: 'Økonomi/bolig',
+          cat: 'Økonomi',
+          text: 'Ellings uføretrygd: to mynter i måneden.',
+          quote: 'trygden hans: to mynter. den kommer den første, og den går rett videre.',
+          supports: ['q_okonomi', 'q_bolig'],
+          discuss: ['Frank'],
+        },
+        f_alt_via_grete: {
+          domain: 'Økonomi/bolig',
+          cat: 'Økonomi',
+          text: 'Hele trygden går rett inn i Gretes system. Alle avtaler står i hennes navn.',
+          quote:
+            'alle betalinger går gjennom Grete. postgiroene ligger i en skoeske, ferdig utfylt.',
+          supports: ['q_okonomi'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_husleie: {
+          domain: 'Økonomi/bolig',
+          cat: 'Økonomi',
+          text: 'Husleien er tre mynter og betales av Grete.',
+          quote: 'husleien: tre mynter. den betales kontant til huseieren, av Grete, den første.',
+          supports: ['q_okonomi', 'q_bolig'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_gap: {
+          domain: 'Økonomi/bolig',
+          cat: 'Økonomi',
+          text: 'Uten Gretes pensjon mangler husholdet to mynter hver måned.',
+          quote: 'regnestykket går opp — med henne. uten henne mangler det to mynter. hver måned.',
+          supports: ['q_okonomi', 'q_bolig'],
+          discuss: ['Frank'],
+        },
+        f_ingen_matkjop: {
+          domain: 'Hverdag/rutine',
+          cat: 'Økonomi',
+          text: 'Elling har aldri betalt for mat selv. Mat skjer gjennom Grete.',
+          quote: 'jeg fant ikke ett kjøp som var hans. ikke ett.',
+          supports: ['q_hverdag'],
+          discuss: ['Frank'],
+        },
+
+        f_leie_stoppet: {
+          domain: 'Økonomi/bolig',
+          cat: 'Risiko',
+          text: 'Husleien har stoppet. Betalingskjeden døde med Grete.',
+          quote: 'leien for mars er ikke kommet',
+          supports: ['q_bolig', 'q_kollaps'],
+          discuss: ['Frank'],
+        },
+        f_huseier_kommer: {
+          domain: 'Økonomi/bolig',
+          cat: 'Risiko',
+          text: 'Huseieren varsler at han kommer innom. Torsdag.',
+          quote: 'jeg kommer innom på torsdag, så får vi snakke om veien videre',
+          supports: ['q_bolig', 'q_kontakt'],
+          discuss: ['Frank'],
+        },
+        f_leie_privat: {
+          domain: 'Økonomi/bolig',
+          cat: 'Dokument',
+          text: 'Leieforholdet er privat og muntlig innarbeidet siden 1971. Ingen kontrakt å lene seg på.',
+          quote:
+            'din mor og jeg har holdt på siden -71 uten papirer. det har aldri vært nødvendig.',
+          supports: ['q_bolig'],
+          discuss: ['Frank'],
+        },
+
+        f_klarer_seg: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Samtale',
+          text: 'Grete avviser bekymringen. Gjentar formuleringen.',
+          quote: '«Han klarer seg. Han har alltid klart seg.»',
+          supports: ['q_hverdag'],
+          discuss: ['Frank'],
+        },
+        f_ingen_plan: {
+          domain: 'Helse/risiko',
+          cat: 'Samtale',
+          text: 'Det finnes ingen plan for hvem som overtar etter Grete.',
+          quote: 'jeg spurte hvem som overtar hvis hun blir innlagt. det ble stille.',
+          supports: ['q_hverdag', 'q_bolig'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_elling_tlf: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Samtale',
+          text: 'Elling tar ikke telefonen. Grete normaliserer det.',
+          quote: '«det er ikke noe galt med ham. han liker bare ikke apparatet.»',
+          supports: ['q_kontakt'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_grete_redd: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Samtale',
+          text: 'Grete frykter at kommunen vil ta leiligheten — eller Elling.',
+          quote: 'hun spurte om dette betydde at noen kom til å ta ham fra leiligheten',
+          supports: ['q_bolig'],
+          discuss: ['Frank'],
+        },
+
+        f_post: {
+          domain: 'Hverdag/rutine',
+          cat: 'Observasjon',
+          text: 'Uåpnet post samler seg. Grete håndterer den — og skjuler den.',
+          quote: 'en bunke uåpnet post på skoskapet. øverst: NAV, Bydel Frogner, Søgaard Eiendom.',
+          supports: ['q_hverdag', 'q_okonomi'],
+          discuss: ['Frank'],
+        },
+        f_kalender: {
+          domain: 'Hverdag/rutine',
+          cat: 'Observasjon',
+          text: 'Kalenderen føres av Grete. Avtaler finnes bare så lenge hun fører dem.',
+          quote: 'alle avtaler ført med samme håndskrift. det er ikke Ellings.',
+          supports: ['q_hverdag'],
+          discuss: ['Frank'],
+        },
+        f_matbokser: {
+          domain: 'Hverdag/rutine',
+          cat: 'Observasjon',
+          text: 'Maten er preppet av Grete, merket med ukedager. Elling varmer.',
+          quote: 'middagsbokser merket med ukedager, mandag til søndag',
+          supports: ['q_hverdag', 'q_selv'],
+          discuss: ['Frank', 'Grete'],
+        },
+        f_bok: {
+          domain: 'Ressurser',
+          cat: 'Ressurs',
+          text: 'Elling leser krevende stoff og noterer systematisk. Konsentrasjonen er en ressurs.',
+          quote: 'en bok om polarekspedisjoner. han noterte i margen. systematisk, små bokstaver.',
+          supports: ['q_selv'],
+          discuss: ['Frank'],
+        },
+        f_utklipp: {
+          domain: 'Ressurser',
+          cat: 'Ressurs',
+          text: 'Elling samler og systematiserer: utklipp av Gro og Arbeiderpartiet, datert og ordnet.',
+          quote:
+            'over skrivebordet: avisutklipp, sirlig montert. Gro, landsmøter, 1. mai. årstall i hjørnene.',
+          supports: ['q_selv'],
+          discuss: ['Frank'],
+        },
+        f_avstand: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Observasjon',
+          text: 'Elling holder avstand til fremmede. Alltid et møbel mellom.',
+          quote: 'han flyttet seg slik at det alltid var et møbel mellom oss',
+          supports: ['q_kontakt', 'q_selv'],
+          discuss: ['Frank'],
+        },
+        f_smart_gutt: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Samtale',
+          text: 'Grete omtaler Elling (35) som «gutt». Rollene er fastlåst.',
+          quote: '«du så hvordan han er. han er en smart gutt.»',
+          supports: ['q_hverdag', 'q_selv'],
+          discuss: ['Frank'],
+        },
+
+        f_ubesvart: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Observasjon',
+          text: 'Elling tar ikke telefonen — heller ikke når den ringer i hans egen stue.',
+          quote: 'åtte ring. fasttelefonen står to meter fra stolen hans.',
+          supports: ['q_kontakt'],
+          discuss: ['Frank'],
+        },
+        f_dor_glott: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Samtale',
+          text: 'Døren er på gløtt: kontakt er mulig — i Ellings tempo, med én fast person.',
+          quote:
+            'han kastet meg ikke ut, og han svarte da jeg spurte om noe han kunne. det er en dør på gløtt.',
+          supports: ['q_kontakt', 'q_selv'],
+          discuss: ['Frank'],
+        },
+        f_tirade: {
+          domain: 'Ressurser',
+          cat: 'Observasjon',
+          text: 'Press utløser foredrag, ikke mestring. Tempoet må være hans.',
+          quote: 'et kvarter langt foredrag om apparatets historie og iboende uforskammethet',
+          supports: ['q_selv', 'q_kontakt'],
+          discuss: ['Frank'],
+        },
+        f_egen_mappe: {
+          domain: 'Ressurser',
+          cat: 'Observasjon',
+          text: 'Elling lager egne systemer når ingen krever det av ham.',
+          quote: 'en mappe han hadde laget selv. den var merket. små bokstaver.',
+          supports: ['q_selv'],
+          discuss: ['Frank'],
+        },
+
+        f_innlagt: {
+          domain: 'Helse/risiko',
+          cat: 'Dokument',
+          text: 'Grete er akutt innlagt på Ullevål.',
+          quote: 'innlagt akutt 14.02',
+          supports: ['q_hverdag', 'q_bolig'],
+          discuss: ['Frank'],
+        },
+        f_elling_uvarslet: {
+          domain: 'Helse/risiko',
+          cat: 'Dokument',
+          text: 'Elling vet ikke at Grete er innlagt. Hun ber kommunen se til ham.',
+          quote: 'pasienten oppgir at sønnen ikke er varslet. ber om at kommunen ser til ham.',
+          supports: ['q_kontakt', 'q_kollaps'],
+          discuss: ['Frank'],
+        },
+
+        f_dod: {
+          domain: 'Helse/risiko',
+          cat: 'Dokument',
+          text: 'Grete Olsen døde 15.02 kl. 04:12.',
+          quote: 'dødsfall konstatert 15.02 kl. 04:12',
+          supports: ['q_kollaps'],
+          discuss: ['Frank'],
+        },
+        f_brevsprekken: {
+          domain: 'Nettverk/sosialt',
+          cat: 'Dokument',
+          text: 'Dødsbudskapet ble gitt gjennom brevsprekken. Døren forble lukket.',
+          quote: 'sønnen åpnet ikke døren. beskjeden ble gitt gjennom brevsprekken.',
+          supports: ['q_kontakt', 'q_kollaps'],
+          discuss: ['Frank'],
+        },
+      };
+
+      /* Dokumenter. body = HTML med authored hotspots: <span class="ev" data-fact="…"> */
+      const DOCUMENTS = {
+        doc_bekymring: {
+          kind: 'BEKYMRINGSMELDING',
+          title: 'Legesenteret · Dr. J. Haug',
+          reg: 'reg-klinisk',
+          peek: '«…anbefaler kommunal kartlegging av funksjon, hjelpebehov og overgangstiltak.»',
+          head: `<div class="frame-title"><span>BEKYMRINGSMELDING</span><span class="meta">LEGESENTERET · DR. J. HAUG · 11.02.1999</span></div>`,
+          body: `
+      <p><span class="tag">GJELDER</span><br><strong>Olsen, Elling · f. 14.03.1964</strong></p>
+      <p>Undertegnede er fastlege for Grete Olsen (f. 1927) og hennes sønn Elling Olsen. Mor er under utredning og behandling for <span class="ev" data-fact="f_grete_syk">sykdom med kort forventet forløp</span>. Hun er informert om at denne meldingen sendes.</p>
+      <p>Mor og sønn bor sammen i en treroms blokkleilighet, fjerde etasje. <span class="ev" data-fact="f_aldri_alene">Sønnen har aldri bodd alene</span>. Han er uføretrygdet og er etter det undertegnede kjenner til <span class="ev" data-fact="f_ingen_tjenester">ikke i kontakt med øvrige tjenester</span>.</p>
+      <p><span class="ev" data-fact="f_grete_baerer">Mor opplyser at hun bistår med praktiske gjøremål, økonomisk oversikt og kontakt med tjenester</span>. Omfanget er ikke kartlagt.</p>
+      <p><span class="ev" data-fact="f_saarbar">Pasienten fremstår sårbar ved bortfall av pårørende</span>. Anbefaler kommunal kartlegging av funksjon, hjelpebehov og overgangstiltak.</p>
+      <p style="margin-top:18px;">Med hilsen<br><span style="font-family:var(--hand-2);font-size:19px;">Jørgen Haug</span><br><span class="tag">spes. allmennmedisin</span></p>`,
+        },
+
+        doc_konto: {
+          kind: 'ØKONOMISK OVERSIKT',
+          title: 'Frank · husholdets økonomi',
+          reg: 'reg-notat',
+          peek: '«Regnestykket går opp — med henne.»',
+          head: `<div class="frame-title" style="border-bottom-color:var(--ink-faint);"><span style="font-family:var(--hand-2);font-size:18px;">Økonomisk oversikt · 4012 F. Solberg</span><span class="meta">GJENNOMGÅTT MED G. OLSEN VED KJØKKENBORDET</span></div>`,
+          body: `
+      <p>Grete fant frem alt. Postgiroene ligger i en skoeske, ferdig utfylt, sortert på forfall.</p>
+      <p>Inn: <span class="ev" data-fact="f_trygd">trygden hans — to mynter i måneden. Den kommer den første, og den går rett videre.</span> Pensjonen hennes: tre mynter.</p>
+      <p>Ut: <span class="ev" data-fact="f_husleie">husleien — tre mynter. Den betales kontant til huseieren, av Grete, den første.</span> Strøm, mat og resten: to mynter til sammen.</p>
+      <p><span class="ev" data-fact="f_alt_via_grete">Alle betalinger går gjennom Grete. Alle avtaler står i hennes navn.</span> Jeg spurte om Elling visste hvor skoesken sto. Hun lo, kort.</p>
+      <p>Jeg gikk gjennom kvitteringene. <span class="ev" data-fact="f_ingen_matkjop">Jeg fant ikke ett kjøp som var hans. Ikke ett.</span></p>
+      <p><span class="ev" data-fact="f_gap">Regnestykket går opp — med henne. Uten henne mangler det to mynter. Hver måned.</span></p>`,
+        },
+
+        doc_papirer: {
+          kind: 'ØKONOMISK OVERSIKT',
+          title: 'Frank · papirene i leiligheten',
+          reg: 'reg-notat',
+          peek: '«Skoesken sto der hun forlot den.»',
+          head: `<div class="frame-title" style="border-bottom-color:var(--ink-faint);"><span style="font-family:var(--hand-2);font-size:18px;">Papirgjennomgang · 4012 F. Solberg</span><span class="meta">ETTER DØDSFALLET · MED ELLING I ROMMET</span></div>`,
+          body: `
+      <p>Skoesken sto der hun forlot den. Postgiroene ferdig utfylt, sortert på forfall. Den øverste gjelder mars. Den er ikke levert.</p>
+      <p>Inn: <span class="ev" data-fact="f_trygd">trygden hans — to mynter i måneden.</span> Pensjonen hennes er opphørt.</p>
+      <p>Ut: <span class="ev" data-fact="f_husleie">husleien — tre mynter. Den ble betalt kontant til huseieren, av Grete, den første.</span></p>
+      <p><span class="ev" data-fact="f_alt_via_grete">Alle avtaler står i Gretes navn.</span> <span class="ev" data-fact="f_ingen_matkjop">Ikke ett kjøp i kvitteringene er hans.</span></p>
+      <p><span class="ev" data-fact="f_gap">Regnestykket gikk opp — med henne. Nå mangler det to mynter. Hver måned.</span></p>
+      <p>Elling satt ved bordet mens jeg gikk gjennom esken. Han rettet på bunkene da jeg la dem fra meg. Han visste rekkefølgen.</p>`,
+        },
+
+        doc_huseier: {
+          kind: 'BREV',
+          title: 'Brev fra huseieren · T. Bakkerud',
+          reg: 'reg-formell',
+          peek: '«Jeg hører at din mor er gått bort.»',
+          head: `<div class="frame-title"><span>T. BAKKERUD</span><span class="meta">HÅNDSKREVET · LEVERT I POSTKASSEN · VIDEREFORMIDLET AV 4012</span></div>`,
+          body: `
+      <p>Til Elling Olsen.</p>
+      <p>Jeg hører at din mor er gått bort. Kondolerer. Grete var et ordensmenneske, det har vært en glede å ha dere i oppgangen.</p>
+      <p>Jeg må likevel skrive om det praktiske. <span class="ev" data-fact="f_leie_stoppet">Leien for mars er ikke kommet.</span> <span class="ev" data-fact="f_leie_privat">Din mor og jeg har holdt på siden -71 uten papirer. Det har aldri vært nødvendig.</span> Nå vet jeg ikke hvem jeg skal forholde meg til.</p>
+      <p>Jeg vil ikke lage vanskeligheter. Men <span class="ev" data-fact="f_huseier_kommer">jeg kommer innom på torsdag, så får vi snakke om veien videre.</span></p>
+      <p style="margin-top:18px;">Vennlig hilsen<br><span style="font-family:var(--hand-2);font-size:19px;">T. Bakkerud</span></p>`,
+        },
+
+        doc_frank_tlf: {
+          kind: 'FELTNOTAT',
+          title: 'Frank · telefonsamtale med Grete',
+          reg: 'reg-notat',
+          peek: '«Hun tok den på andre forsøk.»',
+          head: `<div class="frame-title" style="border-bottom-color:var(--ink-faint);"><span style="font-family:var(--hand-2);font-size:18px;">Feltnotat · 4012 F. Solberg</span><span class="meta">TLF. G. OLSEN</span></div>`,
+          body: `
+      <p>Ringte Grete 11:40. Hun tok den på andre forsøk.</p>
+      <p>Hun visste hvorfor jeg ringte. Haug hadde sagt fra. Hun var ikke sint, men hun var klar: <span class="ev" data-fact="f_klarer_seg">«Han klarer seg. Han har alltid klart seg.» Hun sa det to ganger.</span> Andre gangen lavere.</p>
+      <p><span class="ev" data-fact="f_ingen_plan">Jeg spurte hvem som overtar hvis hun skulle bli innlagt. Det ble stille. Hun svarte ikke på det.</span></p>
+      <p><span class="ev" data-fact="f_elling_tlf">Jeg ba om å få hilse på Elling i telefonen. Hun sa han ikke tar telefonen. «Det er ikke noe galt med ham. Han liker bare ikke apparatet.»</span></p>
+      <p>Mot slutten <span class="ev" data-fact="f_grete_redd">spurte hun om dette betydde at noen kom til å ta ham fra leiligheten</span>. Jeg sa nei. Jeg håper det var sant.</p>
+      <p>Hun gikk med på hjemmebesøk. «Hvis det må til.» Det må til.</p>`,
+        },
+
+        doc_frank_visit: {
+          kind: 'RAPPORT',
+          title: 'Frank · hjemmebesøk Gabels gate 14',
+          reg: 'reg-notat',
+          peek: '«Hun hadde dekket på med tre kopper.»',
+          head: `<div class="frame-title" style="border-bottom-color:var(--ink-faint);"><span style="font-family:var(--hand-2);font-size:18px;">Hjemmebesøk · 4012 F. Solberg</span><span class="meta">BLOKKA · 4. ETASJE · AVTALT VIA G. OLSEN</span></div>`,
+          body: `
+      <p>Grete åpnet før jeg fikk ringt på. Hun hadde dekket på med tre kopper. Elling brukte ikke sin.</p>
+      <p>I gangen: <span class="ev" data-fact="f_post">en bunke uåpnet post på skoskapet. Øverst: Trygdekontoret, sosialkontoret, Oslo Energi.</span> Grete flyttet bunken da hun så at jeg så.</p>
+      <p>På kjøkkenveggen: <span class="ev" data-fact="f_kalender">kalender. Alle avtaler ført med samme håndskrift. Det er ikke Ellings.</span></p>
+      <p>I kjøleskapet (Grete viste meg, uoppfordret, som et bevis): <span class="ev" data-fact="f_matbokser">middagsbokser merket med ukedager, mandag til søndag.</span> «Han varmer dem selv.» Det hørtes ut som et forsvar.</p>
+      <p>Elling satt i stuen med <span class="ev" data-fact="f_bok">en bok om polarekspedisjoner. Han noterte i margen. Systematisk, små bokstaver.</span> Jeg spurte om Nansen. Han svarte med tre presise setninger. Til veggen, ikke til meg.</p>
+      <p>Over skrivebordet hans: <span class="ev" data-fact="f_utklipp">avisutklipp, sirlig montert. Gro, landsmøter, 1. mai-tog. Årstall i hjørnene, hans håndskrift.</span> Det er ikke rot. Det er et arkiv.</p>
+      <p><span class="ev" data-fact="f_avstand">Han forlot ikke rommet, men flyttet seg slik at det alltid var et møbel mellom oss.</span> Ikke demonstrativt. Bare slik det ble.</p>
+      <p>Grete fulgte meg ut. I trappen sa hun: <span class="ev" data-fact="f_smart_gutt">«Du så hvordan han er. Han er en smart gutt.»</span> Hun er 72. Han er 35. Gutt.</p>`,
+        },
+
+        doc_innleggelse: {
+          kind: 'MELDING',
+          title: 'OUS Ullevål · innleggelse',
+          reg: 'reg-klinisk',
+          peek: '«…ber om at kommunen ser til ham.»',
+          head: `<div class="frame-title"><span>ULLEVÅL SYKEHUS</span><span class="meta">TIL SOSIALKONTORET · 14.02.1999</span></div>`,
+          body: `
+      <p><span class="tag">MELDING OM INNLEGGELSE</span></p>
+      <p>Grete Olsen (f. 1927) ble <span class="ev" data-fact="f_innlagt">innlagt akutt 14.02</span>, kl. 06:50. Tilstanden er alvorlig, men avklart. Pårørende: sønn, Elling Olsen.</p>
+      <p><span class="ev" data-fact="f_elling_uvarslet">Pasienten oppgir at sønnen ikke er varslet. Hun ber om at kommunen ser til ham.</span> Hun var tydelig på dette før hun ble lagt i behandling.</p>
+      <p><span class="tag">SOSIALMEDISINSK ENHET · OUS</span></p>`,
+        },
+
+        doc_dodsfall: {
+          kind: 'MELDING',
+          title: 'OUS Ullevål · dødsfall',
+          reg: 'reg-klinisk',
+          peek: '—',
+          head: `<div class="frame-title"><span>ULLEVÅL SYKEHUS</span><span class="meta">TIL SOSIALKONTORET · 15.02.1999</span></div>`,
+          body: `
+      <p><span class="tag">MELDING OM DØDSFALL</span></p>
+      <p>Grete Olsen, f. 21.09.1927. <span class="ev" data-fact="f_dod">Dødsfall konstatert 15.02 kl. 04:12.</span></p>
+      <p>Avdødes sønn er eneste nærmeste pårørende. Varsling ble forsøkt per telefon uten svar. <span class="ev" data-fact="f_brevsprekken">Politiet bisto ved varsling på bopel. Sønnen åpnet ikke døren. Beskjeden ble gitt gjennom brevsprekken.</span></p>
+      <p>Saken overføres kommunen for videre oppfølging av gjenlevende.</p>
+      <p><span class="tag">SOSIALMEDISINSK ENHET · OUS</span></p>`,
+        },
+      };
+
+      /* Åpne spørsmål. Hypoteser velges INNI spørsmålet (SDD-005). */
+      const QUESTIONS = {
+        q_okonomi: {
+          title: 'Hvem holder økonomien i gang?',
+          appearsOn: ['f_grete_baerer', 'f_trygd', 'f_husleie'],
+          hypos: [
+            {
+              id: 'h_ok_grete',
+              label: 'Grete bærer betalingskjeden.',
+              needs: ['f_husleie', 'f_alt_via_grete'],
+              opens: ['t_forvaltning'],
+              note: 'Husleie og faste betalinger fungerer gjennom Gretes system — skoesken, postgiroene, kontantene den første. Systemet har én operatør.',
+            },
+            {
+              id: 'h_ok_unngaar',
+              label: 'Elling forstår økonomien, men unngår post.',
+              needs: ['f_post', 'f_bok'],
+              opens: ['t_dokgjennomgang'],
+              note: 'Kapasiteten til å forstå er observert. Papiret når likevel aldri frem til en vurdering, fordi konvolutten aldri åpnes. Problemet er kanal, ikke forståelse.',
+            },
+            {
+              id: 'h_ok_gap',
+              label: 'Trygden dekker ikke boligen uten Gretes pensjon.',
+              needs: ['f_gap'],
+              opens: ['t_bostotte'],
+              note: 'Ellings trygd er to mynter. Boligen koster tre. Differansen bæres i dag av Gretes pensjon. Bortfall gir umiddelbar restanserisiko.',
+            },
+          ],
+        },
+        q_bolig: {
+          title: 'Kan Elling bli boende når Grete ikke lenger bærer hverdagen?',
+          appearsOn: ['f_gap', 'f_leie_stoppet', 'f_husleie'],
+          hypos: [
+            {
+              id: 'h_b_sikres',
+              label: 'Boligen kan sikres — med bostøtte og ordnet betalingskjede.',
+              needs: ['f_gap', 'f_trygd'],
+              opens: ['t_bostotte', 't_forvaltning'],
+              note: 'Med bostøtte og en ordnet betalingskjede kan leieforholdet videreføres. Forutsetter at søknaden fremmes før restansen blir en sak.',
+            },
+            {
+              id: 'h_b_flytte',
+              label: 'Boligen kan ikke holdes. Flytting bør forberedes nå.',
+              needs: ['f_gap', 'f_leie_privat'],
+              opens: ['t_huseier'],
+              note: 'Leieforholdet er privat, muntlig og uten vern. Vurderingen er at alternativ bolig bør kartlegges før huseieren tvinger frem en akutt løsning.',
+            },
+            {
+              id: 'h_b_uavklart',
+              label: 'Uavklart — økonomien må kartlegges først.',
+              needs: [],
+              opens: [],
+              note: 'Saken mangler økonomisk grunnlag for en boligvurdering. Be Frank lage en økonomisk oversikt.',
+            },
+          ],
+        },
+        q_hverdag: {
+          title: 'Hva bærer Grete i hverdagen — og hva skjer når hun ikke kan?',
+          appearsOn: ['f_grete_baerer', 'f_klarer_seg'],
+          hypos: [
+            {
+              id: 'h_h_infra',
+              label: 'Grete er usynlig infrastruktur: mat, kalender, post, kontakt.',
+              needs: ['f_kalender', 'f_matbokser'],
+              opens: ['t_hjemmehjelp', 't_matlevering'],
+              note: 'Husholdets funksjoner — mat, avtaler, post, kontakt med tjenester — utføres i dag av mor. Funksjonene er ikke dokumentert noe sted og overlever ikke bortfall uten overføring.',
+            },
+            {
+              id: 'h_h_kanmer',
+              label: 'Elling klarer mer enn det ser ut. Grete har bare alltid gjort det først.',
+              needs: ['f_bok', 'f_utklipp'],
+              opens: ['t_brev'],
+              note: 'Observert kapasitet — konsentrasjon, arkiv, system — tilsier at funksjoner er trenbare. Ikke testet. Grete har aldri latt det bli testet.',
+            },
+            {
+              id: 'h_h_system',
+              label: 'Husholdet fungerer bare som system med to.',
+              needs: ['f_matbokser', 'f_ingen_matkjop'],
+              opens: ['t_hjemmehjelp'],
+              note: 'Husholdet er bygget som ett system med to roller. Den ene rollen faller bort. Systemet er ikke vurdert for én.',
+            },
+          ],
+        },
+        q_selv: {
+          title: 'Hva kan Elling lære seg, med riktig stillas?',
+          appearsOn: ['f_bok', 'f_utklipp', 'f_matbokser', 'f_aldri_alene'],
+          hypos: [
+            {
+              id: 'h_s_trenbar',
+              label: 'Konsentrasjonen er sterk. Rutiner kan trenes — én om gangen.',
+              needs: ['f_bok'],
+              opens: ['t_brev', 't_regning'],
+              note: 'Kapasitet til fordypning og system er observert. Avgrensede rutiner kan bygges med støtte — lavt tempo, fast person, hans eget arkivspråk.',
+            },
+            {
+              id: 'h_s_formell',
+              label: 'Ferdighetene er der ikke. Formell støtte må bære alt.',
+              needs: ['f_saarbar'],
+              opens: ['t_institusjon'],
+              note: 'Funksjonsnivået vurderes som for lavt for egenmestring. Tjenestene må dimensjoneres for full kompensasjon.',
+            },
+            {
+              id: 'h_s_ukjent',
+              label: 'Vet ikke — før noe er prøvd med støtte.',
+              needs: [],
+              opens: ['t_brev'],
+              note: 'Kommunen har ingen observasjon av Elling i en mestringssituasjon. Vurdering uten utprøving vil være gjetning.',
+            },
+          ],
+        },
+        q_kontakt: {
+          title: 'Hvordan når kommunen Elling uten Grete?',
+          appearsOn: ['f_elling_tlf', 'f_avstand', 'f_ingen_tjenester'],
+          hypos: [
+            {
+              id: 'h_k_oppmote',
+              label: 'Telefonen er stengt kanal. Fast person og oppmøte kan virke.',
+              needs: ['f_elling_tlf', 'f_avstand'],
+              opens: ['t_hjemmehjelp'],
+              note: 'Fasttelefonen vurderes som uegnet kanal. Kontakt bør bygges gjennom én fast person med forutsigbart oppmøte. Tempoet settes av Elling.',
+            },
+            {
+              id: 'h_k_skriftlig',
+              label: 'All kontakt må gå skriftlig.',
+              needs: ['f_post'],
+              opens: ['t_dokgjennomgang'],
+              note: 'Skriftlig kanal forutsetter at post åpnes. Det er ikke sannsynliggjort. Kanalen kan være riktig på sikt, men er i dag like stengt som telefonen.',
+            },
+            {
+              id: 'h_k_via_grete',
+              label: 'Kontakt må gå via Grete så lenge hun lever.',
+              needs: ['f_klarer_seg'],
+              opens: [],
+              note: 'Grete er i dag eneste fungerende kanal inn. Vedtaket bør merke seg at denne kanalen har kort forventet varighet.',
+            },
+          ],
+        },
+        q_kollaps: {
+          title: 'Hva kollapser først nå?',
+          appearsOn: ['f_dod'],
+          hypos: [
+            {
+              id: 'h_c_penger',
+              label: 'Økonomien. Husleien stopper denne måneden.',
+              needs: ['f_gap'],
+              opens: ['t_forvaltning', 't_huseier'],
+              note: 'Betalingskjeden lå i Gretes skoeske og hukommelse. Den opphørte 15.02. Restanse løper fra første forfall.',
+            },
+            {
+              id: 'h_c_mat',
+              label: 'Maten. Boksene i kjøleskapet tar slutt om dager.',
+              needs: ['f_matbokser'],
+              opens: ['t_matlevering'],
+              note: 'Matforsyningen var preppet uke for uke. Siste leveranse skjedde før innleggelsen. Det finnes ingen neste.',
+            },
+            {
+              id: 'h_c_kontakt',
+              label: 'Kontakten. Uten kanal inn er alt annet teori.',
+              needs: ['f_brevsprekken'],
+              opens: ['t_hjemmehjelp'],
+              note: 'Kommunen har per i dag ingen bekreftet kanal til Elling. Tiltak uten kanal er vedtak på papir.',
+            },
+          ],
+        },
+      };
+
+      /* Tiltak. slot: s1 bolig/økonomi · s2 erstatt Grete · s3 skjør rutine · press */
+      const TILTAK = {
+        t_bostotte: {
+          slot: 's1',
+          title: 'Søk bostøtte',
+          cost: 0,
+          needs: ['f_trygd', 'f_husleie'],
+          needsHypo: ['h_ok_gap', 'h_b_sikres'],
+          desc: 'Husbanken. Krever dokumentert inntekt og husleie. Saksbehandlingstid.',
+          sim: 'bostotte',
+        },
+        t_forvaltning: {
+          slot: 's1',
+          title: 'Frivillig forvaltning av faste betalinger',
+          cost: 1,
+          needs: ['f_alt_via_grete'],
+          needsHypo: ['h_ok_grete', 'h_b_sikres', 'h_c_penger'],
+          desc: 'Kommunen overtar skoesken. Trygt. Bygger ingenting.',
+          sim: 'forvaltning',
+        },
+        t_huseier: {
+          slot: 's1',
+          title: 'Snakk med huseieren',
+          cost: 0,
+          needs: ['f_huseier_kommer'],
+          needsHypo: ['h_b_sikres', 'h_b_flytte', 'h_c_penger'],
+          desc: 'Bakkerud vil vite hvem han skal forholde seg til. La det bli Frank — ikke torsdagsbesøket.',
+          sim: 'garanti',
+        },
+
+        t_hjemmehjelp: {
+          slot: 's2',
+          title: 'Hjemmehjelp 2× uke — Frank',
+          cost: 2,
+          needs: ['f_grete_baerer'],
+          needsHypo: ['h_h_infra', 'h_h_system', 'h_k_oppmote', 'h_c_kontakt'],
+          desc: 'Fast person, fast tid. Den eneste kanalen inn som har virket hittil.',
+          sim: 'hjemmehjelp',
+        },
+        t_matlevering: {
+          slot: 's2',
+          title: 'Matombringing',
+          cost: 1,
+          needs: ['f_matbokser'],
+          needsHypo: ['h_h_infra', 'h_c_mat'],
+          desc: 'Bokser på døren, tre dager i uken. Forutsetter at døren er en kanal.',
+          sim: 'mat',
+        },
+        t_dokgjennomgang: {
+          slot: 's2',
+          title: 'Fast dokumentgjennomgang',
+          cost: 1,
+          needs: ['f_post'],
+          needsHypo: ['h_ok_unngaar', 'h_k_skriftlig', 'h_h_infra'],
+          desc: 'Frank går gjennom posten ukentlig. Papiret når frem til en vurdering.',
+          sim: 'dok',
+        },
+
+        t_brev: {
+          slot: 's3',
+          title: 'Åpne ett brev sammen med Frank',
+          cost: 0,
+          needs: ['f_post'],
+          needsHypo: ['h_h_kanmer', 'h_s_trenbar', 'h_s_ukjent'],
+          needsVisit: true,
+          desc: 'Ett brev. Ikke bunken. Frank legger det på bordet og venter.',
+          sim: 'brev',
+        },
+        t_regning: {
+          slot: 's3',
+          title: 'Betal én regning med støtte',
+          cost: 0,
+          needs: ['f_gap'],
+          needsHypo: ['h_s_trenbar'],
+          needsVisit: true,
+          desc: 'Én regning, én gang. Målet er at det har skjedd, ikke at det er lært.',
+          sim: 'regning',
+        },
+        t_telefon: {
+          slot: 's3',
+          title: 'Telefontrening med manus',
+          cost: 0,
+          needs: ['f_elling_tlf'],
+          early: true,
+          desc: 'Manus ved apparatet i stuen. Krever trygghet som kanskje ikke finnes ennå.',
+          sim: 'telefon',
+        },
+
+        t_institusjon: {
+          slot: 'press',
+          title: 'Institusjonsvurdering / omsorgsbolig',
+          cost: 0,
+          needs: ['f_saarbar'],
+          desc: 'Bureaukratisk lesbart. Trygt på papiret. Leiligheten blir i så fall et avsluttet kapittel.',
+          sim: 'institusjon',
+        },
+      };
+
+      const SLOT_LABELS = {
+        s1: 'SLOT 1 · BOLIG/ØKONOMI-SIKRING — kan leiligheten betales uten Gretes pensjon?',
+        s2: 'SLOT 2 · ERSTATT GRETES USYNLIGE ARBEID — hvem bærer rutinene nå?',
+        s3: 'SLOT 3 · SKJØR SELVSTENDIG RUTINE — hva kan Elling begynne å bære selv?',
+        press: 'PRESS · ALLTID TILGJENGELIG, ALDRI AUTOMATISK RIKTIG',
+      };
+
+      /* Dispatch — Franks oppdrag. Koster 1 handling. */
+      const DISPATCHES = {
+        d_ring_grete: {
+          title: 'Ring Grete',
+          desc: 'Førstekontakt. Hun vet hvorfor du ringer.',
+          avail: (s) => !s.docs.doc_frank_tlf && s.greteStage < 4,
+          result: { doc: 'doc_frank_tlf', delay: 0 },
+        },
+        d_konto: {
+          title: 'Be om økonomisk oversikt',
+          desc: 'Frank setter seg ved kjøkkenbordet med Grete og skoesken. Tar en dag.',
+          avail: (s) =>
+            !s.docs.doc_konto && !s.pending.some((p) => p.doc === 'doc_konto') && s.greteStage < 4,
+          result: { doc: 'doc_konto', delay: 1 },
+        },
+        d_besok: {
+          title: 'Avtal hjemmebesøk',
+          desc: 'Gjennom Grete. Rapport i morgen tidlig.',
+          avail: (s) =>
+            !!s.docs.doc_frank_tlf &&
+            !s.docs.doc_frank_visit &&
+            !s.pending.some((p) => p.doc === 'doc_frank_visit') &&
+            s.greteStage < 4,
+          result: { doc: 'doc_frank_visit', delay: 1 },
+        },
+        d_ring_elling: {
+          title: 'Ring leiligheten',
+          desc: 'Grete tar den ikke lenger. Spørsmålet er om noen gjør det.',
+          avail: (s) => !s.facts.f_ubesvart && s.greteStage >= 4,
+          result: {
+            fact: 'f_ubesvart',
+            log: 'Frank ringte leiligheten. Åtte ring. Fasttelefonen står to meter fra stolen hans.',
+          },
+        },
+        d_papirer: {
+          title: 'Gå gjennom papirene i leiligheten',
+          desc: 'Skoesken står der fortsatt. Noen må åpne den.',
+          avail: (s) =>
+            s.greteStage >= 5 &&
+            !s.docs.doc_konto &&
+            !s.docs.doc_papirer &&
+            (s.sim.doorOpened || s.tiltak.includes('t_hjemmehjelp')),
+          result: { doc: 'doc_papirer', delay: 0 },
+        },
+        d_besok_alene: {
+          title: 'Hjemmebesøk uten avtale',
+          desc: 'Ingen Grete å avtale med lenger. Frank stiller på døren.',
+          avail: (s) => s.greteStage >= 5,
+          result: { special: 'visit_after' },
+        },
+        d_bostotte_f: {
+          title: 'Følg opp bostøttesøknaden',
+          desc: 'Purr Husbanken. Sjekk at dokumentene er komplette.',
+          avail: (s) => s.tiltak.includes('t_bostotte') && !s.clocks.ck_bostotte.done,
+          result: { special: 'bostotte_push' },
+        },
+      };
+
+      /* Frank-chat. Låses opp av fakta. Gratis. */
+      const CHAT = [
+        {
+          id: 'c_kalender',
+          needs: 'f_kalender',
+          q: 'Hva betyr kalenderen?',
+          a: 'Avtalene står der, tydelige nok. Men håndskriften er Gretes. Kalenderen virker bare så lenge noen holder den i live. Spørsmålet er ikke om Elling kan lese den. Det er om den finnes neste måned.',
+        },
+        {
+          id: 'c_post',
+          needs: 'f_post',
+          q: 'Posten i gangen — likegyldighet?',
+          a: 'Nei. Han vet nøyaktig hva som ligger der. Han la merke til at jeg så på bunken, og han ble urolig av det. Det er ikke likegyldighet. Det er noe som ligner mer på frykt for hva papiret krever av svar.',
+        },
+        {
+          id: 'c_smart',
+          needs: 'f_smart_gutt',
+          q: '«En smart gutt» — hva la du i det?',
+          a: 'Hun sa det i trappen, lavt, som om det var en hemmelighet. Hun har båret ham så lenge at jeg tror hun ikke lenger vet hva som er ham og hva som er henne. Det er det vi egentlig skal kartlegge.',
+        },
+        {
+          id: 'c_klarer',
+          needs: 'f_klarer_seg',
+          q: 'Tror du på «han klarer seg»?',
+          a: 'Folk sier det på to måter. Som en vurdering, eller som et håp. Hun sa det to ganger. Andre gangen var det et håp.',
+        },
+        {
+          id: 'c_bok',
+          needs: 'f_bok',
+          q: 'Boken og notatene — hva sier det deg?',
+          a: 'Tre setninger om Nansen, presise, til veggen. Det er ikke en som mangler evner. Det er en som mangler trening i å ha noen i rommet. Det er to forskjellige problemer, og de har to forskjellige løsninger.',
+        },
+        {
+          id: 'c_avstand',
+          needs: 'f_avstand',
+          q: 'Møbelet mellom dere — hvor lang vei er det inn?',
+          a: `Lang. Men <span class="ev" data-fact="f_dor_glott">han kastet meg ikke ut, og han svarte da jeg spurte om noe han kunne. Det er en dør på gløtt.</span> Den lukkes hvis vi river i den.`,
+        },
+        {
+          id: 'c_gro',
+          needs: 'f_utklipp',
+          q: 'Utklippene av Gro — hva gjør vi med det?',
+          a: 'Jeg spurte om valget i -97. Han snakket i fire minutter uten pause — årstall, navn, partilandsmøter. Ikke til meg, men det var nesten. Det arkivet er det mest levende i den leiligheten. Hvis vi noen gang skal bygge noe med ham, begynner det der.',
+        },
+        {
+          id: 'c_brevsprekk',
+          needs: 'f_brevsprekken',
+          q: 'Brevsprekken. Hørte han det, tror du?',
+          a: 'Han sto rett innenfor. Politiet hørte ham puste. Han hørte hvert ord, og han klarte ikke å åpne. Det er det vi jobber med nå. Ikke sorgen. Døren.',
+        },
+        {
+          id: 'c_videre',
+          needs: 'f_dod',
+          q: 'Hva gjør vi nå, Frank?',
+          a: 'Det vi burde gjort for ti år siden, bare fortere. Money først — leiligheten er det eneste faste punktet han har. Så én kanal inn. Så én rutine. I den rekkefølgen. Og så holder vi kjeft om hvor dårlig tid vi har.',
+        },
+      ];
+
+      /* Klokker (SDD-003): parrede, konkrete, fylles — går ikke bakover. */
+      const CLOCK_DEFS = {
+        ck_bostotte: {
+          name: 'Bostøtte sak',
+          q: 'Kan kommunen skape et lovlig grunnlag for at husleien kan betales?',
+          good: { label: 'Søknad komplett', size: 4 },
+          bad: { label: 'Frist glipper', size: 4 },
+          showWhen: (s) => s.tiltak.includes('t_bostotte'),
+        },
+        ck_overfort: {
+          name: 'Gretes arbeid overføres',
+          q: 'Er funksjonene hun bar identifisert og flyttet?',
+          good: { label: 'Funksjoner overført', size: 6 },
+          bad: { label: 'Alt går via Grete', size: 6 },
+          showWhen: (s) => !!s.docs.doc_frank_tlf,
+        },
+        ck_rutine: {
+          name: 'Skjør rutine',
+          q: 'Tåler én rutine å bli båret av Elling, med stillas?',
+          good: { label: 'Rutine tåler støtte', size: 4 },
+          bad: { label: 'Presset for hardt', size: 4 },
+          showWhen: (s) => s.tiltak.some((t) => TILTAK[t].slot === 's3'),
+        },
+        ck_restanse: {
+          name: 'Husleierestanse',
+          q: 'Blir leieproblemet en aktiv sak før støtten er på plass?',
+          bad: { label: 'Restanse bygges', size: 6 },
+          showWhen: (s) => !!s.docs.doc_huseier,
+        },
+        ck_grete: {
+          name: 'Grete tilgjengelig',
+          q: 'Hvor lenge bærer hun?',
+          scenario: true,
+          size: 5,
+          stages: [
+            'Grete bærer alt',
+            'Grete blir sliten',
+            'Grete avlyser',
+            'Grete er innlagt',
+            'Grete er død',
+          ],
+          showWhen: () => true,
+        },
+      };
+
+      /* =====================================================================
+   2 · STATE
+   ===================================================================== */
+
+      const state = {
+        day: 1,
+        actions: 2,
+        phase: 'play', // play | ended
+        greteStage: 1, // 1..5 — ck_grete scenario clock
+        docs: {}, // docId -> { day, read, isNew }
+        pending: [], // { day, doc }
+        facts: {}, // factId -> { day, fresh }
+        unread: 0,
+        questions: {}, // qId -> { visible, hypo }
+        chatLog: [],
+        chatUnread: 0,
+        asked: [],
+        dispatched: [], // engangs-dispatcher brukt
+        draft: [], // tiltak valgt i vedtaksskjema (ikke fattet)
+        tiltak: [], // fattede tiltak
+        vedtakCount: 0,
+        clocks: {
+          ck_bostotte: { good: 0, bad: 0, done: false, failed: false },
+          ck_overfort: { good: 0, bad: 0 },
+          ck_rutine: { good: 0, bad: 0 },
+          ck_restanse: { bad: 0 },
+        },
+        sim: {
+          needs: { hunger: 72, energy: 64, social: 30, security: 55 },
+          foodBoxes: 7,
+          mail: 9,
+          unanswered: 2,
+          doorOpened: false,
+          visitLevel: 0, // 0 ingen innsyn · 1 snapshot · 2 løpende
+          logg: [], // { day, text, kind }
+        },
+        activeSurface: 'pulten',
+      };
+
+      /* =====================================================================
+   3 · ENGINE — pure funksjoner over state. Ingen DOM.
+   ===================================================================== */
+
+      function receiveDoc(docId) {
+        if (state.docs[docId]) return;
+        state.docs[docId] = { day: state.day, read: false, isNew: true };
+      }
+
+      function liftFact(factId) {
+        if (state.facts[factId]) return null;
+        state.facts[factId] = { day: state.day, fresh: true };
+        state.unread++;
+        const f = FACTS[factId];
+        const newQs = [];
+        for (const [qId, q] of Object.entries(QUESTIONS)) {
+          if (!state.questions[qId] && q.appearsOn.includes(factId)) {
+            state.questions[qId] = { visible: true, hypo: null };
+            newQs.push(qId);
+          }
+        }
+        return { fact: f, newQuestions: newQs };
+      }
+
+      function factsFor(qId) {
+        return Object.keys(state.facts).filter((fid) => FACTS[fid].supports.includes(qId));
+      }
+
+      function questionState(qId) {
+        const q = state.questions[qId];
+        if (!q) return 'skjult';
+        if (q.hypo) return 'Foreløpig arbeidssvar';
+        return factsFor(qId).length >= 2 ? 'Delvis belyst' : 'Åpent';
+      }
+
+      function hypoAvailable(h) {
+        return h.needs.every((fid) => state.facts[fid]);
+      }
+
+      /* Arbeidshypoteser er foreløpige — de kan byttes når som helst. */
+      function chooseHypo(qId, hypoId) {
+        const q = QUESTIONS[qId];
+        const h = q.hypos.find((x) => x.id === hypoId);
+        if (!h || !hypoAvailable(h)) return false;
+        state.questions[qId].hypo = state.questions[qId].hypo === hypoId ? null : hypoId;
+        return true;
+      }
+
+      function hypoChosen(hId) {
+        return Object.values(state.questions).some((st) => st.hypo === hId);
+      }
+
+      function chosenHypos() {
+        return Object.entries(state.questions)
+          .filter(([, st]) => st.hypo)
+          .map(([qId, st]) => ({ qId, hypo: QUESTIONS[qId].hypos.find((h) => h.id === st.hypo) }));
+      }
+
+      function tiltakAvailable(tid) {
+        const t = TILTAK[tid];
+        if (state.tiltak.includes(tid)) return { ok: false, why: 'iverksatt' };
+        if (!t.needs.every((fid) => state.facts[fid]))
+          return { ok: false, why: 'mangler grunnlag i sakens fakta' };
+        if (t.needsVisit && !state.docs.doc_frank_visit)
+          return { ok: false, why: 'krever gjennomført hjemmebesøk' };
+        if (t.needsHypo && !t.needsHypo.some(hypoChosen)) {
+          const qTitles = [
+            ...new Set(
+              t.needsHypo.map(
+                (h) =>
+                  Object.entries(QUESTIONS).find(([, q]) => q.hypos.some((x) => x.id === h))?.[1]
+                    .title,
+              ),
+            ),
+          ];
+          return { ok: false, why: 'krever arbeidshypotese under: «' + qTitles[0] + '»' };
+        }
+        return { ok: true };
+      }
+
+      function draftCost() {
+        return state.draft.reduce((s, tid) => s + TILTAK[tid].cost, 0);
+      }
+      function spentCost() {
+        return state.tiltak.reduce((s, tid) => s + TILTAK[tid].cost, 0);
+      }
+
+      function enactVedtak() {
+        if (!state.draft.length) return null;
+        const chosen = [...state.draft];
+        state.tiltak.push(...chosen);
+        state.draft = [];
+        state.vedtakCount++;
+
+        // Klokkebevegelse ved iverksettelse
+        for (const tid of chosen) {
+          const t = TILTAK[tid];
+          if (tid === 't_bostotte') {
+            state.clocks.ck_bostotte.good += state.docs.doc_konto ? 2 : 1;
+          }
+          if (t.slot === 's2') state.clocks.ck_overfort.good += tid === 't_hjemmehjelp' ? 2 : 1;
+          if (tid === 't_telefon' && state.clocks.ck_rutine.good === 0 && !state.sim.doorOpened) {
+            state.clocks.ck_rutine.bad += 2; // presset for hardt — for tidlig
+          }
+        }
+
+        // Generer vedtaksdokument
+        const docId = 'doc_vedtak_' + state.vedtakCount;
+        const rows = chosen
+          .map(
+            (tid) =>
+              `<p>— ${TILTAK[tid].title}${TILTAK[tid].cost ? ` <span class="tag">(${'●'.repeat(TILTAK[tid].cost)} ${TILTAK[tid].cost} mynt${TILTAK[tid].cost > 1 ? 'er' : ''}/mnd)</span>` : ''}</p>`,
+          )
+          .join('');
+        const hypoRows =
+          chosenHypos()
+            .map(
+              ({ hypo }) =>
+                `<p style="font-size:13px;color:var(--ink-dim);">Arbeidshypotese lagt til grunn: ${hypo.label}</p>`,
+            )
+            .join('') ||
+          `<p style="font-size:13px;color:var(--ink-dim);">Ingen arbeidshypotese lagt til grunn.</p>`;
+        DOCUMENTS[docId] = {
+          kind: 'VEDTAK',
+          title: `Vedtak ${state.vedtakCount} · Sosialkontoret`,
+          reg: 'reg-vedtak',
+          peek: 'Iverksettes fra i morgen.',
+          head: `<div class="frame-title"><span>VEDTAK · SAK 99/0412</span><span class="meta">SOSIALKONTORET · DAG ${state.day}</span></div>`,
+          body: `
+      <p>Sosialkontoret fatter med dette vedtak om følgende tiltak for Olsen, Elling, jf. sosialtjenesteloven § 4-3:</p>
+      ${rows}
+      <p style="margin-top:10px;">${hypoRows}</p>
+      <p>Tiltakene iverksettes fra dag ${state.day + 1}. Vedtaket kan påklages. Saken følges opp av hjemmetjenesten v/ 4012 Solberg.</p>
+      <p style="margin-top:14px;"><span class="stamp gold">IVERKSATT</span></p>`,
+        };
+        receiveDoc(docId);
+        return chosen;
+      }
+
+      function runDispatch(did) {
+        const d = DISPATCHES[did];
+        if (state.actions < 1 || !d.avail(state)) return null;
+        state.actions--;
+        state.dispatched.push(did);
+        const out = { toasts: [] };
+
+        if (did === 'd_ring_grete' || did === 'd_konto' || did === 'd_besok') {
+          // Effektivt — men alt går via Grete. Klokken merker seg det.
+          state.clocks.ck_overfort.bad++;
+        }
+        if (d.result.doc) {
+          if (d.result.delay === 0) {
+            receiveDoc(d.result.doc);
+            out.toasts.push({
+              tag: 'NYTT DOKUMENT PÅ PULTEN',
+              text: DOCUMENTS[d.result.doc].title,
+            });
+          } else {
+            state.pending.push({ day: state.day + d.result.delay, doc: d.result.doc });
+            out.toasts.push({ tag: 'FRANK ER I GANG', text: 'Svar ventes i morgen.' });
+          }
+        }
+        if (d.result.fact) {
+          liftFact(d.result.fact);
+          state.sim.unanswered++;
+          out.toasts.push({
+            tag: 'FAKTUM LAGT TIL · ' + FACTS[d.result.fact].domain,
+            text: FACTS[d.result.fact].text,
+            kind: 'fact',
+          });
+          if (d.result.log)
+            state.sim.logg.push({ day: state.day, text: d.result.log, kind: 'frank' });
+        }
+        if (d.result.special === 'bostotte_push') {
+          state.clocks.ck_bostotte.good++;
+          out.toasts.push({ tag: 'BOSTØTTE SAK', text: 'Søknaden rykker frem.' });
+        }
+        if (d.result.special === 'visit_after') {
+          const opened = state.tiltak.includes('t_hjemmehjelp') || state.clocks.ck_rutine.good > 0;
+          if (opened) {
+            state.sim.doorOpened = true;
+            state.sim.visitLevel = 2;
+            state.sim.needs.social = Math.min(100, state.sim.needs.social + 8);
+            state.sim.logg.push({
+              day: state.day,
+              text: 'Frank ringte på. Det tok fire minutter. Så gikk låsen.',
+              kind: 'frank',
+            });
+            state.sim.logg.push({
+              day: state.day,
+              text: 'De sa ingenting om Grete. Frank satte over kaffe. E. ble i rommet.',
+              kind: 'frank',
+            });
+            out.toasts.push({
+              tag: 'FELTNOTAT',
+              text: 'Døren gikk opp. Fire minutter, så gikk låsen.',
+            });
+          } else {
+            state.clocks.ck_rutine.bad = Math.min(4, state.clocks.ck_rutine.bad + 1);
+            state.sim.logg.push({
+              day: state.day,
+              text: 'Frank ringte på. Ingen lyd. Han la et håndskrevet kort i brevsprekken og ble stående litt.',
+              kind: 'frank',
+            });
+            out.toasts.push({ tag: 'FELTNOTAT', text: 'Ingen åpnet. Frank la igjen et kort.' });
+          }
+        }
+        return out;
+      }
+
+      function askFrank(chatId) {
+        const c = CHAT.find((x) => x.id === chatId);
+        if (!c || state.asked.includes(chatId)) return;
+        state.asked.push(chatId);
+        state.chatLog.push({ who: 'DEG', text: c.q });
+        state.chatLog.push({ who: 'FRANK', text: c.a });
+      }
+
+      /* =====================================================================
+   4 · SIM (mock) — svarer på vedtaket. Erstattes av core-loop i Godot.
+   ===================================================================== */
+
+      function cover() {
+        const t = state.tiltak;
+        return {
+          channel:
+            t.includes('t_hjemmehjelp') || state.clocks.ck_rutine.good > 0 || state.sim.doorOpened,
+          money:
+            t.includes('t_forvaltning') || state.clocks.ck_bostotte.done || t.includes('t_huseier'),
+          food: t.includes('t_matlevering'),
+          dok: t.includes('t_dokgjennomgang'),
+          routine: t.some((x) => TILTAK[x].slot === 's3'),
+          institusjon: t.includes('t_institusjon'),
+        };
+      }
+
+      const FLAVOR = [
+        '21:10 — teleskopet ved vinduet. 40 min. Himmelen var overskyet.',
+        'Kryssordet fra lørdagsavisen. Tre ord fylt inn, alle riktige.',
+        'Boken om Maud-ekspedisjonen. Margnotater, små bokstaver.',
+        'Utklippsboken: nytt utklipp limt inn under «1994». Limstift, linjal, årstall i hjørnet.',
+        '10:48 — naboen i vinduet et øyeblikk. E. så, uten å bevege seg.',
+        'NRK Kveldsnytt. Han satt gjennom hele sendingen. Reiste seg da innenrikspolitikken var over.',
+        'Han brettet pleddet på Gretes stol. La det tilbake nøyaktig slik det lå.',
+      ];
+      let flavorIdx = 0;
+      function flavor() {
+        return FLAVOR[flavorIdx++ % FLAVOR.length];
+      }
+
+      function simTick() {
+        const day = state.day;
+        const s = state.sim;
+        const c = cover();
+        const log = (text, kind) => s.logg.push({ day, text, kind: kind || 'obs' });
+
+        if (state.greteStage < 4) {
+          // Grete bærer. Stabilt — det er hele poenget.
+          s.needs.security = 55;
+          s.needs.hunger = Math.max(s.needs.hunger, 70);
+          if (s.visitLevel > 0 && day >= 3) log(flavor());
+          if (day === 3 && s.visitLevel > 0)
+            log(
+              'Grete var på kjøkkenet fra 15:30. Kjøttkaker. Hun fylte fire nye bokser og satte seg ikke ned mens de spiste.',
+            );
+          return;
+        }
+
+        if (state.greteStage === 4) {
+          // Innlagt. Leiligheten er alene for første gang.
+          s.needs.security = 38;
+          s.foodBoxes--;
+          s.mail++;
+          if (s.visitLevel > 0) {
+            log('Ingen kom kl. 16. E. ved vinduet fra 15:40 til 18:05.');
+            log(
+              'Telefonen ringte to ganger (Ullevål). Han sto ved apparatet under andre oppringning. Tok den ikke.',
+            );
+            s.unanswered += 2;
+          }
+          return;
+        }
+
+        // Etter dødsfallet. Nå testes vedtaket.
+        s.mail++;
+        s.needs.security = Math.max(12, s.needs.security - 7);
+        s.needs.energy = Math.max(20, s.needs.energy - 4);
+
+        if (c.food && c.channel) {
+          s.foodBoxes = Math.max(s.foodBoxes, 4);
+          log('Matlevering 11:00. Boksene ble tatt inn i løpet av en time.', 'tiltak');
+          s.needs.hunger = 65;
+        } else if (c.food && !c.channel) {
+          s.foodBoxes--;
+          log(
+            'Matlevering 11:00. Kassen ble stående i gangen. Sjåføren har ikke nøkkel, og ingen åpnet.',
+            'tiltak',
+          );
+          s.needs.hunger = Math.max(15, s.needs.hunger - 12);
+        } else {
+          s.foodBoxes--;
+          s.needs.hunger =
+            s.foodBoxes > 0 ? Math.max(40, s.needs.hunger - 6) : Math.max(10, s.needs.hunger - 15);
+          if (s.foodBoxes === 1)
+            log('Én boks igjen i kjøleskapet. Merket «søndag», i Gretes håndskrift.');
+          if (s.foodBoxes <= 0)
+            log(
+              'Kjøleskapet: lyset, en halv pakke smør, ingenting annet. Han spiste knekkebrød stående.',
+            );
+        }
+
+        if (c.dok) {
+          s.mail = Math.max(0, s.mail - 3);
+          log(
+            'Dokumentgjennomgang. Frank åpnet og sorterte. E. ble i rommet — på andre siden av bordet, men i rommet.',
+            'tiltak',
+          );
+        } else if (s.mail > 12) {
+          log(
+            'Postbunken har veltet. Konvoluttene ligger i vifteform over skoskapet. Øverst: Søgaard Eiendom.',
+          );
+        }
+
+        if (c.channel && state.tiltak.includes('t_hjemmehjelp')) {
+          log(
+            'Frank 14:00, fast tid. Kaffen sto klar da han gikk — én kopp brukt. Ikke Franks.',
+            'tiltak',
+          );
+          s.needs.social = Math.min(45, s.needs.social + 4);
+        } else if (!c.channel) {
+          log(
+            'Banking på døren (nabo, kondolanse). E. frøs. Ingen lyd i fire minutter. Så stillhet.',
+          );
+          s.unanswered++;
+        }
+
+        if (c.routine && state.tiltak.includes('t_brev') && c.channel) {
+          if (state.clocks.ck_rutine.good < 4) {
+            state.clocks.ck_rutine.good++;
+            const steps = [
+              'Brevrutine: Frank la ett brev på bordet og ventet. E. så på det. Det var alt. Det var nok.',
+              'Brevrutine: E. åpnet konvolutten. Leste avsenderen høyt. La den fra seg. Frank sa ingenting.',
+              'Brevrutine: E. åpnet brevet og leste første avsnitt. «De vil ha et svar innen fjorten dager.» Det var en vurdering.',
+              `Brevrutine: E. la brevet i <span class="ev" data-fact="f_egen_mappe">en mappe han hadde laget selv. Den var merket. Små bokstaver.</span>`,
+            ];
+            log(steps[state.clocks.ck_rutine.good - 1], 'tiltak');
+          }
+        } else if (c.routine && state.tiltak.includes('t_brev') && !c.channel) {
+          log('Brevrutinen forutsetter at noen kommer inn. Ingen kommer inn.', 'tiltak');
+        }
+
+        if (
+          state.tiltak.includes('t_telefon') &&
+          state.clocks.ck_rutine.bad >= 2 &&
+          !s.tiradeLogged
+        ) {
+          s.tiradeLogged = true;
+          log(
+            `Telefontrening avbrutt. E. reiste seg, holdt <span class="ev" data-fact="f_tirade">et kvarter langt foredrag om apparatets historie og iboende uforskammethet</span>, og gikk inn på soverommet. Manuset lå urørt.`,
+            'tiltak',
+          );
+        }
+
+        if (c.institusjon && !s.instLogged) {
+          s.instLogged = true;
+          log(
+            'Kartleggingsskjema for omsorgsbolig levert i postkassen. Det ligger nå i bunken med det andre kommunen har sendt.',
+            'tiltak',
+          );
+        }
+
+        // Penger
+        if (!c.money) {
+          state.clocks.ck_restanse.bad = Math.min(6, state.clocks.ck_restanse.bad + 1);
+          if (state.clocks.ck_restanse.bad === 3)
+            log(
+              'Ny lapp fra Bakkerud i postkassen. Kortere enn brevet. Bare ett spørsmålstegn til slutt.',
+            );
+        } else if (state.tiltak.includes('t_forvaltning') && !s.forvLogged) {
+          s.forvLogged = true;
+          log(
+            'Forvaltningskontoret har overtatt de faste betalingene. Husleien for mars er sikret.',
+            'tiltak',
+          );
+        }
+
+        log(flavor());
+      }
+
+      /* =====================================================================
+   5 · DAGSSKRIPT + advanceDay
+   ===================================================================== */
+
+      const SCRIPT = {
+        2: (s) => {
+          state.greteStage = 2;
+        },
+        3: (s) => {
+          state.greteStage = 3;
+          return [
+            {
+              tag: 'BESKJED FRA FRANK',
+              text: 'Grete skulle ringe tilbake om papirene. Hun ringte ikke.',
+              kind: 'day',
+            },
+          ];
+        },
+        4: (s) => {
+          receiveDoc('doc_innleggelse');
+          state.greteStage = 4;
+          return [{ tag: 'MELDING FRA ULLEVÅL', text: 'Grete er innlagt.', kind: 'day' }];
+        },
+        5: (s) => {
+          receiveDoc('doc_dodsfall');
+          state.greteStage = 5;
+          if (!state.questions.q_kollaps) state.questions.q_kollaps = { visible: true, hypo: null };
+          return [{ tag: 'MELDING FRA ULLEVÅL', text: 'Grete Olsen er død.', kind: 'day' }];
+        },
+        6: (s) => {
+          receiveDoc('doc_huseier');
+          return [
+            { tag: 'NY POST PÅ PULTEN', text: 'Håndskrevet brev · T. Bakkerud', kind: 'day' },
+          ];
+        },
+        8: (s) => {
+          endGame();
+          return [];
+        },
+      };
+
+      function advanceDay() {
+        if (state.phase !== 'play') return [];
+        state.day++;
+        state.actions = 2;
+        const toasts = [{ tag: 'DAG ' + state.day, text: dayName(state.day), kind: 'day' }];
+
+        // Leveranser
+        state.pending = state.pending.filter((p) => {
+          if (p.day <= state.day) {
+            receiveDoc(p.doc);
+            if (p.doc === 'doc_frank_visit')
+              state.sim.visitLevel = Math.max(state.sim.visitLevel, 1);
+            toasts.push({ tag: 'NY POST PÅ PULTEN', text: DOCUMENTS[p.doc].title, kind: 'day' });
+            return false;
+          }
+          return true;
+        });
+
+        // Bostøtteklokke: uten oppfølging glipper fristen
+        const ck = state.clocks.ck_bostotte;
+        if (state.tiltak.includes('t_bostotte') && !ck.done && !ck.failed) {
+          if (ck.good >= 4) {
+            ck.done = true;
+            toasts.push({
+              tag: 'BOSTØTTE SAK',
+              text: 'Søknad komplett. Under behandling.',
+              kind: 'day',
+            });
+          } else if (state.greteStage >= 4) {
+            ck.bad++;
+            if (ck.bad >= 4) {
+              ck.failed = true;
+              toasts.push({
+                tag: 'BOSTØTTE SAK',
+                text: 'Fristen glapp. Søknaden må fremmes på nytt.',
+                kind: 'day',
+              });
+            }
+          }
+        }
+
+        // Skript + sim
+        const beats = SCRIPT[state.day] ? SCRIPT[state.day](state) || [] : [];
+        toasts.push(...beats);
+        simTick();
+        return toasts;
+      }
+
+      function dayName(d) {
+        const names = {
+          1: 'Torsdag. Meldingen ligger der.',
+          2: 'Fredag.',
+          3: 'Lørdag. Posten kom likevel.',
+          4: 'Søndag.',
+          5: 'Mandag.',
+          6: 'Tirsdag.',
+          7: 'Onsdag.',
+          8: 'Torsdag. En uke.',
+        };
+        return names[d] || 'Dag ' + d;
+      }
+
+      /* =====================================================================
+   6 · SLUTT — statusrapport + refleksjon. Ingen seier. Et spørsmål.
+   ===================================================================== */
+
+      function endGame() {
+        state.phase = 'ended';
+        const c = cover();
+        const r = state.clocks.ck_restanse.bad;
+        const rut = state.clocks.ck_rutine;
+
+        let para1, para2, closing;
+        if (c.institusjon) {
+          para1 =
+            'Kartlegging for omsorgsbolig er igangsatt. Saken er bureaukratisk lesbar og kan lukkes administrativt ved tildeling.';
+          para2 =
+            'Skjemaet ligger fortsatt uåpnet i posten hans. Leiligheten — den eneste verden han kjenner — er i så fall et avsluttet kapittel.';
+          closing =
+            '«Han er en smart gutt,» sa hun i trappen. Det var det siste hun sa til kommunen.';
+        } else if (c.money && (c.channel || rut.good > 0)) {
+          para1 =
+            'Husleien for mars er sikret. ' +
+            (state.clocks.ck_bostotte.done
+              ? 'Bostøtte er under behandling.'
+              : 'Betalingskjeden er midlertidig forvaltet.') +
+            ' Leieforholdet består.';
+          para2 =
+            rut.good >= 2
+              ? 'Én rutine har begynt å tåle støtte: brevet på bordet. Det høres ikke ut som mye. Det er det første han har båret selv.'
+              : 'En kanal inn finnes. Den er smal og den er ny, og den heter Frank.';
+          closing =
+            'Leiligheten består. Det gjør også stillheten i den. Spørsmålet nå er hva den skal fylles med.';
+        } else if (c.money) {
+          para1 =
+            'Husleien er sikret. Det økonomiske grunnlaget for leieforholdet er midlertidig på plass.';
+          para2 =
+            'Ingen har vært inne i leiligheten siden dødsfallet. Frank anslår ' +
+            Math.max(0, state.sim.foodBoxes) +
+            ' middagsbokser igjen. Telefonen har ' +
+            state.sim.unanswered +
+            ' ubesvarte anrop.';
+          closing = 'Vedtaket var riktig utfylt. Det var ikke nok.';
+        } else if (c.channel || c.food || c.dok) {
+          para1 =
+            'Noen bærer deler av hverdagen. ' +
+            (c.food ? 'Mat kommer inn. ' : '') +
+            (c.dok ? 'Posten åpnes. ' : '') +
+            (c.channel ? 'Døren går opp for én person.' : '');
+          para2 =
+            'Ingen betaler den. Restanseklokken står på ' +
+            r +
+            ' av 6. Bakkerud har lagt en ny lapp i postkassen. Han kommer på torsdag.';
+          closing = 'Hverdagen har fått stillas. Grunnmuren har ingen.';
+        } else {
+          para1 = 'Det foreligger ikke iverksatte tiltak som dekker bolig eller hverdag.';
+          para2 =
+            'Restanse bygges. Posten vokser. Døren er lukket. Kommunen vet nå svært mye om Elling Olsen, og når ham ikke.';
+          closing = 'Bekymringsmeldingen var berettiget. Det er den fortsatt.';
+        }
+
+        DOCUMENTS.doc_status = {
+          kind: 'STATUSRAPPORT',
+          title: 'Frank · status dag 8',
+          reg: 'reg-notat',
+          peek: 'En uke siden meldingen.',
+          head: `<div class="frame-title" style="border-bottom-color:var(--ink-faint);"><span style="font-family:var(--hand-2);font-size:18px;">Status · 4012 F. Solberg</span><span class="meta">DAG 8</span></div>`,
+          body: `<p>${para1}</p><p>${para2}</p><p>${closing}</p>`,
+        };
+        receiveDoc('doc_status');
+        state.endText = { para1, para2, closing };
+      }
+
+      /* =====================================================================
+   7 · UI — én state, render per flate. → Godot-scener + signaler.
+   ===================================================================== */
+
+      const $ = (sel) => document.querySelector(sel);
+      const esc = (s) => s.replace(/</g, '&lt;');
+
+      const DOMAIN_ICONS = {
+        'Økonomi/bolig': { g: '●', c: 'var(--hint-gold)' },
+        'Hverdag/rutine': { g: '⌂', c: 'var(--hint-green)' },
+        'Helse/risiko': { g: '✚', c: 'var(--hint-warn)' },
+        'Nettverk/sosialt': { g: '☎', c: 'var(--hint-blue)' },
+        Ressurser: { g: '✦', c: 'var(--hint-purple)' },
+      };
+      function dico(domain) {
+        const d = DOMAIN_ICONS[domain];
+        return `<span class="dico" style="color:${d.c};">${d.g}</span>`;
+      }
+      function coins(n, cls) {
+        return n
+          ? Array.from({ length: n }, () => `<span class="coin ${cls || ''}"></span>`).join('')
+          : '—';
+      }
+
+      /* Løft fra hvor som helst: dokumenter, Frank-samtale, loggen. Én delegert lytter. */
+      document.addEventListener('click', (e) => {
+        const span = e.target.closest('.ev');
+        if (!span || span.classList.contains('collected')) return;
+        const fid = span.dataset.fact;
+        if (!fid || !FACTS[fid]) return;
+        const res = liftFact(fid);
+        if (!res) return;
+        span.classList.remove('nudged');
+        span.classList.add('collected');
+        toast({ tag: 'FAKTUM LAGT TIL · ' + res.fact.domain, text: res.fact.text, kind: 'fact' });
+        for (const qId of res.newQuestions)
+          toast({ tag: 'ÅPENT SPØRSMÅL', text: QUESTIONS[qId].title, kind: 'hypo' });
+        renderAll();
+      });
+
+      function decorateEvs(root) {
+        root.querySelectorAll('.ev').forEach((s) => {
+          if (state.facts[s.dataset.fact]) s.classList.add('collected');
+        });
+      }
+
+      /* ---------- toasts ---------- */
+      function toast(t) {
+        const el = document.createElement('div');
+        el.className = 'toast' + (t.kind === 'hypo' ? ' hypo' : t.kind === 'day' ? ' day' : '');
+        el.innerHTML = `<div class="t-tag">${t.tag}</div><div class="t-text">${t.text}</div>`;
+        el.onclick = () => {
+          if (t.kind === 'fact') showSurface('fakta');
+          if (t.kind === 'hypo') showSurface('sporsmal');
+          el.remove();
+        };
+        $('#toasts').appendChild(el);
+        setTimeout(() => {
+          el.style.transition = 'opacity 0.6s';
+          el.style.opacity = '0';
+          setTimeout(() => el.remove(), 600);
+        }, 5200);
+      }
+
+      /* ---------- prologue ---------- */
+      let prologueIdx = 1; // caption + første replikk vises sammen
+      function renderPrologue() {
+        const wrap = $('#prologue');
+        const shown = PROLOGUE.slice(0, prologueIdx + 1);
+        const last = PROLOGUE[prologueIdx];
+        const lines = shown
+          .map((b) => {
+            if (b.cap) return `<div class="story-caption">${b.cap}</div>`;
+            if (b.dir) return `<div class="story-line direction">${b.dir}</div>`;
+            if (b.stamp)
+              return `<div class="story-line" style="text-align:center;margin-top:20px;"><span class="stamp">${b.stamp}</span><div style="font-family:var(--hand-2);font-size:18px;margin-top:14px;">${b.end}</div></div>`;
+            return `<div class="story-line"><div class="speaker">${b.who}</div><div class="said">${b.say}</div></div>`;
+          })
+          .join('');
+        wrap.innerHTML = `<div class="story-card"><div class="story-lines">${lines}</div>
+    <div class="story-next">${
+      last.stamp
+        ? `<button class="primary" onclick="startGame()">TIL PULTEN</button>`
+        : `<button class="primary" onclick="nextBeat()">VIDERE ›</button> <button class="quiet" onclick="startGame()" style="margin-left:6px;">HOPP OVER</button>`
+    }</div></div>`;
+        const sc = wrap.querySelector('.story-lines');
+        sc.scrollTop = sc.scrollHeight;
+      }
+      function nextBeat() {
+        prologueIdx = Math.min(PROLOGUE.length - 1, prologueIdx + 1);
+        renderPrologue();
+      }
+      function startGame() {
+        $('#prologue').style.display = 'none';
+        $('#app').style.display = 'block';
+        receiveDoc('doc_bekymring');
+        renderAll();
+      }
+
+      /* ---------- tabs ---------- */
+      function showSurface(name) {
+        state.activeSurface = name;
+        if (name === 'fakta') {
+          state.unread = 0;
+          Object.values(state.facts).forEach((f) => setTimeout(() => (f.fresh = false), 50));
+        }
+        document
+          .querySelectorAll('.tab-btn')
+          .forEach((b) => b.classList.toggle('active', b.dataset.surface === name));
+        document
+          .querySelectorAll('.surface')
+          .forEach((s) => s.classList.toggle('active', s.id === 'surface-' + name));
+        renderAll();
+      }
+      document
+        .querySelectorAll('.tab-btn')
+        .forEach((b) => (b.onclick = () => showSurface(b.dataset.surface)));
+
+      /* ---------- pulten ---------- */
+      const DOC_ROT = {};
+      function renderDesk() {
+        const wrap = $('#desk-docs');
+        const ids = Object.keys(state.docs);
+        wrap.innerHTML = ids
+          .map((id, i) => {
+            const d = DOCUMENTS[id],
+              st = state.docs[id];
+            if (!(id in DOC_ROT)) DOC_ROT[id] = (((i * 137) % 50) - 25) / 10;
+            const evTotal = (d.body.match(/data-fact/g) || []).length;
+            const evGot = (d.body.match(/data-fact="([^"]+)"/g) || []).filter(
+              (m) => state.facts[m.slice(11, -1)],
+            ).length;
+            return `<div class="desk-doc ${st.read ? 'read-done' : ''}" style="transform:rotate(${DOC_ROT[id]}deg)" onclick="openDoc('${id}')">
+      ${st.isNew ? `<span class="stamp new-stamp">NY</span>` : ''}
+      <div class="kind">${d.kind} · DAG ${st.day}</div>
+      <div class="title">${d.title}</div>
+      <div class="peek">${d.peek}</div>
+      ${evTotal ? `<div class="ev-count">${evGot}/${evTotal} merket</div>` : ''}
+    </div>`;
+          })
+          .join('');
+        $('#desk-note').textContent =
+          state.greteStage >= 5
+            ? 'Mappen er tyngre enn den var. Det er fortsatt bare én sak i den.'
+            : state.day === 1
+              ? 'Én melding. Én pult. Begynn der.'
+              : '';
+      }
+
+      /* ---------- document reader ---------- */
+      let nudgeTimer = null;
+      function openDoc(id) {
+        const d = DOCUMENTS[id];
+        state.docs[id].read = true;
+        state.docs[id].isNew = false;
+        const r = $('#reader-doc');
+        r.className = d.reg;
+        r.innerHTML = `<button id="reader-close" class="quiet" onclick="closeDoc()">LUKK</button>${d.head}<div class="doc-body">${d.body}</div>`;
+        decorateEvs(r);
+        clearTimeout(nudgeTimer);
+        nudgeTimer = setTimeout(() => {
+          r.querySelectorAll('.ev:not(.collected)').forEach((s) => s.classList.add('nudged'));
+        }, 10000);
+        $('#reader-overlay').classList.add('open');
+        renderDesk();
+        renderBadges();
+      }
+      function closeDoc() {
+        clearTimeout(nudgeTimer);
+        $('#reader-overlay').classList.remove('open');
+        renderAll();
+      }
+      $('#reader-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'reader-overlay') closeDoc();
+      });
+
+      /* ---------- faktum-detalj (Blake Manor-stil: hva henger dette sammen med?) ---------- */
+      function openFact(fid) {
+        const f = FACTS[fid],
+          st = state.facts[fid];
+        if (!f || !st) return;
+        const srcDoc = Object.keys(DOCUMENTS).find((did) =>
+          (DOCUMENTS[did].body || '').includes(`data-fact="${fid}"`),
+        );
+        const qs = f.supports.filter((qId) => state.questions[qId]);
+        $('#fact-card').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:4px;">${dico(f.domain)}<span class="tag">${f.domain} · ${f.cat} · DAG ${st.day}</span></div>
+    <div style="font-family:var(--hand-2);font-size:19px;font-weight:600;line-height:1.3;margin:6px 0 4px;">${f.text}</div>
+    <div style="font-family:var(--hand-1);font-size:12.5px;font-style:italic;color:var(--ink-dim);">«${f.quote}»</div>
+    <div class="fc-rel"><h4>HENGER SAMMEN MED</h4>
+      ${qs.map((qId) => `<span class="fc-link" onclick="closeFact();showSurface('sporsmal')">? &nbsp;${QUESTIONS[qId].title}</span>`).join('') || `<span class="tag">ingen åpne spørsmål ennå</span>`}
+    </div>
+    <div class="fc-rel"><h4>KAN DRØFTES MED</h4>
+      ${f.discuss
+        .map((p) =>
+          p === 'Frank'
+            ? `<span class="fc-link" onclick="closeFact();showSurface('frank')">☎ &nbsp;Frank</span>`
+            : `<span class="fc-link" style="color:var(--ink-faint);cursor:default;">${state.greteStage >= 5 ? '✝' : '○'} &nbsp;${p}${state.greteStage >= 5 ? ' — ikke lenger mulig' : ' — i en senere utgave'}</span>`,
+        )
+        .join('')}
+    </div>
+    ${srcDoc ? `<div class="fc-rel"><h4>KILDE</h4><span class="fc-link" onclick="closeFact();openDoc('${srcDoc}')">▤ &nbsp;${DOCUMENTS[srcDoc].title}</span></div>` : ''}
+    <div style="text-align:right;margin-top:12px;"><button class="quiet" onclick="closeFact()">LUKK</button></div>`;
+        $('#fact-overlay').classList.add('open');
+      }
+      function closeFact() {
+        $('#fact-overlay').classList.remove('open');
+      }
+      $('#fact-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'fact-overlay') closeFact();
+      });
+
+      /* ---------- sakens fakta ---------- */
+      function renderFakta() {
+        const board = $('#fakta-board');
+        const byDomain = {};
+        for (const d of DOMAINS) byDomain[d] = [];
+        for (const [fid, st] of Object.entries(state.facts))
+          byDomain[FACTS[fid].domain].push({ fid, st });
+        board.innerHTML = DOMAINS.map((d) => {
+          const list = byDomain[d];
+          return `<div class="domain-col"><h3><span>${d}</span><span>${list.length || '—'}</span></h3>
+      ${
+        list
+          .map(({ fid, st }) => {
+            const f = FACTS[fid];
+            return `<div class="fact-chip ${st.fresh ? 'fresh' : ''}" onclick="openFact('${fid}')">
+          <div class="f-text">${dico(f.domain)}${f.text}</div>
+          <div class="f-quote">«${f.quote}»</div>
+          <div class="f-src">${f.cat} · dag ${st.day} · kan drøftes med: ${f.discuss.join(', ')}</div>
+        </div>`;
+          })
+          .join('') ||
+        `<div style="font-family:var(--hand-2);font-size:15px;color:var(--ink-faint);">ingenting ennå</div>`
+      }
+    </div>`;
+        }).join('');
+      }
+
+      /* ---------- åpne spørsmål ---------- */
+      function renderQuestions() {
+        const wrap = $('#q-cards');
+        const visible = Object.keys(QUESTIONS).filter((qId) => state.questions[qId]);
+        if (!visible.length) {
+          wrap.innerHTML = `<div style="text-align:center;padding:70px;color:var(--ink-dim);font-family:var(--hand-2);font-size:20px;">Spørsmålene kommer av fakta. Les dokumentene på pulten.</div>`;
+          $('#q-lines').innerHTML = '';
+          return;
+        }
+        wrap.innerHTML = visible
+          .map((qId) => {
+            const q = QUESTIONS[qId],
+              qst = state.questions[qId];
+            const sup = factsFor(qId);
+            const stateLabel = questionState(qId);
+            const pillCls =
+              stateLabel === 'Foreløpig arbeidssvar'
+                ? 'gold'
+                : stateLabel === 'Delvis belyst'
+                  ? 'blue'
+                  : '';
+            const chosen = qst.hypo ? q.hypos.find((h) => h.id === qst.hypo) : null;
+            return `<div class="frame q-card" data-q="${qId}">
+      <span class="pill ${pillCls} q-state">${stateLabel}</span>
+      <div class="q-title">${q.title}</div>
+      <div class="q-facts">
+        ${sup.map((fid) => `<span class="q-fact-min" data-line-fact="${fid}" title="${esc(FACTS[fid].quote)}" onclick="openFact('${fid}')">${dico(FACTS[fid].domain)}${FACTS[fid].text}</span>`).join('')}
+        ${sup.length < 2 ? `<span class="q-fact-min q-fact-missing">… saken mangler grunnlag</span>` : ''}
+      </div>
+      <div class="hypo-list">
+        ${q.hypos
+          .map((h) => {
+            const ok = hypoAvailable(h);
+            const cls = qst.hypo === h.id ? 'chosen' : ok ? '' : 'blocked';
+            const missing = h.needs.filter((f) => !state.facts[f]);
+            return `<div class="hypo-opt ${cls}" onclick="${ok ? `uiChooseHypo('${qId}','${h.id}')` : ''}">
+            <span class="h-mark">${qst.hypo === h.id ? '☒' : '☐'}</span>
+            <span>${ok ? h.label : `<span class="redact">${h.label}</span> <span class="tag">uleselig — mangler ${missing.length} faktum</span>`}</span>
+          </div>`;
+          })
+          .join('')}
+      </div>
+      ${chosen ? `<div class="arbeidshypo"><div class="ah-head">ARBEIDSHYPOTESE · FORELØPIG — KAN BYTTES</div><div class="ah-body">${chosen.note}</div>${chosen.opens && chosen.opens.length ? `<div class="q-opens">→ GIR GRUNNLAG FOR: ${chosen.opens.map((tid) => TILTAK[tid].title.toUpperCase()).join(' · ')}</div>` : ''}</div>` : ''}
+    </div>`;
+          })
+          .join('');
+        requestAnimationFrame(drawLines);
+      }
+
+      function uiChooseHypo(qId, hId) {
+        if (chooseHypo(qId, hId)) {
+          const h = QUESTIONS[qId].hypos.find((x) => x.id === hId);
+          if (state.questions[qId].hypo === hId)
+            toast({ tag: 'ARBEIDSHYPOTESE NOTERT', text: h.label, kind: 'hypo' });
+          renderAll();
+        }
+      }
+
+      /* Blake Manor-linjer: samme faktum brukt i flere spørsmål bindes sammen. */
+      function drawLines() {
+        const svg = $('#q-lines');
+        const board = $('#question-board');
+        svg.setAttribute('width', board.clientWidth);
+        svg.setAttribute('height', board.clientHeight);
+        const groups = {};
+        board.querySelectorAll('[data-line-fact]').forEach((el) => {
+          (groups[el.dataset.lineFact] ||= []).push(el);
+        });
+        const bRect = board.getBoundingClientRect();
+        let paths = '';
+        let hue = 0;
+        for (const els of Object.values(groups)) {
+          if (els.length < 2) continue;
+          const color = ['#c89a2e', '#5b7fc4', '#a57bc2', '#7aa66f', '#c86244'][hue++ % 5];
+          for (let i = 0; i < els.length - 1; i++) {
+            const a = els[i].getBoundingClientRect(),
+              b = els[i + 1].getBoundingClientRect();
+            const x1 = a.left - bRect.left + a.width / 2,
+              y1 = a.top - bRect.top + a.height;
+            const x2 = b.left - bRect.left + b.width / 2,
+              y2 = b.top - bRect.top;
+            paths += `<path d="M${x1},${y1} C${x1 - 30},${(y1 + y2) / 2} ${x2 + 30},${(y1 + y2) / 2} ${x2},${y2}" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="5 4" opacity="0.55"/>`;
+          }
+        }
+        svg.innerHTML = paths;
+      }
+      window.addEventListener('resize', () => {
+        if (state.activeSurface === 'sporsmal') drawLines();
+      });
+
+      /* ---------- vedtak og tiltak ---------- */
+      function renderVedtak() {
+        const form = $('#vedtak-form');
+        const slots = ['s1', 's2', 's3', 'press'];
+        form.innerHTML =
+          `<div class="frame-title"><span>VEDTAK ${state.vedtakCount + 1} · UTKAST</span><span class="meta">TILTAKSPAKKE — EN PAKKE ER GOD NÅR DEN DEKKER BÅDE PENGENE OG LIVET</span></div>` +
+          slots
+            .map((slot) => {
+              const list = Object.entries(TILTAK).filter(([, t]) => t.slot === slot);
+              return (
+                `<div class="slot-head">${SLOT_LABELS[slot]}</div>` +
+                list
+                  .map(([tid, t]) => {
+                    const av = tiltakAvailable(tid);
+                    const isActive = state.tiltak.includes(tid);
+                    const isDraft = state.draft.includes(tid);
+                    const cls = isActive
+                      ? 'active-now'
+                      : isDraft
+                        ? 'chosen'
+                        : av.ok
+                          ? ''
+                          : 'blocked';
+                    return `<div class="tiltak-card ${cls}" onclick="${!isActive && av.ok ? `toggleDraft('${tid}')` : ''}">
+          <span class="t-box">${isActive ? '☒' : isDraft ? '☒' : '☐'}</span>
+          <span>
+            <span class="t-title">${t.title}</span> ${isActive ? `<span class="pill green">iverksatt</span>` : ''}${t.early && !state.sim.doorOpened && state.clocks.ck_rutine.good === 0 ? ` <span class="pill warn">for tidlig?</span>` : ''}
+            <div class="t-desc">${t.desc}</div>
+            ${!av.ok && !isActive ? `<div class="t-req">▸ ${av.why}</div>` : ''}
+          </span>
+          <span class="t-cost">${coins(t.cost)}</span>
+        </div>`;
+                  })
+                  .join('')
+              );
+            })
+            .join('') +
+          `<div style="margin-top:18px;display:flex;align-items:center;gap:14px;">
+      <button class="primary" onclick="uiEnact()" ${state.draft.length && state.phase === 'play' ? '' : 'disabled'}>FATT VEDTAK (${state.draft.length} tiltak)</button>
+      <span class="tag" style="display:flex;align-items:center;gap:6px;">RAMME: ${coins(spentCost() + draftCost(), 'spent')}${coins(Math.max(0, 6 - spentCost() - draftCost()))}</span>
+    </div>`;
+        renderClocks();
+      }
+
+      function toggleDraft(tid) {
+        const i = state.draft.indexOf(tid);
+        if (i >= 0) state.draft.splice(i, 1);
+        else if (spentCost() + draftCost() + TILTAK[tid].cost <= 6) state.draft.push(tid);
+        else {
+          toast({ tag: 'TILTAKSRAMME', text: 'Seks mynter i måneden. Noe må ut.', kind: 'hypo' });
+          return;
+        }
+        renderVedtak();
+      }
+
+      function uiEnact() {
+        const chosen = enactVedtak();
+        if (!chosen) return;
+        toast({
+          tag: 'VEDTAK FATTET',
+          text: chosen.length + ' tiltak iverksettes fra i morgen.',
+          kind: 'hypo',
+        });
+        renderAll();
+      }
+
+      function segRow(label, n, size, good) {
+        let s = '';
+        for (let i = 0; i < size; i++)
+          s += `<span class="seg ${i < n ? 'fill ' + (good ? 'good' : 'bad') : ''}"></span>`;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:var(--hand-3);font-size:9.5px;letter-spacing:0.5px;color:var(--ink-dim);">${label}</span><span class="segs">${s}</span></div>`;
+      }
+
+      function renderClocks() {
+        const wrap = $('#vedtak-clocks');
+        let html = `<div class="frame-title"><span>KLOKKER</span><span class="meta">FYLLES · GÅR IKKE TILBAKE</span></div>`;
+        for (const [cid, def] of Object.entries(CLOCK_DEFS)) {
+          if (!def.showWhen(state)) continue;
+          if (def.scenario) {
+            const stage = state.greteStage;
+            let s = '';
+            for (let i = 0; i < def.size; i++)
+              s += `<span class="seg ${i < stage ? 'fill' : 'unknown'}"></span>`;
+            html += `<div class="clock-row"><div class="c-name"><span>${def.name}</span><span class="segs">${s}</span></div>
+        <div class="c-q">${stage <= 2 ? def.q : def.stages[stage - 1] + '.'}</div></div>`;
+            continue;
+          }
+          const c = state.clocks[cid];
+          html += `<div class="clock-row"><div class="c-name"><span>${def.name}</span></div><div class="c-q">${def.q}</div>
+      ${def.good ? segRow(def.good.label, Math.min(c.good, def.good.size), def.good.size, true) : ''}
+      ${def.bad ? segRow(def.bad.label, Math.min(c.bad, def.bad.size), def.bad.size, false) : ''}</div>`;
+        }
+        html += `<div style="margin-top:14px;font-family:var(--hand-2);font-size:14.5px;color:var(--ink-dim);line-height:1.4;">En klokke er ikke et måltall. Når den fylles, skjer det noe konkret i saken.</div>`;
+        wrap.innerHTML = `<div class="frame" style="background:var(--paper-shade);">${html}</div>`;
+      }
+
+      /* ---------- frank ---------- */
+      function renderFrank() {
+        const disp = $('#frank-dispatch');
+        const av = Object.entries(DISPATCHES).filter(([, d]) => d.avail(state));
+        disp.innerHTML =
+          `<div class="frame-title"><span>SEND FRANK</span><span class="meta">1 HANDLING PER OPPDRAG · ${state.actions} IGJEN I DAG</span></div>` +
+          (av.length
+            ? av
+                .map(
+                  ([did, d]) => `
+      <div class="dispatch-card">
+        <div class="d-title">${d.title}</div>
+        <div class="d-desc">${d.desc}</div>
+        <button ${state.actions > 0 && state.phase === 'play' ? '' : 'disabled'} onclick="uiDispatch('${did}')">SEND · 1 HANDLING</button>
+      </div>`,
+                )
+                .join('')
+            : `<div style="font-family:var(--hand-2);font-size:17px;color:var(--ink-dim);padding:18px 4px;">Ingen oppdrag akkurat nå. Saken må gi Frank noe å gjøre.</div>`);
+
+        const chat = $('#frank-chat');
+        const askable = CHAT.filter((c) => state.facts[c.needs] && !state.asked.includes(c.id));
+        chat.innerHTML = `<div class="frame-title"><span>SAMTALE MED FRANK</span><span class="meta">HAN SITERER DET HAN SÅ — HAN ER IKKE ET ORAKEL</span></div>
+    <div class="chat-log">${
+      state.chatLog
+        .map(
+          (m) =>
+            `<div class="chat-msg ${m.who === 'DEG' ? 'you' : ''}"><div class="who">${m.who}</div><div class="bubble">${m.text}</div></div>`,
+        )
+        .join('') ||
+      `<div style="font-family:var(--hand-2);font-size:16px;color:var(--ink-faint);">Spørsmålene låses opp av sakens fakta.</div>`
+    }</div>
+    <div class="chat-ask">${askable.map((c) => `<button onclick="uiAsk('${c.id}')">${c.q}</button>`).join('')}</div>`;
+        decorateEvs(chat);
+        const log = chat.querySelector('.chat-log');
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function uiDispatch(did) {
+        const out = runDispatch(did);
+        if (!out) return;
+        out.toasts.forEach(toast);
+        renderAll();
+      }
+      function uiAsk(cid) {
+        askFrank(cid);
+        renderAll();
+      }
+
+      /* ---------- leiligheten ---------- */
+      function renderApt() {
+        const wrap = $('#apt-content');
+        const s = state.sim;
+        if (s.visitLevel === 0) {
+          wrap.innerHTML = `<div id="apt-locked">Kommunen har ikke innsyn i leiligheten ennå.<br>
+      <span style="font-size:15px;font-family:var(--hand-1);color:var(--ink-faint);">Et hjemmebesøk er den eneste veien inn. Det avtales gjennom Grete — foreløpig.</span></div>`;
+          return;
+        }
+        const needLabel = {
+          hunger: 'Mat',
+          energy: 'Krefter',
+          social: 'Kontakt',
+          security: 'Trygghet',
+        };
+        const needRows = Object.entries(s.needs)
+          .map(([k, v]) => {
+            const cls = v < 25 ? 'crit' : v < 45 ? 'low' : '';
+            return `<div class="need-row"><span class="n-lab">${needLabel[k]}</span><div class="need-bar"><div class="n-fill ${cls}" style="width:${v}%"></div></div><span class="n-val">~${Math.round(v)}</span></div>`;
+          })
+          .join('');
+        const days = [...new Set(s.logg.map((e) => e.day))].sort((a, b) => a - b);
+        const loggHtml = days
+          .map(
+            (d) =>
+              `<div class="day-head">DAG ${d} · ${dayName(d).split('.')[0].toUpperCase()}</div>` +
+              s.logg
+                .filter((e) => e.day === d)
+                .map(
+                  (e) => `<div class="${e.kind === 'tiltak' ? 'tiltak-line' : ''}">${e.text}</div>`,
+                )
+                .join(''),
+          )
+          .join('');
+        wrap.innerHTML = `<div id="apt-wrap">
+    <div id="apt-state">
+      <div class="frame" style="margin-bottom:14px;">
+        <div class="frame-title"><span>ELLING · ANSLAG</span><span class="meta">${s.visitLevel === 2 ? 'LØPENDE — FRANK HAR KANAL INN' : 'SIST OBSERVERT VED BESØK — TALL ER ANSLAG'}</span></div>
+        ${needRows}
+        <div style="margin-top:8px;font-family:var(--hand-3);font-size:9px;color:var(--ink-faint);letter-spacing:1px;">SIMULERINGEN ER MOCKET — I GODOT LESES DETTE FRA CORE-LOOP</div>
+      </div>
+      <div class="frame">
+        <div class="frame-title"><span>LEILIGHETEN</span><span class="meta">GABELS GATE 14 · 3. ETG</span></div>
+        <div class="apt-obj"><span>Postbunken på skoskapet</span><span class="o-val ${s.mail > 11 ? 'warn' : ''}">${s.mail} brev</span></div>
+        <div class="apt-obj"><span>Middagsbokser i kjøleskapet</span><span class="o-val ${s.foodBoxes <= 1 ? 'warn' : ''}">${Math.max(0, s.foodBoxes)}</span></div>
+        <div class="apt-obj"><span>Ubesvarte anrop</span><span class="o-val ${s.unanswered > 4 ? 'warn' : ''}">${s.unanswered}</span></div>
+        <div class="apt-obj"><span>Døren</span><span class="o-val">${s.doorOpened ? 'går opp for Frank' : 'lukket'}</span></div>
+        <div class="apt-obj"><span>Gretes stol</span><span class="o-val">pleddet brettet</span></div>
+      </div>
+    </div>
+    <div id="apt-logg">
+      <div class="frame reg-notat" style="position:relative;">
+        <div class="frame-title" style="border-bottom-color:var(--ink-faint);"><span style="font-family:var(--hand-2);font-size:18px;">Logg · det kommunen vet</span><span class="meta">${s.visitLevel === 2 ? 'DAGLIG' : 'FRAGMENTARISK'}</span></div>
+        <div class="logg-entries">${loggHtml || 'Ingen observasjoner ennå.'}</div>
+      </div>
+    </div>
+  </div>`;
+        decorateEvs(wrap);
+      }
+
+      /* ---------- badges + topbar ---------- */
+      function renderBadges() {
+        const setBadge = (id, n) => {
+          const el = $(id);
+          el.style.display = n > 0 ? '' : 'none';
+          el.textContent = n;
+        };
+        setBadge('#badge-fakta', state.unread);
+        setBadge(
+          '#badge-sporsmal',
+          Object.entries(state.questions).filter(
+            ([qId, st]) => !st.hypo && QUESTIONS[qId].hypos.some(hypoAvailable),
+          ).length,
+        );
+        setBadge(
+          '#badge-frank',
+          CHAT.filter((c) => state.facts[c.needs] && !state.asked.includes(c.id)).length,
+        );
+        $('#res-day').textContent = state.day;
+        $('#res-actions').textContent = state.actions;
+        $('#head-disponert').innerHTML = 'DISPONERT: ' + (spentCost() ? coins(spentCost()) : '—');
+      }
+
+      /* ---------- neste dag + slutt ---------- */
+      $('#btn-next-day').onclick = () => {
+        if (state.phase !== 'play') return;
+        const toasts = advanceDay();
+        toasts.forEach(toast);
+        if (state.phase === 'ended') showReflection();
+        renderAll();
+      };
+
+      function showReflection() {
+        const r = $('#reflection');
+        const e = state.endText;
+        const c = state.clocks;
+        const clockLine = (lab, n, max, good) =>
+          `<div style="display:flex;justify-content:space-between;font-family:var(--hand-3);font-size:10.5px;letter-spacing:1px;padding:3px 0;border-bottom:1px dashed var(--ink-faint);"><span>${lab}</span><span style="color:${good ? 'var(--hint-green)' : 'var(--hint-warn)'};">${'■'.repeat(Math.min(n, max))}${'□'.repeat(Math.max(0, max - n))}</span></div>`;
+        r.style.display = 'flex';
+        r.innerHTML = `<div class="story-card" style="min-height:0;">
+    <div class="story-caption">DAG 8 · SAKEN FORTSETTER</div>
+    <div style="font-family:var(--hand-1);font-size:14.5px;line-height:1.7;">
+      <p style="margin-bottom:10px;">${e.para1}</p>
+      <p style="margin-bottom:10px;">${e.para2}</p>
+    </div>
+    <div style="margin:14px 0;">
+      ${clockLine('SØKNAD KOMPLETT', c.ck_bostotte.good, 4, true)}
+      ${clockLine('FRIST GLIPPER', c.ck_bostotte.bad, 4, false)}
+      ${clockLine('FUNKSJONER OVERFØRT', c.ck_overfort.good, 6, true)}
+      ${clockLine('ALT GIKK VIA GRETE', c.ck_overfort.bad, 6, false)}
+      ${clockLine('RUTINE TÅLER STØTTE', c.ck_rutine.good, 4, true)}
+      ${clockLine('PRESSET FOR HARDT', c.ck_rutine.bad, 4, false)}
+      ${clockLine('RESTANSE BYGGES', c.ck_restanse.bad, 6, false)}
+    </div>
+    <div style="font-family:var(--hand-2);font-size:21px;font-weight:600;line-height:1.35;margin:8px 0 18px;">${e.closing}</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="quiet" onclick="document.getElementById('reflection').style.display='none'">SE PÅ SAKEN</button>
+      <button class="primary" onclick="location.reload()">START PÅ NYTT</button>
+    </div>
+  </div>`;
+      }
+
+      /* ---------- blåkopi ---------- */
+      $('#blue-btn').onclick = () => $('#blue-panel').classList.toggle('open');
+
+      /* ---------- root render ---------- */
+      function renderAll() {
+        renderDesk();
+        renderFakta();
+        renderQuestions();
+        renderVedtak();
+        renderFrank();
+        renderApt();
+        renderBadges();
+      }
+
+      renderPrologue();
+    </script>
+  </body>
+</html>

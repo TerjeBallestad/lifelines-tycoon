@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PatternRule" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/pattern_rule.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="trace"]
+script = ExtResource("2")
+id = &"trace_crossword_repeats"
+source = 0
+provenance = &"authored"
+title = "The same crossword routine, repeated"
+body = "The crossword comes out over and over through the week — a small fixed routine the days keep settling back into, always alone at the table."
+tags = []
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"rule_crossword_loop"
+predicate_type = &"activity_fixation"
+min_count = 10
+window_days = 0
+need_key = &"act_do_crossword"
+trace_fact = SubResource("trace")
+evidence_query = &""

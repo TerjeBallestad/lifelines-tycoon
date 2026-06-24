@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PatternRule" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/pattern_rule.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="trace"]
+script = ExtResource("2")
+id = &"trace_no_company"
+source = 0
+provenance = &"authored"
+title = "Whole days pass without company"
+body = "Across the logged week there is no small talk, no walk out, no caller received — the days run their course start to finish inside the flat with no one else in them."
+tags = []
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"rule_no_company_window"
+predicate_type = &"need_deficit_over_window"
+min_count = 30
+window_days = 7
+need_key = &"social"
+trace_fact = SubResource("trace")
+evidence_query = &""

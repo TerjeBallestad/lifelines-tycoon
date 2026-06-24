@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"obs_phone_unanswered"
 source = 0
+provenance = &"authored"
 title = "Phone unanswered"
 body = "The phone rings; Elling stares at it until it stops."
 tags = [&"skill_gap:phone", &"trauma:strangers"]

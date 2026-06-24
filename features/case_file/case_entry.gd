@@ -2,6 +2,9 @@ class_name CaseEntry extends Resource
 
 @export var id: StringName
 @export_enum("Observation", "Diagnostic") var source: int = 0
+## Origin tag (separate from `source` KIND): &"authored" for scheduled-consequence
+## facts baked at authoring time, &"derived" for CA-emergent facts.
+@export var provenance: StringName = &"authored"
 @export var title: String
 @export_multiline var body: String
 @export var tags: Array[StringName] = []

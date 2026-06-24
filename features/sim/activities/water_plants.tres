@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Activity" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/sim/activity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act_water_plants"
+display_name = "Water Plants"
+colors = [0.0, 0.0, 0.0, 0.0, 0.8]
+effects = {
+&"hunger": 0.0,
+&"bladder": 0.0,
+&"energy": -0.01,
+&"social": 0.0,
+&"security": 0.02
+}
+difficulty = 2.0
+model = &"TASK"
+start_mastery = 0.3

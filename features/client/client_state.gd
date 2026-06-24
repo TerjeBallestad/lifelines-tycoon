@@ -5,6 +5,11 @@ var display_name: String
 var mtg_primary: StringName
 var mtg_secondary: StringName
 
+## 5-float MTG-style color-identity vector, index order [White, Blue, Black, Red, Green].
+## The hidden truth re-pointed by Task 14. Populated from ClientInitData.colors at init.
+## Kept alongside (not replacing) mtg_primary/mtg_secondary.
+var colors: Array = []
+
 var needs: Dictionary = {
 	&"energy":   1.0,
 	&"hunger":   1.0,
@@ -56,3 +61,5 @@ func apply_init_data(init: ClientInitData) -> void:
 	overskudd = init.overskudd
 	overskudd_regen_rate = init.overskudd_regen_rate
 	skills = init.skills.duplicate()
+	mastery = init.mastery.duplicate()
+	colors = init.colors.duplicate()

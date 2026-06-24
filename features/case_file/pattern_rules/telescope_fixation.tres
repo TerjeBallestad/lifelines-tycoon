@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PatternRule" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/pattern_rule.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="trace"]
+script = ExtResource("2")
+id = &"trace_telescope_hours"
+source = 0
+provenance = &"authored"
+title = "Long stretches spent at the telescope"
+body = "Across the week the telescope is where most of the hours went — Elling returns to it again and again, sometimes for the better part of a day, more than to any other corner of the flat."
+tags = []
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"rule_telescope_fixation"
+predicate_type = &"activity_fixation"
+min_count = 12
+window_days = 0
+need_key = &"act_use_telescope"
+trace_fact = SubResource("trace")
+evidence_query = &""

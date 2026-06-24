@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Activity" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/sim/activity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"act_use_telescope"
+display_name = "Use Telescope"
+colors = [0.0, 0.9, 0.0, 0.0, 0.3]
+effects = {
+&"hunger": 0.0,
+&"bladder": -0.02,
+&"energy": -0.03,
+&"social": 0.0,
+&"security": 0.03
+}
+difficulty = 7.0
+model = &"FLOW"
+start_mastery = 0.6

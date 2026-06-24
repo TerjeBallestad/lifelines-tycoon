@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PatternRule" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://features/case_file/pattern_rule.gd" id="1"]
+[ext_resource type="Script" path="res://features/case_file/case_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="trace"]
+script = ExtResource("2")
+id = &"trace_security_steady"
+source = 0
+provenance = &"authored"
+title = "Doors and locks kept under steady watch"
+body = "Through the whole week the flat stays sealed and re-checked — locks tried, the door confirmed, the same rounds repeated so that the sense of being shut in never slips. Nothing in the log loosens it."
+tags = []
+require_state = {}
+
+[resource]
+script = ExtResource("1")
+id = &"rule_door_checking_loop"
+predicate_type = &"need_deficit_over_window"
+min_count = 40
+window_days = 7
+need_key = &"security"
+trace_fact = SubResource("trace")
+evidence_query = &""
