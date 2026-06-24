@@ -1,0 +1,502 @@
+{
+  "id": "PLAN-001",
+  "title": "SDD-001 — CA-World onto the Tycoon Shell, Slice 1: The Legibility Pipe",
+  "sddId": "SDD-001",
+  "stage": "planned",
+  "sprintId": null,
+  "context": {
+    "setupNotes": "Repo: /Users/godstemning/dev/lifelines-tycoon (branch spike/social-realist-phone-resistance). THIS IS THE TYCOON REPO — NOT core-loop. Read AGENTS.md and docs/PIPELINE.md before any task.\n\n## Test commands (tycoon-real — NEVER GATH / run_tests.sh / :3333)\nGUT (GDScript unit): /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit  (add -gtest=res://test/unit/<file>.gd for one file; exit 0 = pass). Harness-dir GUT tests live under test/harness/unit/ and run with -gtest=res://test/harness/unit/<file>.gd. Python (for any tooling touched): python3 -m unittest harness.test.<module>.\nThe slice-level DoD is the STANDALONE blind-read gate built in Slice E (scripts/gate/blind_read_gate.py + a contract under scripts/gate/). It is NOT the harness — see 'The gate' below.\nPM is cwd-scoped to this repo (port 3334). Run pm from this repo.\n\n## Execution model (per docs/PIPELINE.md)\nThis plan executes SEMI-ADVERSARIAL, WAVE-BY-WAVE: builder sub-agents run the parallel-safe tasks in each dependency wave (the blockedBy map guarantees they touch different files → no worktrees), then one critic sub-agent per wave re-reads the diffs, RUNS the GUT suite, and adversarially checks each task's verification against the SDD mechanism (the critic must prove the check ran, can fail, and passed — never rubber-stamp a 'done' claim). Tasks are kept small and parallel-safe within waves; same-file edits are serialized across waves via blockedBy. Approximate waves from the blockedBy map: Wave 1 = {T1, T2, T3, T7}; Wave 2 = {T4} (+T2,T3 done); Wave 3 = {T5}; Wave 4 = {T6}; Wave 5 = {T8}; Wave 6 = {T9, T10, T14}; Wave 7 = {T11}; Wave 8 = {T12, T15}; Wave 9 = {T13, T16}; Wave 10 = {T17 redaction-consuming gate driver}; Wave 11 = {T18 gate run}.\n\n## What this slice does\nReplace tycoon Sim.apply_tick flat NEEDS decay + activity-selection with a ported CA decision kernel (oracle: /Users/godstemning/dev/lifelines-core-loop/playgrounds/full_ca_sandbox.html), headless, one agent (Elling), frozen preset, native 0-1 need units. Add a Lens (PatternRule + PatternDeriver) that reads CA activity history and emits OBSERVATIONAL-TRACE facts (traces, NOT diagnoses) onto EventBus.case_file_updated, provenance-tagged. Re-point the agent_bridge hidden truth from mtg_primary/secondary to a 5-float color-identity vector. DoD = a STANDALONE blind-read gate (own driver under scripts/gate/) passing M-of-N over the seed set.\n\n## Design canon — the blueprint (prototypes/blueprint/blueprint_v1.html is CANON, tie-breaking per AGENTS.md)\nLOOPEN (blueprint line 1405): `Pulten → fakta → spørsmål → arbeidshypotese → dispatch/vedtak → sim svarer → ny post på pulten → loopen strammes`. THIS SLICE REALIZES ONLY THE `sim svarer → ny post på pulten` EDGE: the living sim runs and emits a derived post (a trace fact) onto the desk's case file. It does NOT close the loop — there is no Grete, no dispatch/vedtak lever, no consequence loop, no `loopen strammes`. Loop closure is explicitly out of scope (Slice 2+). Every task here must serve and stay faithful to that single edge; where the shipped shape diverges from the blueprint it is a named decision below.\n\n## Honest limit — symptom legibility, NOT loop closure (U1)\nTHIS IS A SYMPTOM-LEGIBILITY SLICE, NOT A LOOP. There is no Grete, no dispatch/vedtak, no consequence feedback — so the slice can prove only that the living sim's behavior is LEGIBLE as a named symptom from derived facts, NOT that the player can act on it and see the loop tighten. The standalone gate driver (Task 17) MUST carry this limit as a literal marker: a header comment block in scripts/gate/blind_read_gate.py stating 'LIMIT: symptom-legibility only — no Grete, no lever, no loop closure; this gate proves the sim is READABLE as a dominant problem, not that the LOOPEN edge round-trips.' The gate scores 'did the blind reader NAME the dominant problem', nothing about player action. Do not let a green gate be read as loop closure.\n\n## Proof surface (per AGENTS.md 'Proof surfaces')\nTycoon is desk-first and currently headless — no rendered apartment/diorama, no shot_runner, no PresentationBus. For this slice, valid product evidence is: (a) the STANDALONE blind-read gate verdict (Slice E), and (b) GUT assertions on the observable end-state (derived facts emitted, provenance correct, redaction correct). DO NOT veto headless tasks for 'no screenshot' — for this headless desk slice the standalone blind-read gate IS the player-visible proof surface (AGENTS.md says so explicitly).\n\n## The gate — STANDALONE (do NOT use the harness)\nUSER DECISION + AGENTS.md + docs/PIPELINE.md: the blind-read gate is SELF-CONTAINED. It does NOT use harness/run_evaluator.sh, harness/lib/score.py, harness/lib/judge.py, the strategy tournament, judgments.json, or ANY rubric floors. The loop-closure-floor problem dissolves entirely (it never runs). There is NO rubric-floor-audit task. The gate is its own driver, built fresh under scripts/gate/:\n- Driver: scripts/gate/blind_read_gate.py (Python 3.11 stdlib only, matching harness style but NOT importing it).\n- For EACH seed in the seed set it: (1) boots Godot headless in agent-mode at that --seed (agent_bridge snapshot/advance ops over the cmd.jsonl/events.jsonl comms protocol — snapshot API ONLY, no mutation), (2) advances N days, (3) requests the REDACTED blind-read snapshot (Task 15 — derived-provenance facts ONLY; client.needs/cognitive/overskudd STRIPPED) plus the uncovered-behavior channel (Task 12), (4) feeds those derived facts to an LLM-as-caseworker via the `claude` CLI (claude -p '<prompt>' or claude --print) asking it to NAME Elling's single dominant problem, (5) scores the named problem against the seeded GROUND-TRUTH LOG (the color vector + the seed's known dominant-need/behavior signature, produced by the driver from the reveal_hidden snapshot at boot — the reader never sees it), (6) records pass/fail for that seed and tallies.\n- PASS = M-of-N = 4 of 5. Seed set = authoring {101,202,303} ∪ fresh-validation {747,919}. Rules are authored ONLY on {101,202,303}; BOTH fresh seeds {747,919} MUST be among the passers or the gate is circular/invalid even at 4/5.\n- Gate red-green (mandatory, on a FRESH seed): stub PatternDeriver to emit a wrong/empty fact, run the gate on fresh seed 747, confirm the blind reader CANNOT name the dominant problem (gate FAILS); restore PatternDeriver, confirm it PASSES on 747.\n\n## Gate parameters (closed — these ARE the gate, not open questions)\nN = 5. M = 4. Authoring seeds (used to author/tune PatternRules): [101, 202, 303]. FRESH validation seeds (NEVER used to author rules — circularity guard): [747, 919]. M-of-N runs over the union {101,202,303,747,919}; gate validity rests on BOTH fresh seeds also passing. The uncovered-behavior channel output MUST be in the blind-read prompt alongside derived facts (so rules authored to hit only seed-specific patterns cannot be disguised).\n\n## History interface ownership (DECIDED)\nWorld owns an append-only activity history (Array of typed Dictionaries). CAEngine WRITES via World; PatternDeriver READS via a read-only query World.get_activity_history() -> Array (returns a copy / read-only view). This keeps the Lens off CAEngine internals. Rationale: World already owns ClientState + CaseFile + ScheduleQueue, and PatternDeriver emits to World.case_file; CAEngine stays a pure kernel.\n\n## Provenance strategy (DECIDED — Option B, no signal break)\nProvenance is a NEW FIELD on CaseEntry, NOT a second signal parameter. EventBus.case_file_updated keeps its single-StringName signature so agent_bridge._on_case_file_updated and summarize_traces.py do not break. CaseEntry.source stays the 2-value enum (Observation=0, Diagnostic=1) for entry KIND; a SEPARATE new field provenance: StringName (&\"authored\" / &\"derived\") is added. AUTHORED .tres consequence entries are shared resources and MUST NOT be mutated at runtime — bake provenance=&\"authored\" into the .tres at authoring time. DERIVED entries are created dynamically by PatternDeriver (which DUPLICATEs the rule's trace_fact before tagging) and set provenance=&\"derived\". The redacted blind-read snapshot filters to provenance==&\"derived\" AND strips client.needs/cognitive/overskudd.\n\n## Cadence (DECIDED)\nPatternDeriver evaluates per-day-end (hooked off the day boundary, not per tick) — at most one batch per Clock.advance, trace timestamps aligned with day_ended, deriver bursts temporally separated from scheduled-consequence bursts.\n\n## Cognitive decay SURVIVES (DECIDED — code-tracer minor)\nThe CA replacement in Task 8 replaces ONLY the NEEDS-decay loop (sim.gd:29-31, decay.needs_per_hour) AND the activity-selection / observation-roll path. COGNITIVE decay (attention/willpower via client_decay.cognitive_per_hour, sim.gd:32-34) SURVIVES UNCHANGED — the sandbox CA kernel does not model cognitive, so the existing cognitive decay loop stays. Task 8 must keep that loop and keep test_apply_tick_regens_attention_and_decays_willpower passing.\n\n## RNG isolation (CRITICAL)\nCAEngine MUST use a PRIVATE RandomNumberGenerator seeded from the --seed flag — NEVER global randi()/seed(). try_surface_observation (which uses global randi()) MUST be retired in the SAME task the CAEngine lands, to avoid interleaved RNG-stream taint. main.gd._apply_cli_flags currently DROPS --seed; Task 3 wires it (storing on World.ca_seed) before World boots.\n\n## mtg fields (U2 — DECIDED: keep, retire only from hidden snapshot)\nmtg_primary/mtg_secondary STAY on ClientState (they are referenced by the bridge snapshot + one test only). Task 14 RETIRES them ONLY from the reveal_hidden snapshot (re-points it to the 5-float color vector). The fields are NOT deleted. Deleting fields is broader than this slice needs.\n\n## Slice-2 deferrals (documented, no task this slice)\n- Beat-5 player-visible action-list UNLOCK: the action-list-unlock beat is legitimately downstream of this read-only thesis (you cannot act before you can read). DEFERRED to Slice 2 — no task here. The plan-reviewer-player-visible WARN about a missing visible action-unlock is acknowledged and intentional: this slice proves legibility, the next slice adds the lever.\n- Loop closure (Grete, dispatch/vedtak, consequence feedback) — Slice 2+ (see honest-limit + blueprint sections).\n- PatternRule.evidence_query (Slice-2 placeholder field, authored empty this slice).\n\n## SDD Deviations\n1. **MECHANISM_DEVIATION (provenance carrier):** SDD says emit provenance-tagged facts on EventBus.case_file_updated but does not mandate HOW provenance travels. Plan stores provenance as a new CaseEntry FIELD (Option B), not a second signal arg. Reason: a second signal parameter breaks all 3 existing emit sites + agent_bridge listener + summarize_traces.py; the field is the minimal non-breaking carrier and mirrors how source already distinguishes entry kinds. Requires human decision: no.\n2. **MECHANISM_DEVIATION (CaseEntry.source vs new field):** Research suggested OBSERVATIONAL-TRACE could reuse source=0 (Observation). Plan adds a DISTINCT provenance field instead of overloading source, because source's meaning (UI kind) is orthogonal to authored-vs-derived origin; conflating them is the SB-294 trap. Requires human decision: no.\n3. **SDD_ASSUMPTION_CORRECTION (mtg retirement, U2):** SDD lists 'mtg derives from vector or retires' as open. Plan RETIRES mtg ONLY from the hidden-truth snapshot (re-points reveal_hidden to the color vector); it does NOT delete mtg_primary/mtg_secondary from ClientState. Reason: re-pointing is sufficient and lower-risk than deleting fields. Requires human decision: no (was flagged U2; user kept the fields).\n4. **GATE MECHANISM (DoD carrier — STANDALONE gate, supersedes SDD's harness DoD):** SDD treats the rubric gate (harness/run_evaluator.sh) as the DoD. Per explicit USER DECISION + AGENTS.md 'Proof surfaces' + docs/PIPELINE.md, the gate is REBUILT STANDALONE under scripts/gate/ and does NOT use the harness, score.py, judge.py, the tournament, judgments.json, or rubric floors. Reason: the harness is the social-realist-phone-resistance spike's tournament+7-axis evaluator whose rubric floors (loop-closure=2) STRUCTURALLY auto-reject a single-agent symptom slice; it cannot gate this slice and was never built to. The standalone driver implements the SDD's actual intent (redacted snapshot → blind reader names dominant problem → score vs ground truth → M-of-N with fresh-seed circularity guard). Requires human decision: ALREADY MADE (user decision recorded in synthesis.md and docs/PIPELINE.md). The earlier draft's rubric-floor-audit task is DROPPED.\n\n## Implementation Slices\n### Slice A — Foundation: types, seed, history, allowlist (Tasks 1-5, 7)\nEvidence: focused GUT with red-green; catalog load-count test.\n### Slice B — CA engine port + apply_tick replacement (Tasks 6, 8, 9)\nEvidence: focused GUT (determinism, sandbox-parity distribution, no death-spiral); cognitive decay survives; retire try_surface_observation in the SAME task as CA lands.\n### Slice C — Lens: PatternRule + PatternDeriver + provenance (Tasks 10-13)\nEvidence: focused GUT (rules fire iff predicate holds, provenance=derived, idempotent, uncovered-behavior channel) + integrated agent-mode smoke.\n### Slice D — Gate plumbing: hidden-truth re-point + redaction + serialisation (Tasks 14-16)\nEvidence: focused GUT/Python on snapshot shape (color vector exposed/hidden; redacted snapshot strips raw numbers + derived-only entries).\n### Slice E — The STANDALONE gate (Tasks 17-18)\nEvidence: standalone driver authored + executes end-to-end; blind-read M-of-N over {101,202,303,747,919} with BOTH fresh seeds passing; gate red-green via stubbed deriver on fresh seed 747.\n\n## Test deletion / replacement targets (explicit)\n- test/unit/test_sim_decay.gd — DELETE the linear-NEEDS-decay + observation-roll assertions (test_apply_tick_decays_needs, test_clock_tick_applies_sim_decay_once, test_manual_advance_and_away_time_share_clock_tick_path, test_observation_roll_fires_every_6_game_hours). KEEP test_apply_tick_regens_attention_and_decays_willpower (cognitive decay survives), test_apply_tick_emits_overskudd_when_changed_enough (tick_overskudd survives), test_day_boundary_refills_capacity, and test_sim_start_uses_clock_as_only_live_process_authority.\n- test/unit/test_world_observation.gd — DELETE all 3 tests (they call the retired try_surface_observation).\n- test/harness/unit/test_bridge_reveal_hidden.gd — UPDATE: replace mtg_primary/mtg_secondary assertions with color-vector assertions.\n- test/unit/test_catalog_load.gd — EXTEND: add Activity and PatternRule load-count assertions.",
+    "relevantFiles": [
+      "/Users/godstemning/dev/lifelines-tycoon/AGENTS.md",
+      "/Users/godstemning/dev/lifelines-tycoon/docs/PIPELINE.md",
+      "/Users/godstemning/dev/lifelines-tycoon/prototypes/blueprint/blueprint_v1.html",
+      "/Users/godstemning/dev/lifelines-tycoon/autoload/sim.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/autoload/world.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/autoload/catalog.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/autoload/agent_bridge.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/autoload/event_bus.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/autoload/clock.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/main.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/features/client/client_state.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/features/client/client_init_data.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/features/client/client_decay.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/features/case_file/case_entry.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/features/case_file/case_file.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/features/sim/scheduled_consequence.gd",
+      "/Users/godstemning/dev/lifelines-core-loop/playgrounds/full_ca_sandbox.html",
+      "/Users/godstemning/dev/lifelines-tycoon/test/unit/test_sim_decay.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/test/unit/test_world_observation.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/test/unit/test_catalog_load.gd",
+      "/Users/godstemning/dev/lifelines-tycoon/test/harness/unit/test_bridge_reveal_hidden.gd"
+    ],
+    "designDecisions": [
+      "BLUEPRINT CANON: prototypes/blueprint/blueprint_v1.html is the tie-breaking design reference (AGENTS.md). This slice realizes ONLY the `sim svarer → ny post på pulten` edge of LOOPEN (blueprint line 1405) — the living sim emits a derived desk post — NOT loop closure (no Grete, no dispatch/vedtak, no `loopen strammes`).",
+      "GATE: STANDALONE blind-read driver under scripts/gate/ (own Python 3.11-stdlib driver + claude CLI). NO harness/run_evaluator.sh, NO score.py/judge.py, NO tournament/judgments.json, NO rubric floors. PASS = M-of-N = 4/5 over {101,202,303,747,919}; authoring {101,202,303}; FRESH {747,919} BOTH must pass. Gate red-green stubs PatternDeriver on fresh seed 747.",
+      "HONEST LIMIT (U1): symptom-legibility only — no Grete = no loop; the gate proves the sim is READABLE as a dominant problem, not that the LOOPEN edge round-trips. Carried as a literal marker block in the gate driver.",
+      "History interface: World owns append-only activity history; CAEngine writes via World; PatternDeriver reads via World.get_activity_history() read-only query. Keeps Lens off engine internals.",
+      "Provenance: Option B — new CaseEntry.provenance field (authored/derived), no signal signature change. Authored baked into .tres; derived set in code on a duplicated trace_fact.",
+      "Cadence: PatternDeriver evaluates per-day-end, not per tick.",
+      "RNG: CAEngine uses a private RandomNumberGenerator seeded from World.ca_seed; global randi() banned; try_surface_observation retired in the same task CA lands.",
+      "Cognitive decay SURVIVES: CA replaces only needs-decay + activity selection; cognitive (attention/willpower) decay via client_decay.cognitive_per_hour is untouched.",
+      "Effects in 0-1 units: Activity.effects stored 0-1 (sandbox /100 absorbed into data; score uses deficit=(1-need), no /100).",
+      "mtg fields (U2): KEPT on ClientState; retired ONLY from the reveal_hidden snapshot (re-pointed to color vector). Fields not deleted.",
+      "Execution: semi-adversarial wave-by-wave per docs/PIPELINE.md (builder agents per dependency wave + critic per wave running the GUT suite)."
+    ]
+  },
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Task 1: Add provenance field to CaseEntry and bake authored provenance into consequence .tres entries",
+      "description": "Extend the CaseEntry type system with a provenance field (Option B — no EventBus signature change). This carrier lets the desk and the blind-read snapshot distinguish derived (CA-emergent) facts from authored (scheduled-consequence) facts. The existing source @export_enum (Observation=0, Diagnostic=1) stays as the entry KIND; provenance is a SEPARATE origin tag. Authored .tres entries are shared resources and must not be mutated at runtime, so provenance is baked in at authoring time.",
+      "steps": [
+        "In /Users/godstemning/dev/lifelines-tycoon/features/case_file/case_entry.gd, add `@export var provenance: StringName = &\"authored\"` as a new field (keep the existing source enum at line 4 unchanged).",
+        "Identify every authored CaseEntry .tres referenced by a ScheduledConsequence.observation_id (grep features/sim/consequences/ for observation_id values, then locate the matching CaseEntry .tres under features/case_file/).",
+        "For each such authored .tres, set provenance = &\"authored\" explicitly so the default is explicit and survives re-save.",
+        "Write a focused GUT test test/unit/test_case_entry_provenance.gd asserting (a) a freshly constructed CaseEntry defaults provenance to &\"authored\", and (b) a loaded consequence-linked .tres entry reports provenance &\"authored\".",
+        "Run the test, then temporarily change the default to &\"derived\", confirm the test fails (red), restore, confirm green, add `## Verified red-green: <date>` to the test doc comment."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_case_entry_provenance.gd -gexit | Expected proof: default provenance is &\"authored\" and authored .tres entries report &\"authored\"; exit 0 | Red-green needed: yes",
+      "blockedBy": [],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave1: provenance field on CaseEntry + baked obs_phone_unanswered.tres; GUT 2/2 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T18:32:14.310Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Task 2: Create Activity Resource type",
+      "description": "Add the new Activity Resource mirroring the sandbox ACTIVITIES table so CA activities can live as .tres content. Pure type definition + no behavior; CAEngine (Task 6) and Catalog (Task 4) depend on it. Effect values are stored in NATIVE 0-1 units (the sandbox's /100 normalisation is absorbed into the data).",
+      "steps": [
+        "Create /Users/godstemning/dev/lifelines-tycoon/features/sim/activity.gd with `class_name Activity extends Resource` and @export fields: id: StringName, display_name: String, colors: Array (5 floats, [White,Blue,Black,Red,Green]), effects: Dictionary (need StringName -> float in 0-1 units, may be negative for drains), difficulty: float, model: StringName (FLOW/TASK/NEED), start_mastery: float.",
+        "Add a doc comment stating effects are 0-1 units (sandbox hunger:60 becomes 0.6) and the color vector index order.",
+        "Write a focused GUT test test/unit/test_activity_resource.gd that constructs an Activity in code, sets fields, asserts they read back typed correctly.",
+        "Run green; red-green: temporarily rename the effects field, confirm the test errors, restore, add red-green note."
+      ],
+      "verification": "Evidence type: architecture | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_activity_resource.gd -gexit | Expected proof: Activity class loads and fields are typed as specified; exit 0 | Red-green needed: yes",
+      "blockedBy": [],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave1: Activity Resource type (0-1 units); GUT red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T18:32:14.401Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Task 3: Wire --seed CLI flag into main.gd so the RNG is reproducible before World boots",
+      "description": "main.gd._apply_cli_flags (line 17) parses only --agent-mode, --comms-dir, --reveal-hidden and SILENTLY DROPS --seed. Without this the standalone gate is non-reproducible. Add a --seed case that captures the integer into a World-readable slot BEFORE World boots, so CAEngine (Task 6) seeds its PRIVATE RandomNumberGenerator from it. Do NOT call global seed() — store the value for CAEngine to consume into its own RNG.",
+      "steps": [
+        "In /Users/godstemning/dev/lifelines-tycoon/main.gd, add a `--seed` case in the match block (mirroring --comms-dir: read args[i+1], i += 1) parsing the next arg as an int.",
+        "Add `var ca_seed: int = 0` to World (autoload/world.gd) and assign it from main.gd before Sim/World boot. Document the chosen slot in a code comment.",
+        "Confirm the seed is captured BEFORE the World/Sim boot path runs (in _apply_cli_flags, which runs first in _ready) so CAEngine can read it at first tick.",
+        "Write a focused GUT test test/unit/test_seed_flag.gd (or a unit on the extracted parse helper) asserting that the --seed parse path sets World.ca_seed to the passed int (e.g. 747).",
+        "Red-green: temporarily ignore the --seed case, confirm the test fails, restore, add red-green note. Note in the test that two CA runs with the same seed must later produce identical history (asserted in Task 6)."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_seed_flag.gd -gexit | Expected proof: --seed N is parsed into World.ca_seed; exit 0 | Red-green needed: yes",
+      "blockedBy": [],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave1: --seed -> World.ca_seed (no global seed), pre-boot; GUT 5/5 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T18:32:14.492Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Task 4: Create PatternRule Resource type and extend Catalog allowlist for Activity + PatternRule",
+      "description": "Add the PatternRule Resource type and register both new content types (Activity from Task 2, PatternRule) in Catalog so .tres content loads. The Catalog._load_dir allowlist at catalog.gd:32 is a hard-coded `not (... or ...)` chain — any type not listed is silently dropped with only a push_warning, which no test currently catches for the new types. This task adds the types AND a load-count guard test.",
+      "steps": [
+        "Create /Users/godstemning/dev/lifelines-tycoon/features/case_file/pattern_rule.gd with `class_name PatternRule extends Resource` and @export fields: id: StringName, predicate_type: StringName, threshold values (e.g. min_count: int, window_days: int, need_key: StringName as applicable), trace_fact: CaseEntry (the fact yielded when the rule fires), evidence_query: StringName = &\"\" (Slice-2 placeholder, empty for now).",
+        "In /Users/godstemning/dev/lifelines-tycoon/autoload/catalog.gd: add `or res is Activity or res is PatternRule` INSIDE the negated parentheses of the allowlist at line 32.",
+        "Add `var activities: Dictionary = {}` and `var pattern_rules: Dictionary = {}` to the var block (catalog.gd:9-13).",
+        "Add constants ACTIVITIES_DIR := \"res://features/sim/activities\" and PATTERN_RULES_DIR := \"res://features/case_file/pattern_rules\", and add `_load_dir(ACTIVITIES_DIR, activities)` and `_load_dir(PATTERN_RULES_DIR, pattern_rules)` calls in _ready().",
+        "Create the two directories (with a placeholder so DirAccess.open succeeds).",
+        "Extend test/unit/test_catalog_load.gd with assertions Catalog.activities.size() >= 18 (the count authored in Task 5) and Catalog.pattern_rules.size() >= 1 (authored in Task 11). Assert the spec count, do not weaken.",
+        "Red-green: temporarily remove `or res is Activity` from the allowlist, confirm the catalog load-count test fails (activities empty), restore, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_catalog_load.gd -gexit | Expected proof: Catalog.activities and Catalog.pattern_rules load non-empty at the asserted counts; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 2"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave2: PatternRule type + Catalog allowlist/dirs; placeholders load; GUT red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T18:47:39.730Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Task 5: Author the 18 Activity .tres files and the frozen Elling preset (mastery + color vector)",
+      "description": "Port the sandbox ACTIVITIES table (full_ca_sandbox.html lines ~234-253) into 18 Activity .tres in 0-1 units, plus the Elling color vector and starting mastery (FROZEN preset — no tuning surface this slice). This is the data CAEngine scores against. Effect values MUST be 0-1 (sandbox /100 absorbed): sandbox hunger:60 -> 0.6, bladder:90 -> 0.9.",
+      "steps": [
+        "Read the ACTIVITIES table, NEED_DECAY, Elling preset (colors [0,0.8,0,0,0.4]), and CHARACTER_PRESETS[0].mastery from /Users/godstemning/dev/lifelines-core-loop/playgrounds/full_ca_sandbox.html (lines ~231-277).",
+        "Create one .tres per activity under /Users/godstemning/dev/lifelines-tycoon/features/sim/activities/ (Activity resources), converting every effect value 0-100 -> 0-1 by /100. Preserve id, colors (5 floats), difficulty, model, start_mastery.",
+        "Define the FROZEN Elling starting mastery map (Use Telescope:0.6, Read Book:0.4, Look Through Window:0.7, Do Crossword:0.3, Lock Doors:0.8, Small Talk:0.1, Water Plants:0.3; others default to start_mastery or 0.9 for NEED model). Store it where CAEngine init reads it (extend ClientInitData with a mastery field for the Elling preset, OR a constant on CAEngine — pick one and document).",
+        "Add the color-identity vector field to ClientState (colors: Array of 5 floats) and populate Elling's vector [0.0,0.8,0.0,0.0,0.4] at init (this is the hidden truth Task 14 re-points to).",
+        "Write a focused GUT test test/unit/test_activity_content.gd asserting: 18 activities load from Catalog, every effect value within [-1.0, 1.0], and the Elling color vector has 5 elements (assert the known vector values).",
+        "Red-green: temporarily set one effect to 60 (un-converted), confirm the [-1,1] bound assertion fails, restore, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_activity_content.gd -gexit | Expected proof: 18 Activity .tres load, all effects in 0-1 range, Elling color vector populated; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 4"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave3: 18 Activity .tres (0-1 units, sandbox-verified) + frozen Elling mastery/color vector; catalog>=18; GUT red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T18:54:25.546Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Task 6: Create CAEngine with ported scoreActivity/flowOutput/weighted-top-3 selection (private RNG, 0-1 units)",
+      "description": "Port the CA decision kernel from the sandbox into a pure RefCounted CAEngine — the heart of the slice. Given needs (0-1), mastery, and the color vector it scores all activities, picks one via weighted-top-3 with a PRIVATE RandomNumberGenerator (seeded from World.ca_seed — NEVER global randi()), applies the chosen activity's effects to needs, and grows mastery. CRITICAL UNIT FIX: the sandbox scoreActivity divides by 100; here needs and effects are already 0-1 (Task 5), so deficit = (1.0 - need) and restoration/drain use the raw 0-1 effect — REMOVE the /100. This task does NOT yet wire into Sim or own history; it is a testable kernel.",
+      "steps": [
+        "Create /Users/godstemning/dev/lifelines-tycoon/features/sim/ca_engine.gd as `class_name CAEngine extends RefCounted` holding a private `var _rng := RandomNumberGenerator.new()` and an `init(seed_value: int)` that sets `_rng.seed = seed_value`.",
+        "Port flowOutput(mastery, difficulty, rise_exp, fall_exp) -> float from sandbox lines 313-322 (beta-curve, returns 0-1).",
+        "Port score_activity(activity, needs, colors, mastery) from sandbox lines 324-361 WITH the unit fix: urgency = pow(1.0 - needs[n], exps[n]); restoration = max(0.0, effect); drain = max(0.0, -effect); need_pressure += urgency*restoration - urgency*drain*drain_pen. personality_pull = clamp(sum(colors[i]*activity.colors[i]),0,1)*pers_weight. Competence: if mastery==0 and model!=NEED return -10; else flow*comp_weight. jitter = (_rng.randf()-0.5)*0.02. score = max(0, sum).",
+        "Hard-code the frozen-preset constants (pers_weight=0.20, comp_weight=0.15, drain_pen=0.40, learn_rate=0.09, decay_factor=0.905, auto_thresh=0.05, rise_exp=1.2, fall_exp=0.9, passive_social=1.0, passive_security=0.25, exps={hunger:3.2,bladder:2.7,energy:3.9,social:4.3,security:1.6}).",
+        "Port weighted top-3 selection (sandbox lines 432-438) using _rng.randf(): sort scores desc, take top 3, weighted-random among them by score.",
+        "Implement select_and_apply(needs, mastery, colors) -> Dictionary returning {activity_id, breakdown, score} AND mutating needs (apply effects, clamp 0-1) and mastery (chosen activity: mastery += (1-mastery)*learn_rate per sandbox line 446). Apply passive_social/passive_security gains per the preset.",
+        "Write focused GUT test test/unit/test_ca_engine.gd: (a) determinism — two CAEngine.init(747) instances run the same N-step sequence and produce IDENTICAL activity-id sequences; (b) no death-spiral — over a seeded 14-day-equivalent run, no need stays pinned at 0 the whole run and at least K distinct activities are chosen (entropy guard); (c) unit sanity — an Eat-Meal-type activity with effects.hunger>0 raises hunger toward 1.0 by its effect magnitude, not 60x.",
+        "Red-green: temporarily re-introduce the /100 in restoration, confirm the unit-sanity assertion fails (scores collapse), restore, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_ca_engine.gd -gexit | Expected proof: identical seeded sequences, no death-spiral, correct 0-1 unit response; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 3",
+        "Task 5"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave4: CAEngine kernel (0-1 unit fix, private RNG, determinism+death-spiral guards); GUT 5/5 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:01:45.838Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Task 7: Add World-owned append-only activity history with read-only query",
+      "description": "Establish the stable history interface the SDD calls for, keeping the Lens off CAEngine internals (per the ownership decision: World owns history; CAEngine writes via World; PatternDeriver reads via a read-only query). World already owns ClientState/CaseFile/ScheduleQueue, making it the natural owner. The history is the ONLY seam PatternDeriver couples to. NOTE: this task reads World.ca_seed indirectly is NOT required, but it must be ordered AFTER the --seed/World.ca_seed task (Task 3) since both edit autoload/world.gd (same-file serialization).",
+      "steps": [
+        "In /Users/godstemning/dev/lifelines-tycoon/autoload/world.gd, add `var _activity_history: Array = []` (Array of Dictionaries: {day:int, step:int, activity_id:StringName, needs_snapshot:Dictionary, mastery_snapshot:Dictionary}).",
+        "Add `func append_activity_record(record: Dictionary) -> void` that pushes onto _activity_history (the write seam CAEngine/Sim uses).",
+        "Add `func get_activity_history() -> Array` returning a duplicate deep enough that callers cannot mutate internal records — the read-only query PatternDeriver uses.",
+        "Add history reset to reset_for_test() (clear _activity_history).",
+        "Write focused GUT test test/unit/test_world_history.gd: appending records then reading via get_activity_history returns them in order; mutating the returned array does NOT affect subsequent reads (proves read-only isolation); reset_for_test clears it.",
+        "Red-green: temporarily return the internal array directly (no duplicate), confirm the isolation assertion fails, restore, add red-green note."
+      ],
+      "verification": "Evidence type: architecture | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_world_history.gd -gexit | Expected proof: history is append-only, read returns isolated copy, reset clears; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 3"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave2: World-owned append-only _activity_history + deep-copy read query; GUT 4/4 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T18:47:39.819Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Task 8: Replace Sim.apply_tick NEEDS-decay with CA decision step, retire try_surface_observation IN THE SAME TASK, keep cognitive decay, update overnight reset",
+      "description": "Integration + RNG-safety task combined (they MUST land together). Replace the flat NEEDS-decay block in Sim.apply_tick (sim.gd:29-31) with a CAEngine decision step that appends to World history; REMOVE the _hours_since_observation observation-roll (sim.gd:39-42) AND delete World.try_surface_observation (the global-randi() side-path) in the SAME change, so no interleaved RNG taint exists at any point. COGNITIVE DECAY SURVIVES: keep the cognitive_per_hour loop (sim.gd:32-34) and client.tick_overskudd (sim.gd:35) UNCHANGED — the sandbox CA kernel does not model attention/willpower, so that decay path stays. Add CA overnight reset to World.start_new_day.",
+      "steps": [
+        "Construct/hold a CAEngine instance (init from World.ca_seed) — own it on Sim or World; document which. Initialise Elling mastery + color vector from the preset (Task 5) at boot.",
+        "In sim.gd apply_tick: replace ONLY the decay.needs_per_hour loop (lines 29-31) with: map game_hours to CA decision step(s) (sandbox cadence ~1.75 game-hours/decision; document the mapping), call CAEngine.select_and_apply on World.client.needs/mastery/colors, and World.append_activity_record({day,step,activity_id,needs_snapshot,mastery_snapshot}).",
+        "KEEP the decay.cognitive_per_hour loop (sim.gd:32-34) EXACTLY AS IS — cognitive (attention/willpower) decay via client_decay.cognitive_per_hour SURVIVES the CA replacement (CA replaces needs-decay + activity selection only). Confirm test_apply_tick_regens_attention_and_decays_willpower still passes.",
+        "KEEP client.tick_overskudd(game_hours) and the OVERSKUDD_EMIT_THRESHOLD emit (sim.gd:35-38) unchanged.",
+        "DELETE the _hours_since_observation accumulator block (sim.gd:39-42) and the OBSERVATION_INTERVAL_HOURS constant (sim.gd:3).",
+        "DELETE World.try_surface_observation (world.gd:146-152) entirely (it uses global randi() — must not coexist with the seeded CA stream). Catalog.observation_candidates and the observations dict STAY (still used by _apply_consequence's observation_id lookup).",
+        "In World.start_new_day (world.gd:142-145), add CA overnight reset: needs.energy=min(1.0,energy+0.85); needs.hunger=max(0,hunger-0.30); needs.bladder=max(0,bladder-0.35); for each activity NOT chosen that day, mastery[id]*=0.905. (social/security persist.) Keep the existing economy refill.",
+        "DELETE/REPLACE broken tests: in test/unit/test_sim_decay.gd remove test_apply_tick_decays_needs, test_clock_tick_applies_sim_decay_once, test_manual_advance_and_away_time_share_clock_tick_path, test_observation_roll_fires_every_6_game_hours; KEEP test_apply_tick_regens_attention_and_decays_willpower, test_apply_tick_emits_overskudd_when_changed_enough, test_day_boundary_refills_capacity, test_sim_start_uses_clock_as_only_live_process_authority. DELETE test/unit/test_world_observation.gd (all 3 call the retired method).",
+        "Add NEW test test/unit/test_sim_ca_tick.gd asserting: after apply_tick, an activity record was appended to World history; at least one need changed; mastery for the chosen activity increased; cognitive (attention/willpower) STILL decays/regens per cognitive_per_hour; AND World.try_surface_observation no longer exists (assert has_method == false). Verify overnight reset bumps energy on day boundary.",
+        "Red-green: temporarily skip the append_activity_record call, confirm test_sim_ca_tick fails (no history record), restore, add red-green note. Run the FULL GUT suite (-gdir) to confirm no method-not-found errors from the retirement."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit | Expected proof: apply_tick runs CA + appends history, cognitive decay survives, try_surface_observation gone, overnight reset works, full suite exit 0 with no method-not-found | Red-green needed: yes",
+      "blockedBy": [
+        "Task 6",
+        "Task 7"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave5: CA tick integration + try_surface_observation retired together; cognitive decay/overskudd kept; overnight reset; obsolete tests swapped. Critic caught stale-cache false-green -> ca_engine.gd untyped_declaration=2 fixed (SB-001). Clean import, 133/133 (97 test/unit). ADVANCE",
+          "timestamp": "2026-06-24T19:17:37.760Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-009",
+      "title": "Task 9: Sandbox-parity distribution test at a fixed seed (oracle check)",
+      "description": "Guard against silent unit/scoring divergence from the sandbox oracle. Run a seeded multi-day CA simulation in GUT and assert the dominant-activity distribution matches the sandbox's own output at the same seed within tolerance. This catches the 0-100 vs 0-1 mismatch (death-spiral) before the gate runs. The sandbox at a fixed seed is the oracle.",
+      "steps": [
+        "Capture the sandbox oracle distribution: run /Users/godstemning/dev/lifelines-core-loop/playgrounds/full_ca_sandbox.html with the Elling preset at a chosen fixed seed for a 14-day run and record the activity-choice histogram (top dominant activities + approximate frequencies). Embed this expected distribution as constants in the test (document the seed and source).",
+        "Write test/unit/test_ca_sandbox_parity.gd that runs CAEngine.init(<same seed>) for the equivalent 14-day run over the Elling preset and builds the activity-choice histogram.",
+        "Assert the GDScript dominant activity matches the sandbox's dominant activity, and the top-3 activity set overlaps the sandbox top-3 within tolerance (assert the oracle values directly — do NOT weaken to match current code; if it fails, the unit/scoring port is wrong and must be fixed).",
+        "If the GDScript RNG cannot be made bit-identical to the sandbox mulberry32, assert DISTRIBUTIONAL parity (dominant activity + entropy) rather than exact sequence, and document why in the doc comment.",
+        "Red-green: temporarily scale one effect by 100, confirm the parity test fails (distribution collapses to need-survival activities), restore, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_ca_sandbox_parity.gd -gexit | Expected proof: GDScript CA dominant-activity distribution matches the sandbox oracle at the fixed seed within tolerance; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 8"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave6: sandbox-parity oracle test (node-captured, telescope dominant @747, distributional); GUT 5/5 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:25:50.705Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-010",
+      "title": "Task 10: Create PatternDeriver that reads World history, fires rules, emits derived facts with provenance",
+      "description": "Build the Lens. PatternDeriver reads the stable World.get_activity_history() seam (NOT CAEngine internals), evaluates each loaded PatternRule's predicate against the history, and for any newly-true rule creates a DERIVED CaseEntry (provenance=&\"derived\"), calls World.case_file.add_entry, and emits EventBus.case_file_updated(fact.id). It tracks which rules already fired (dedupe) and accumulates an 'uncovered behavior' channel (decision categories where no rule fired) for the designer surface and the blind-read prompt. Facts must read as TRACES (observed patterns), not diagnoses.",
+      "steps": [
+        "Create /Users/godstemning/dev/lifelines-tycoon/features/case_file/pattern_deriver.gd as `class_name PatternDeriver extends RefCounted`, constructed with a reference to World.",
+        "Implement evaluate(history: Array) -> void: iterate Catalog.pattern_rules.values(); for each rule whose predicate holds on history AND has not already fired, DUPLICATE rule.trace_fact (do NOT mutate the shared .tres), set the duplicate's provenance = &\"derived\", call World.case_file.add_entry(fact), emit EventBus.case_file_updated(fact.id), and mark the rule fired.",
+        "Implement predicate evaluation for the predicate_type values authored in Task 11 (e.g. need-deficit-over-window, activity-fixation-count). Predicates read ONLY the history records' fields.",
+        "Accumulate the uncovered-behavior channel: count history decision categories (activity ids / need-pressure buckets) that no rule matched; expose via get_uncovered_summary() -> Dictionary/Array for the designer surface and blind-read prompt.",
+        "Write focused GUT test test/unit/test_pattern_deriver.gd: (a) a rule fires exactly when its predicate holds on a hand-built history and NOT when it doesn't; (b) the emitted CaseEntry has provenance==&\"derived\"; (c) firing is idempotent (same rule does not emit twice); (d) get_uncovered_summary returns non-empty when history contains unmatched categories.",
+        "Red-green: temporarily force the predicate to always return true, confirm the 'NOT when predicate fails' assertion fails, restore, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_pattern_deriver.gd -gexit | Expected proof: rules fire iff predicate holds, derived facts carry provenance=derived, idempotent, uncovered channel populated; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 1",
+        "Task 7",
+        "Task 4",
+        "Task 8"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave6: PatternDeriver Lens (reads history seam only, derived provenance, dedupe, uncovered channel); GUT 7/7 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:25:50.793Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-011",
+      "title": "Task 11: Author PatternRule .tres trace facts (traces not diagnoses) avoiding observation_id collisions",
+      "description": "Author the PatternRule content the deriver evaluates. Each rule's trace_fact must read as an OBSERVATIONAL TRACE ('No meals taken Mon-Wed', 'Repeatedly checked the window') NOT a diagnosis ('Isolating', 'Depressed') — the blind-read must require interpretation, not parroting a label. Rules must NOT share observation_id / entry id with existing ScheduledConsequences (avoids add_entry dedupe order-sensitivity). AUTHORING DISCIPLINE: rules are authored against the AUTHORING seeds {101,202,303} ONLY; they must NOT be tuned to the FRESH gate seeds {747,919} (circularity guard).",
+      "steps": [
+        "Author PatternRule .tres files under /Users/godstemning/dev/lifelines-tycoon/features/case_file/pattern_rules/, each with a unique id (no collision with features/sim/consequences observation_id values — grep them first) and a trace_fact CaseEntry whose title/body reads as an observed pattern, NOT a diagnosis label.",
+        "Author each trace_fact .tres with a neutral provenance default (PatternDeriver sets &\"derived\" dynamically on a duplicate in Task 10 — do NOT bake &\"derived\" into the authored .tres).",
+        "Cover the dominant-problem categories that emerge from the Elling preset on the AUTHORING seeds (e.g. need-fixation, social withdrawal pattern, security-checking loop) so a dominant problem is INFERABLE from the trace set.",
+        "Add a focused GUT test test/unit/test_pattern_rule_content.gd asserting: every PatternRule id is unique AND disjoint from the Catalog.consequences observation_id set; every trace_fact title is non-empty; (lint) no trace_fact body contains a banned diagnosis keyword from a small documented list (e.g. 'depressed','isolating','anxious') — facts must be TRACES, not diagnoses.",
+        "Red-green: temporarily add a rule whose id collides with an existing consequence observation_id, confirm the disjointness assertion fails, remove it, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/unit/test_pattern_rule_content.gd -gexit | Expected proof: rule ids unique + disjoint from consequence observation_ids, trace facts read as traces not diagnoses; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 4",
+        "Task 10"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave7: 5 PatternRule .tres (traces not diagnoses, probed @101/202/303, disjoint ids); lint+catalog>=5; GUT 7/7 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:34:58.363Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-012",
+      "title": "Task 12: Hook PatternDeriver evaluation to per-day-end and wire uncovered-behavior channel into events",
+      "description": "Wire the deriver into the runtime at the DECIDED cadence: per-day-end (not per tick). This guarantees one evaluation batch per day, aligns trace timestamps with day_ended, and separates deriver bursts from scheduled-consequence bursts. The uncovered-behavior channel is emitted to the designer/gate surface (an events.jsonl entry per day), not the live game UI.",
+      "steps": [
+        "Construct and own a PatternDeriver instance (World is natural since it owns case_file and history — document the owner).",
+        "Hook PatternDeriver.evaluate(World.get_activity_history()) to the day boundary: call it from Sim._on_day_started (after World.start_new_day, sim.gd:57-60) or a day_ended handler, so it runs once per day rollover. Document the exact hook.",
+        "After each evaluation, write the uncovered-behavior summary to a designer/gate-facing channel: emit it so it lands in the agent_bridge events.jsonl stream (the standalone gate reads it). Do NOT add a game-facing UI element this slice. Confirm it does not block the live UI.",
+        "Add focused GUT test test/unit/test_deriver_cadence.gd: simulate two day rollovers and assert PatternDeriver.evaluate is invoked exactly once per day (not per tick) and the uncovered-behavior summary is recorded each day.",
+        "Red-green: temporarily move the evaluate() call into apply_tick (per-tick), confirm the cadence test fails (evaluate count > days), restore to day-end, add red-green note. Run the full GUT suite to confirm no regressions."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit | Expected proof: deriver evaluates once per day-end, uncovered channel recorded per day, full suite exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 10",
+        "Task 11"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave8: PatternDeriver wired day-end (Sim._on_day_started, World owns), uncovered->EventBus.patterns_evaluated->events.jsonl; cadence ==days; GUT 4/4 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:42:11.284Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-013",
+      "title": "Task 13: Integration smoke — seeded multi-day agent-mode run produces derived facts in the bridge snapshot",
+      "description": "Prove the pipe end-to-end in the production agent-mode path (not just unit isolation): a seeded multi-day run through agent_bridge advances the clock, the CA engine drives Elling, PatternDeriver fires at day boundaries, and derived facts appear in the case-file snapshot with provenance=derived. This is the integrated evidence the legibility pipe carries signal BEFORE the standalone gate is built on top.",
+      "steps": [
+        "Run Godot headless in agent-mode with a fixed authoring seed (e.g. 202): launch with --agent-mode --comms-dir <tmp> --seed 202, then drive {\"op\":\"advance\",\"game_hours\":<one day>} for N days via cmd.jsonl, collecting events.jsonl.",
+        "After the run issue {\"op\":\"snapshot\"} and inspect case_file.entries: assert at least one entry has provenance==&\"derived\" and reads as a trace; assert overskudd_changed and case_file_updated events appear in events.jsonl.",
+        "Run the import step first if needed (Godot --headless --path . --import) so new class_name files (CAEngine, Activity, PatternRule, PatternDeriver) resolve in a fresh worktree — stale .godot caches must be cleared after new class_name files land (risk: bridge bind timeout exit 4).",
+        "Capture the run as a documented manual trace (or a thin script under scripts/gate/), recording the exact commands and the observed derived-fact titles.",
+        "Confirm the same seed reproduces the same derived-fact set across two runs (reproducibility check — depends on Task 3 + Task 6 private seeded RNG)."
+      ],
+      "verification": "Evidence type: integrated | Manual steps: launch --agent-mode --comms-dir <tmp> --seed 202, advance N days via cmd.jsonl, {\"op\":\"snapshot\"}; inspect case_file.entries and events.jsonl | Expected proof: >=1 derived-provenance trace fact present, reproducible across two same-seed runs, events.jsonl shows case_file_updated emissions | Red-green needed: no (integration smoke; underlying logic red-greened in Tasks 8/10/12)",
+      "blockedBy": [
+        "Task 12",
+        "Task 8"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave9: integration smoke (scripts/gate/integration_smoke.py) - seeded agent-mode run, 5 reproducible derived facts @202, fails on no-signal; critic re-ran ADVANCE",
+          "timestamp": "2026-06-24T19:53:32.324Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-014",
+      "title": "Task 14: Re-point agent_bridge hidden truth from mtg fields to the 5-float color vector",
+      "description": "Re-point reveal_hidden so the blind-read GROUND TRUTH is the color-identity vector (the CA's actual hidden personality driver), NOT the mtg_primary/mtg_secondary strings. If the gate could read mtg strings it would cheat; the color vector + need trajectory is the legitimate ground truth the gate scores the blind read against. mtg fields STAY on ClientState (U2 — not deleted); they simply stop being surfaced.",
+      "steps": [
+        "In /Users/godstemning/dev/lifelines-tycoon/autoload/agent_bridge.gd:51-54, replace the mtg_primary/mtg_secondary block with: out[\"colors\"] = c.colors (the 5-float vector populated in Task 5), and optionally out[\"need_trajectory\"] = a compact seeded-trajectory summary if cheaply available — gated on reveal_hidden ONLY.",
+        "Leave the mtg_primary/mtg_secondary FIELDS on ClientState intact (do NOT delete them — U2 decision).",
+        "Update test/harness/unit/test_bridge_reveal_hidden.gd: replace the mtg_primary/mtg_secondary presence assertions (lines ~22-24) with assertions that reveal_hidden=true exposes a 5-element 'colors' vector and reveal_hidden=false does NOT expose 'colors'.",
+        "Confirm test_bridge_snapshot.gd still passes (it does not assert mtg fields).",
+        "Red-green: temporarily leave reveal_hidden exposing mtg only, confirm the updated test fails (no 'colors' key), restore the re-point, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/harness/unit/test_bridge_reveal_hidden.gd -gexit | Expected proof: reveal_hidden exposes the 5-float color vector, hides it when false; mtg fields still present on ClientState; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 5"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave4: agent_bridge reveal_hidden re-pointed mtg->5-float colors (mtg kept); GUT red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:01:45.926Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-015",
+      "title": "Task 15: Add redacted blind-read snapshot mode (derived facts only, strip raw client numbers)",
+      "description": "Without redaction the blind-read can cheat by reading raw client.needs numbers and never use the derived facts — proving the LLM can read numbers, not that PatternDeriver is legible. Add a blind-read snapshot mode that (a) omits client.needs, client.cognitive, client.overskudd, and (b) filters case_file.entries to provenance==&\"derived\" only. This is the snapshot the STANDALONE gate (Task 17) feeds the blind reader. It must exist AFTER derived facts exist (so it can be tested against a real derived-fact set) — blocked on the deriver wiring.",
+      "steps": [
+        "In /Users/godstemning/dev/lifelines-tycoon/autoload/agent_bridge.gd, add a blind-read mode (a flag e.g. blind_read or a distinct op {\"op\":\"snapshot_redacted\"}) such that build_snapshot omits the raw need/cognitive/overskudd fields from _client_snapshot AND _case_file_snapshot returns ONLY entries with provenance==&\"derived\".",
+        "Ensure _case_file_snapshot serialises the provenance field on each entry (currently it emits id/title/tags only) so the filter — and any downstream consumer — can see it.",
+        "Keep the normal (non-blind) snapshot unchanged for existing tests / agent flows.",
+        "Add a focused test (GUT test/harness/unit/test_bridge_redacted.gd) asserting: in blind-read mode the client dict has NO needs/cognitive/overskudd keys, and case_file.entries contains ONLY derived-provenance entries (authored consequence entries excluded).",
+        "Red-green: temporarily leave needs in the blind-read client dict, confirm the redaction test fails, restore, add red-green note. Confirm summarize_traces.py still reads the 'entry' field unchanged (Option B keeps the signal intact)."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/harness/unit/test_bridge_redacted.gd -gexit | Expected proof: blind-read snapshot strips client needs/cognitive/overskudd and returns derived-only entries; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 1",
+        "Task 14",
+        "Task 12"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave9: blind-read redaction (strip needs/cognitive/overskudd, derived-only, provenance serialised); GUT 5/5 red-green; critic ADVANCE",
+          "timestamp": "2026-06-24T19:53:32.413Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-016",
+      "title": "Task 16: Add provenance to normal case_file snapshot serialisation and confirm summarize_traces parsing",
+      "description": "Ensure provenance is observable wherever the desk and trace tooling consume case-file entries, so beat-2 (player can tell derived vs authored) holds and trace rules can filter. This is the non-blind serialisation companion to Task 15.",
+      "steps": [
+        "In agent_bridge._case_file_snapshot (agent_bridge.gd:56-68), add \"provenance\": String(e.provenance) to each serialised entry dict (both normal and blind-read modes).",
+        "Check harness/lib/summarize_traces.py (line ~74) — it reads obj.get(\"entry\") from the EVENT stream; confirm Option B (single-StringName signal) means NO change is needed there. Document if a provenance pass-through is desired but out of scope.",
+        "Add/extend a GUT or Python test asserting the serialised entry dict includes a provenance field with the correct value for an authored vs a derived entry.",
+        "Red-green: temporarily omit the provenance key from serialisation, confirm the test fails, restore, add red-green note."
+      ],
+      "verification": "Evidence type: logic | Command: /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -s addons/gut/gut_cmdln.gd -gtest=res://test/harness/unit/test_bridge_snapshot.gd -gexit | Expected proof: case-file snapshot entries carry provenance; authored vs derived distinguishable; exit 0 | Red-green needed: yes",
+      "blockedBy": [
+        "Task 15"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave10: provenance in normal snapshot (T15 covered) + authored-vs-derived value test; summarize_traces no-change confirmed; GUT 7/7 red-green; self-critic 162/162 clean",
+          "timestamp": "2026-06-24T19:56:12.611Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-017",
+      "title": "Task 17: Build the STANDALONE blind-read gate driver (own driver under scripts/gate/; NOT the harness)",
+      "description": "Build the self-contained blind-read gate driver. It does NOT use harness/run_evaluator.sh, score.py, judge.py, the tournament, judgments.json, or any rubric floors. Per seed it: boots Godot headless in agent-mode at that --seed (snapshot/advance ops over the cmd.jsonl/events.jsonl comms protocol — snapshot API ONLY, no mutation), advances N days, requests the REDACTED blind-read snapshot (Task 15) + the uncovered-behavior channel (Task 12), feeds those derived facts to an LLM-as-caseworker via the `claude` CLI asking it to NAME Elling's single dominant problem, and scores the named problem against the seeded GROUND-TRUTH LOG the driver derives at boot from the reveal_hidden color vector (the reader never sees it). The driver MUST carry the honest-limit marker (U1).",
+      "steps": [
+        "Create /Users/godstemning/dev/lifelines-tycoon/scripts/gate/blind_read_gate.py (Python 3.11 stdlib only; do NOT import anything from harness/). At the TOP add a literal marker comment block: 'LIMIT: symptom-legibility only — no Grete, no lever, no loop closure; this gate proves the sim is READABLE as a dominant problem, not that the LOOPEN edge round-trips. Realizes only the `sim svarer → ny post` edge of LOOPEN (blueprint_v1.html line 1405).'",
+        "Implement per-seed run: launch `Godot --headless --path . --agent-mode --comms-dir <tmp/seed> --reveal-hidden --seed <S>`; over the cmd.jsonl/events.jsonl protocol drive {\"op\":\"advance\",\"game_hours\":<one day>} for N days, then {\"op\":\"snapshot\"} (reveal_hidden, to capture GROUND TRUTH = the color vector + derived dominant-need/behavior signature) and the REDACTED blind-read snapshot (Task 15) for the reader. The ground truth is held by the driver and NEVER shown to the reader.",
+        "Build the blind-read prompt from the REDACTED snapshot's derived facts PLUS the uncovered-behavior channel (Task 12); call the `claude` CLI in non-interactive mode (claude -p / claude --print) instructing it to NAME Elling's single dominant problem and nothing else.",
+        "Score the reader's named problem against the ground-truth signature (string/keyword match against the seed's known dominant problem derived from the color vector + need trajectory). Record per-seed pass/fail and the named problem.",
+        "Implement the M-of-N tally: PASS = 4 of 5 over the union {101,202,303,747,919}; ADD a HARD assertion that BOTH fresh seeds {747,919} are among the passers (fail the gate if either fresh seed fails, even at 4/5). Print a per-seed table + the verdict and exit non-zero on FAIL.",
+        "Add a thin Python self-test (test under scripts/gate/, e.g. test_gate_scoring.py runnable via python3 -m unittest) covering the scorer (named-problem match logic) and the fresh-seed-must-pass guard with synthetic inputs (no Godot/claude needed), with red-green on the scorer.",
+        "Document the exact invocation (python3 scripts/gate/blind_read_gate.py --seeds 101,202,303,747,919 --days N) and any import/.godot prerequisites in a header comment."
+      ],
+      "verification": "Evidence type: integrated | Command/steps: python3 scripts/gate/blind_read_gate.py --seeds 101,202,303,747,919 --days N (dry/smoke on one seed first to confirm boot+snapshot+claude plumbing) + python3 -m unittest the scorer self-test | Expected proof: driver boots the sim per seed, captures redacted snapshot + uncovered channel, calls claude, scores vs ground truth, prints per-seed table + M-of-N verdict with the fresh-seed guard; honest-limit marker present in the file; scorer self-test red-green | Red-green needed: yes (scorer self-test; the full gate red-green is Task 18)",
+      "blockedBy": [
+        "Task 13",
+        "Task 15",
+        "Task 12"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave11: standalone blind-read gate driver (no harness; redaction+scorer+M-of-N+fresh-seed guard); scorer self-test red-green; one-seed live smoke PASS",
+          "timestamp": "2026-06-24T20:18:45.999Z"
+        }
+      ]
+    },
+    {
+      "id": "TASK-018",
+      "title": "Task 18: Run the standalone blind-read gate on M-of-N seeds with fresh-seed red-green (circularity guard)",
+      "description": "The DoD: the standalone blind reader (Task 17) names Elling's dominant problem on >= M=4 of N=5 seeds from the REDACTED snapshot + uncovered-behavior channel. The circularity guard is MANDATORY: rules were authored on {101,202,303}; the gate's validity rests on the FRESH seeds {747,919} (never used to author rules) ALSO passing. Gate red-green uses a FRESH seed: stub PatternDeriver to emit a wrong/empty fact, confirm the gate FAILS on fresh seed 747 (reader cannot name the problem), then restore and confirm it PASSES.",
+      "steps": [
+        "Run python3 scripts/gate/blind_read_gate.py --seeds 101,202,303,747,919 --days N for all N=5 seeds, feeding the redacted blind-read snapshot (Task 15) PLUS the uncovered-behavior channel (Task 12) to the LLM-as-caseworker.",
+        "Record per-seed: did the blind read NAME the dominant problem (without parroting a fact label)? Assert >= 4 of 5 pass AND BOTH fresh seeds {747,919} are among the passers (if a fresh seed fails, the gate is circular/invalid even at 4/5 — FAIL).",
+        "GATE RED-GREEN (fresh seed, mandatory): temporarily stub PatternDeriver.evaluate to emit a wrong/empty fact, run the gate on FRESH seed 747, confirm the blind read CANNOT name the dominant problem (gate FAILS). Restore PatternDeriver, confirm the gate PASSES on 747. Record this as the gate's red-green proof.",
+        "Record the final verdict, per-seed results (named problem per seed), and the red-green proof as a PM comment on SDD-001 (tycoon PM, port 3334), citing the exact gate invocation.",
+        "Re-affirm the honest limit in the PM note: a GREEN gate proves symptom-legibility (the sim is readable as a dominant problem), NOT loop closure — no Grete, no lever, no `loopen strammes` this slice."
+      ],
+      "verification": "Evidence type: integrated | Command/steps: python3 scripts/gate/blind_read_gate.py --seeds 101,202,303,747,919 --days N; then stub-deriver red-green on seed 747 | Expected proof: blind read names dominant problem on >=4/5 seeds INCLUDING both fresh seeds {747,919}; gate FAILS with stubbed/empty deriver and PASSES restored on fresh seed 747; PM note records verdict + red-green + honest-limit | Red-green needed: yes (gate red-green on a fresh seed outside the authoring set)",
+      "blockedBy": [
+        "Task 17"
+      ],
+      "passes": true,
+      "status": "done",
+      "progressNotes": [
+        {
+          "text": "Wave12 DoD: gate GREEN 5/5 both fresh seeds named 'Social isolation' from derived facts only; SB-002 leak found+fixed; red-green can-fail proven on fresh seed 747 (stub->FAIL, restore->PASS); 24/24 scorer + 162/162 GUT; final critic re-ran independently = DoD MET",
+          "timestamp": "2026-06-24T20:18:46.092Z"
+        }
+      ]
+    }
+  ],
+  "comments": [],
+  "createdAt": "2026-06-24T18:22:04.397Z",
+  "updatedAt": "2026-06-24T20:18:46.092Z"
+}
